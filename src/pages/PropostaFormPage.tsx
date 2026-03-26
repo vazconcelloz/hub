@@ -254,7 +254,7 @@ export default function PropostaFormPage() {
           ...form,
           consultora_foto_url: consultorPhotoUrl,
           validade_proposta: form.validade_proposta || null,
-        }).eq("id", id!);
+        } as any).eq("id", id!);
         if (error) throw error;
         propostaId = id!;
 
