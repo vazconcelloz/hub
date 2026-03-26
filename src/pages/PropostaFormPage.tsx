@@ -374,7 +374,16 @@ export default function PropostaFormPage() {
           </div>
 
           {operadoras.map((op, index) => (
-            <Card key={index} className="relative">
+            <Card key={index} className={`relative ${extractingIndex === index ? "ring-2 ring-primary/50" : ""}`}>
+              {extractingIndex === index && (
+                <div className="absolute inset-0 bg-background/60 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+                  <div className="flex items-center gap-3 text-primary font-medium">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Sparkles className="w-5 h-5 animate-pulse" />
+                    Extraindo dados do PDF...
+                  </div>
+                </div>
+              )}
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base flex items-center gap-2">
