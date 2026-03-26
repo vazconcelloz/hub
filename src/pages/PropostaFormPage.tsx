@@ -307,10 +307,6 @@ export default function PropostaFormPage() {
               <Label>Tipo de Produto</Label>
               <Input value={form.tipo_produto} onChange={(e) => updateForm("tipo_produto", e.target.value)} placeholder="Ex: Plano de Saúde, Seguro de Vida..." />
             </div>
-            <div className="space-y-2">
-              <Label>Faixa Etária / Perfil</Label>
-              <Input value={form.faixa_etaria_ou_perfil} onChange={(e) => updateForm("faixa_etaria_ou_perfil", e.target.value)} />
-            </div>
           </CardContent>
         </Card>
 
