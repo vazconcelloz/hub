@@ -156,7 +156,8 @@ export default function PropostaFormPage() {
           reembolso: extracted.reembolso || newOperadoras[index].reembolso,
           resumo_cobertura: extracted.resumo_cobertura || newOperadoras[index].resumo_cobertura,
           rede_credenciada_resumo: extracted.rede_credenciada_resumo || newOperadoras[index].rede_credenciada_resumo,
-        };
+          faixas_etarias: extracted.faixas_etarias || newOperadoras[index].faixas_etarias,
+          previsao_reajuste_faixa: extracted.previsao_reajuste_faixa || newOperadoras[index].previsao_reajuste_faixa,
         setOperadoras(newOperadoras);
 
         // Preencher dados do cliente se campos estiverem vazios
