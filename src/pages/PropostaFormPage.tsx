@@ -29,6 +29,8 @@ interface OperadoraForm {
   destaque_comercial: string;
   ordem_exibicao: number;
   pdf_url: string;
+  faixas_etarias: string;
+  previsao_reajuste_faixa: string;
   pdf_file?: File;
 }
 

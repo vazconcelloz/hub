@@ -110,6 +110,16 @@ Extraia APENAS dados que estejam claramente presentes no documento. Não invente
                     description:
                       "Lista dos principais hospitais, laboratórios e clínicas da rede credenciada, priorizando os mais próximos da região do cliente. Inclua nomes específicos.",
                   },
+                  faixas_etarias: {
+                    type: "string",
+                    description:
+                      "Tabela de faixas etárias e valores mensais encontrada no PDF. Formato: '0-18: R$250 | 19-23: R$310 | 24-28: R$380 | 29-33: R$420 | 34-38: R$480 | 39-43: R$560 | 44-48: R$680 | 49-53: R$850 | 54-58: R$1100 | 59+: R$1500'. Extraia TODAS as faixas e valores que aparecerem no documento.",
+                  },
+                  previsao_reajuste_faixa: {
+                    type: "string",
+                    description:
+                      "Previsão de reajuste por mudança de faixa etária. Explique brevemente como o valor muda ao trocar de faixa, incluindo percentuais de aumento entre faixas quando disponível. Ex: 'Reajuste médio de 15-20% entre faixas até 48 anos. A partir dos 49 anos, o reajuste pode chegar a 30-40% por faixa.'",
+                  },
                   cliente_nome: {
                     type: "string",
                     description: "Nome do cliente/beneficiário que aparece no documento de cotação",

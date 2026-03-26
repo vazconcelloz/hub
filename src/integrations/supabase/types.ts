@@ -21,11 +21,13 @@ export type Database = {
           coparticipacao: string | null
           created_at: string
           destaque_comercial: string | null
+          faixas_etarias: string | null
           id: string
           operadora_nome: string
           ordem_exibicao: number
           pdf_url: string | null
           plano_nome: string | null
+          previsao_reajuste_faixa: string | null
           proposta_id: string
           rede_credenciada_resumo: string | null
           reembolso: string | null
@@ -39,11 +41,13 @@ export type Database = {
           coparticipacao?: string | null
           created_at?: string
           destaque_comercial?: string | null
+          faixas_etarias?: string | null
           id?: string
           operadora_nome: string
           ordem_exibicao?: number
           pdf_url?: string | null
           plano_nome?: string | null
+          previsao_reajuste_faixa?: string | null
           proposta_id: string
           rede_credenciada_resumo?: string | null
           reembolso?: string | null
@@ -57,11 +61,13 @@ export type Database = {
           coparticipacao?: string | null
           created_at?: string
           destaque_comercial?: string | null
+          faixas_etarias?: string | null
           id?: string
           operadora_nome?: string
           ordem_exibicao?: number
           pdf_url?: string | null
           plano_nome?: string | null
+          previsao_reajuste_faixa?: string | null
           proposta_id?: string
           rede_credenciada_resumo?: string | null
           reembolso?: string | null
