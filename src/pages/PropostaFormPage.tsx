@@ -80,6 +80,7 @@ export default function PropostaFormPage() {
       validade_proposta: proposta.validade_proposta || "",
       observacoes_gerais: proposta.observacoes_gerais || "",
       status: proposta.status,
+      idades_beneficiarios: (proposta as any).idades_beneficiarios || "",
     });
 
     const { data: ops } = await supabase
