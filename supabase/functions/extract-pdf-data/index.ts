@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { pdf_base64 } = await req.json();
+    const { pdf_base64, cidade, estado } = await req.json();
     if (!pdf_base64) {
       return new Response(JSON.stringify({ error: "pdf_base64 is required" }), {
         status: 400,
@@ -24,6 +24,10 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
+
+    const locationContext = cidade || estado
+      ? `\nO cliente está localizado em ${cidade || ""}${cidade && estado ? "/" : ""}${estado || ""}. Ao descrever a rede credenciada (campo rede_credenciada_resumo), PRIORIZE os melhores hospitais, laboratórios e clínicas mais próximos dessa região. Liste os nomes dos principais hospitais e laboratórios da rede nessa localidade.`
+      : "";
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -38,7 +42,7 @@ serve(async (req) => {
             role: "system",
             content: `Você é um especialista em extrair dados de documentos PDF de operadoras de planos de saúde e seguros no Brasil.
 Analise o conteúdo do PDF e extraia as informações solicitadas. Se não conseguir identificar algum campo, retorne string vazia para texto ou null para valor numérico.
-Extraia APENAS dados que estejam claramente presentes no documento. Não invente dados.`,
+Extraia APENAS dados que estejam claramente presentes no documento. Não invente dados.${locationContext}`,
           },
           {
             role: "user",
@@ -104,7 +108,7 @@ Extraia APENAS dados que estejam claramente presentes no documento. Não invente
                   rede_credenciada_resumo: {
                     type: "string",
                     description:
-                      "Resumo da rede credenciada (hospitais, laboratórios e clínicas principais)",
+                      "Lista dos principais hospitais, laboratórios e clínicas da rede credenciada, priorizando os mais próximos da região do cliente. Inclua nomes específicos.",
                   },
                   cliente_nome: {
                     type: "string",
@@ -158,6 +162,47 @@ Extraia APENAS dados que estejam claramente presentes no documento. Não invente
     }
 
     const extractedData = JSON.parse(toolCall.function.arguments);
+
+    // Enrich rede_credenciada_resumo if empty/short and we have location + operator info
+    const redeResumo = extractedData.rede_credenciada_resumo || "";
+    const operadoraNome = extractedData.operadora_nome || "";
+    const clienteCidade = cidade || extractedData.cliente_cidade || "";
+    const clienteEstado = estado || extractedData.cliente_estado || "";
+
+    if (redeResumo.length < 50 && operadoraNome && (clienteCidade || clienteEstado)) {
+      try {
+        const enrichResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              {
+                role: "system",
+                content: "Você é um especialista em planos de saúde no Brasil. Responda de forma direta e concisa.",
+              },
+              {
+                role: "user",
+                content: `Liste os 5 principais hospitais e 3 principais laboratórios da rede credenciada da operadora ${operadoraNome} na região de ${clienteCidade}${clienteEstado ? "/" + clienteEstado : ""}. Formato: nome do hospital/laboratório, um por linha. Apenas nomes reais e conhecidos.`,
+              },
+            ],
+          }),
+        });
+
+        if (enrichResponse.ok) {
+          const enrichResult = await enrichResponse.json();
+          const enrichedText = enrichResult.choices?.[0]?.message?.content;
+          if (enrichedText) {
+            extractedData.rede_credenciada_resumo = enrichedText.trim();
+          }
+        }
+      } catch (enrichError) {
+        console.error("Enrich error (non-fatal):", enrichError);
+      }
+    }
 
     return new Response(JSON.stringify({ data: extractedData }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
