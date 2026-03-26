@@ -53,7 +53,7 @@ export default function PropostaFormPage() {
     nome_cliente: "", telefone_cliente: "", cidade: "", estado: "",
     tipo_produto: "", faixa_etaria_ou_perfil: "", consultora_nome: "",
     consultora_telefone: "", consultora_foto_url: "", validade_proposta: "",
-    observacoes_gerais: "", status: "pendente",
+    observacoes_gerais: "", status: "pendente", idades_beneficiarios: "",
   });
 
   const [operadoras, setOperadoras] = useState<OperadoraForm[]>([{ ...emptyOperadora, ordem_exibicao: 1 }]);
