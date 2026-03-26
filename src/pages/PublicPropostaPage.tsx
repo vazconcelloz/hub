@@ -5,7 +5,7 @@ import { Proposta, Operadora, formatCurrency, formatPhone, DESTAQUE_LABELS, DEST
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Shield, MessageCircle, FileText, CheckCircle, Phone, MapPin, Calendar, User, Heart } from "lucide-react";
+import { Shield, MessageCircle, FileText, CheckCircle, MapPin, Calendar, Heart } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
