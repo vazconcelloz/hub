@@ -121,10 +121,58 @@ export default function PropostaFormPage() {
     setOperadoras(operadoras.filter((_, i) => i !== index));
   };
 
-  const handlePdfUpload = (index: number, file: File) => {
+  const handlePdfUpload = async (index: number, file: File) => {
     const updated = [...operadoras];
     updated[index].pdf_file = file;
     setOperadoras(updated);
+
+    // Auto-extract data from PDF
+    setExtractingIndex(index);
+    try {
+      const base64 = await fileToBase64(file);
+      const response = await supabase.functions.invoke("extract-pdf-data", {
+        body: { pdf_base64: base64 },
+      });
+
+      if (response.error) throw new Error(response.error.message);
+      
+      const extracted = response.data?.data;
+      if (extracted) {
+        const newOperadoras = [...operadoras];
+        newOperadoras[index] = {
+          ...newOperadoras[index],
+          pdf_file: file,
+          operadora_nome: extracted.operadora_nome || newOperadoras[index].operadora_nome,
+          plano_nome: extracted.plano_nome || newOperadoras[index].plano_nome,
+          valor_mensal: extracted.valor_mensal?.toString() || newOperadoras[index].valor_mensal,
+          coparticipacao: extracted.coparticipacao || newOperadoras[index].coparticipacao,
+          acomodacao: extracted.acomodacao || newOperadoras[index].acomodacao,
+          abrangencia: extracted.abrangencia || newOperadoras[index].abrangencia,
+          reembolso: extracted.reembolso || newOperadoras[index].reembolso,
+          resumo_cobertura: extracted.resumo_cobertura || newOperadoras[index].resumo_cobertura,
+          rede_credenciada_resumo: extracted.rede_credenciada_resumo || newOperadoras[index].rede_credenciada_resumo,
+        };
+        setOperadoras(newOperadoras);
+        toast({ title: "Dados extraídos!", description: `Campos preenchidos automaticamente para ${extracted.operadora_nome || "a operadora"}. Revise antes de salvar.` });
+      }
+    } catch (err: any) {
+      console.error("PDF extraction error:", err);
+      toast({ title: "Extração automática falhou", description: "Preencha os campos manualmente.", variant: "destructive" });
+    } finally {
+      setExtractingIndex(null);
+    }
+  };
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(",")[1]);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleConsultorPhotoUpload = (file: File) => {
