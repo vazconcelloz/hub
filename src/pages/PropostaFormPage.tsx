@@ -29,6 +29,8 @@ interface OperadoraForm {
   destaque_comercial: string;
   ordem_exibicao: number;
   pdf_url: string;
+  faixas_etarias: string;
+  previsao_reajuste_faixa: string;
   pdf_file?: File;
 }
 
@@ -36,6 +38,7 @@ const emptyOperadora: OperadoraForm = {
   operadora_nome: "", plano_nome: "", valor_mensal: "", coparticipacao: "",
   acomodacao: "", abrangencia: "", reembolso: "", resumo_cobertura: "",
   rede_credenciada_resumo: "", destaque_comercial: "", ordem_exibicao: 0, pdf_url: "",
+  faixas_etarias: "", previsao_reajuste_faixa: "",
 };
 
 export default function PropostaFormPage() {
@@ -100,6 +103,8 @@ export default function PropostaFormPage() {
         destaque_comercial: op.destaque_comercial || "",
         ordem_exibicao: op.ordem_exibicao,
         pdf_url: op.pdf_url || "",
+        faixas_etarias: (op as any).faixas_etarias || "",
+        previsao_reajuste_faixa: (op as any).previsao_reajuste_faixa || "",
       })));
     }
   };
@@ -151,6 +156,8 @@ export default function PropostaFormPage() {
           reembolso: extracted.reembolso || newOperadoras[index].reembolso,
           resumo_cobertura: extracted.resumo_cobertura || newOperadoras[index].resumo_cobertura,
           rede_credenciada_resumo: extracted.rede_credenciada_resumo || newOperadoras[index].rede_credenciada_resumo,
+          faixas_etarias: extracted.faixas_etarias || newOperadoras[index].faixas_etarias,
+          previsao_reajuste_faixa: extracted.previsao_reajuste_faixa || newOperadoras[index].previsao_reajuste_faixa,
         };
         setOperadoras(newOperadoras);
 
@@ -256,7 +263,9 @@ export default function PropostaFormPage() {
           destaque_comercial: op.destaque_comercial || null,
           ordem_exibicao: i + 1,
           pdf_url: pdfUrl || null,
-        });
+          faixas_etarias: op.faixas_etarias || null,
+          previsao_reajuste_faixa: op.previsao_reajuste_faixa || null,
+        } as any);
       }
 
       toast({ title: isEdit ? "Proposta atualizada!" : "Proposta criada!" });
@@ -306,10 +315,6 @@ export default function PropostaFormPage() {
             <div className="space-y-2">
               <Label>Tipo de Produto</Label>
               <Input value={form.tipo_produto} onChange={(e) => updateForm("tipo_produto", e.target.value)} placeholder="Ex: Plano de Saúde, Seguro de Vida..." />
-            </div>
-            <div className="space-y-2">
-              <Label>Faixa Etária / Perfil</Label>
-              <Input value={form.faixa_etaria_ou_perfil} onChange={(e) => updateForm("faixa_etaria_ou_perfil", e.target.value)} />
             </div>
           </CardContent>
         </Card>
@@ -455,6 +460,14 @@ export default function PropostaFormPage() {
                 <div className="space-y-2 md:col-span-2">
                   <Label>Rede Credenciada (Resumo)</Label>
                   <Textarea value={op.rede_credenciada_resumo} onChange={(e) => updateOperadora(index, "rede_credenciada_resumo", e.target.value)} rows={2} />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Faixas Etárias</Label>
+                  <Textarea value={op.faixas_etarias} onChange={(e) => updateOperadora(index, "faixas_etarias", e.target.value)} rows={2} placeholder="Ex: 0-18: R$250 | 19-23: R$310 | 24-28: R$380..." />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Previsão de Reajuste por Faixa</Label>
+                  <Textarea value={op.previsao_reajuste_faixa} onChange={(e) => updateOperadora(index, "previsao_reajuste_faixa", e.target.value)} rows={2} placeholder="Ex: Reajuste médio de 15-20% entre faixas..." />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label>PDF da Operadora</Label>
