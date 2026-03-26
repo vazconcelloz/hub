@@ -131,7 +131,7 @@ export default function PropostaFormPage() {
     try {
       const base64 = await fileToBase64(file);
       const response = await supabase.functions.invoke("extract-pdf-data", {
-        body: { pdf_base64: base64 },
+        body: { pdf_base64: base64, cidade: form.cidade, estado: form.estado },
       });
 
       if (response.error) throw new Error(response.error.message);
