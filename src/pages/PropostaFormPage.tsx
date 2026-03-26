@@ -110,11 +110,42 @@ export default function PropostaFormPage() {
     }
   };
 
-  const updateForm = (field: string, value: string) => setForm({ ...form, [field]: value });
+  const updateForm = (field: string, value: string) => {
+    const newForm = { ...form, [field]: value };
+    setForm(newForm);
+    
+    // Auto-recalculate valor_mensal when idades change
+    if (field === "idades_beneficiarios") {
+      recalcularValores(value, operadoras);
+    }
+  };
+
+  const recalcularValores = (idadesText: string, ops: OperadoraForm[]) => {
+    const idades = parseIdades(idadesText);
+    if (idades.length === 0) return;
+    const updated = ops.map((op) => {
+      const faixas = parseFaixasEtarias(op.faixas_etarias);
+      if (faixas.length === 0) return op;
+      const { total } = calcularTotalPorFaixas(idades, faixas);
+      return { ...op, valor_mensal: total.toFixed(2) };
+    });
+    setOperadoras(updated);
+  };
 
   const updateOperadora = (index: number, field: string, value: string | number) => {
     const updated = [...operadoras];
     (updated[index] as any)[field] = value;
+    
+    // Recalculate if faixas_etarias changed
+    if (field === "faixas_etarias" && form.idades_beneficiarios) {
+      const idades = parseIdades(form.idades_beneficiarios);
+      const faixas = parseFaixasEtarias(value as string);
+      if (idades.length > 0 && faixas.length > 0) {
+        const { total } = calcularTotalPorFaixas(idades, faixas);
+        updated[index].valor_mensal = total.toFixed(2);
+      }
+    }
+    
     setOperadoras(updated);
   };
 
