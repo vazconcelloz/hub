@@ -153,6 +153,15 @@ export default function PropostaFormPage() {
           rede_credenciada_resumo: extracted.rede_credenciada_resumo || newOperadoras[index].rede_credenciada_resumo,
         };
         setOperadoras(newOperadoras);
+
+        // Preencher dados do cliente se campos estiverem vazios
+        setForm(prev => ({
+          ...prev,
+          nome_cliente: prev.nome_cliente || extracted.cliente_nome || "",
+          cidade: prev.cidade || extracted.cliente_cidade || "",
+          estado: prev.estado || extracted.cliente_estado || "",
+        }));
+
         toast({ title: "Dados extraídos!", description: `Campos preenchidos automaticamente para ${extracted.operadora_nome || "a operadora"}. Revise antes de salvar.` });
       }
     } catch (err: any) {
