@@ -106,6 +106,18 @@ Extraia APENAS dados que estejam claramente presentes no documento. Não invente
                     description:
                       "Resumo da rede credenciada (hospitais, laboratórios e clínicas principais)",
                   },
+                  cliente_nome: {
+                    type: "string",
+                    description: "Nome do cliente/beneficiário que aparece no documento de cotação",
+                  },
+                  cliente_cidade: {
+                    type: "string",
+                    description: "Cidade do cliente mencionada no documento",
+                  },
+                  cliente_estado: {
+                    type: "string",
+                    description: "Estado (UF) do cliente mencionado no documento (ex: SP, RJ, MG)",
+                  },
                 },
                 required: ["operadora_nome"],
                 additionalProperties: false,
