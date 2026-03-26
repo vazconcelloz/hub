@@ -14,7 +14,9 @@ export default function Index() {
           <h1 className="text-4xl md:text-5xl font-bold max-w-2xl mx-auto leading-tight">
             Propostas de seguros que encantam seus clientes
           </h1>
-          <p className="text-lg opacity-90 max-w-xl mx-auto">Crie estudos comparativos em minutos.</p>
+          <p className="text-lg opacity-90 max-w-xl mx-auto">
+            Crie estudos comparativos em minutos. Envie links e feche mais contratos.
+          </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
             <Link to="/login">
               <Button variant="accent" size="lg" className="text-base px-8">
