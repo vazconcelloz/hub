@@ -55,6 +55,7 @@ export default function PropostaFormPage() {
 
   const [operadoras, setOperadoras] = useState<OperadoraForm[]>([{ ...emptyOperadora, ordem_exibicao: 1 }]);
   const [consultorPhoto, setConsultorPhoto] = useState<File | null>(null);
+  const [extractingIndex, setExtractingIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (isEdit) loadProposta();
