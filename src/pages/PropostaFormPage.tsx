@@ -266,7 +266,7 @@ export default function PropostaFormPage() {
           faixas_etarias: op.faixas_etarias || null,
           previsao_reajuste_faixa: op.previsao_reajuste_faixa || null,
         } as any);
-        });
+      }
       }
 
       toast({ title: isEdit ? "Proposta atualizada!" : "Proposta criada!" });
