@@ -46,7 +46,10 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu@email.com" />
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder={isSignUp ? "nome@grupofbn.com.br" : "seu@email.com"} />
+              {isSignUp && (
+                <p className="text-xs text-muted-foreground">Apenas emails @grupofbn.com.br podem criar conta</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
