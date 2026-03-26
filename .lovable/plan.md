@@ -1,31 +1,22 @@
 
 
-## Plano: Extrair múltiplos planos de um único PDF
-
-### Problema
-O PDF da Amil contém **5 planos em uma única tabela** (Amil Black I QP R1, R2, R3 e Amil Black S2500 QP R1, R2), cada um com valores por faixa etária. O sistema atual extrai apenas 1 plano por PDF. Precisamos extrair todos os planos separadamente, cada um com seus valores por vida e total.
+## Plano: Restringir cadastro ao domínio @grupofbn.com.br
 
 ### Mudanças
 
 | Arquivo | O que muda |
 |---------|-----------|
-| `supabase/functions/extract-pdf-data/index.ts` | Alterar a extração para retornar um **array de planos** em vez de um único plano. Cada plano terá: nome, valores por faixa etária, e o valor total. Campos comuns (operadora, coparticipação, acomodação, rede credenciada) são compartilhados. |
-| `src/pages/PropostaFormPage.tsx` | Ao receber múltiplos planos do PDF, criar automaticamente uma operadora para cada plano extraído (em vez de preencher apenas uma). O PDF file é compartilhado entre todas. |
-| `src/pages/PublicPropostaPage.tsx` | Cada card de plano já mostra o detalhamento por beneficiário e total — sem mudanças estruturais necessárias. |
+| `src/contexts/AuthContext.tsx` | Validar domínio do email antes de chamar `signUp`. Rejeitar com erro se não for `@grupofbn.com.br` |
+| `src/pages/LoginPage.tsx` | Adicionar validação visual no campo de email durante cadastro, mostrando hint "Apenas emails @grupofbn.com.br" |
+| **Auth config** | Habilitar auto-confirm para que contas criadas com o domínio correto possam fazer login imediatamente sem precisar verificar email |
 
 ### Detalhes técnicos
 
-**Nova estrutura de extração (edge function)**:
-- Adicionar uma nova tool function `extract_multiple_plans` que retorna um array de planos
-- Cada plano: `{ plano_nome, faixas_etarias (formato "0-18: R$921,64 | 34-38: R$1.657,59 | ..."), valor_total }`
-- Campos compartilhados: `operadora_nome, coparticipacao, acomodacao, abrangencia, reembolso, resumo_cobertura, rede_credenciada_resumo, previsao_reajuste_faixa`
+**Validação client-side (AuthContext)**: No `signUp`, antes de chamar `supabase.auth.signUp`, verificar se `email.endsWith('@grupofbn.com.br')`. Se não, retornar `{ error: new Error("Apenas emails @grupofbn.com.br podem criar conta.") }`.
 
-**Lógica no formulário admin (handlePdfUpload)**:
-- Se a resposta contiver `planos` (array), criar N operadoras a partir do índice atual
-- Cada operadora recebe o mesmo `pdf_file`, `operadora_nome`, `coparticipacao`, `acomodacao`, etc.
-- Cada uma recebe seu próprio `plano_nome`, `faixas_etarias`, e `valor_mensal` calculado
+**Validação server-side (Edge Function)**: Criar uma edge function `validate-signup` que verifica o domínio. Porém, como a abordagem mais simples e eficaz é usar um **database trigger** que rejeita inserts em `auth.users` com domínio diferente — isso não é permitido em schemas reservados. Então a validação client-side + a restrição visual são a camada principal, e um hook de signup server-side pode ser adicionado futuramente.
 
-**Exibição na proposta pública**:
-- Cada plano já aparece como card separado — funciona automaticamente
-- O detalhamento por beneficiário mostra o valor de cada vida no plano e o total
+**Auto-confirm**: Usar `cloud--configure_auth` para habilitar auto-confirm de email, já que os emails são restritos a um domínio corporativo confiável, eliminando a necessidade de verificação por email.
+
+**UI**: No modo de cadastro, mostrar texto informativo "Apenas emails @grupofbn.com.br" abaixo do campo de email. Placeholder muda para "nome@grupofbn.com.br".
 
