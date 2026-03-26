@@ -40,6 +40,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string) => {
+    if (!email.toLowerCase().endsWith('@grupofbn.com.br')) {
+      return { error: new Error("Apenas emails @grupofbn.com.br podem criar conta.") };
+    }
     const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } });
     return { error: error as Error | null };
   };
