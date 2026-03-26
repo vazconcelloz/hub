@@ -95,6 +95,7 @@ export type Database = {
           estado: string | null
           faixa_etaria_ou_perfil: string | null
           id: string
+          idades_beneficiarios: string | null
           nome_cliente: string
           observacoes_gerais: string | null
           slug: string
@@ -114,6 +115,7 @@ export type Database = {
           estado?: string | null
           faixa_etaria_ou_perfil?: string | null
           id?: string
+          idades_beneficiarios?: string | null
           nome_cliente: string
           observacoes_gerais?: string | null
           slug: string
@@ -133,6 +135,7 @@ export type Database = {
           estado?: string | null
           faixa_etaria_ou_perfil?: string | null
           id?: string
+          idades_beneficiarios?: string | null
           nome_cliente?: string
           observacoes_gerais?: string | null
           slug?: string

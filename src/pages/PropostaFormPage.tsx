@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { generateSlug } from "@/lib/proposal-utils";
+import { generateSlug, parseFaixasEtarias, parseIdades, calcularTotalPorFaixas } from "@/lib/proposal-utils";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,7 +53,7 @@ export default function PropostaFormPage() {
     nome_cliente: "", telefone_cliente: "", cidade: "", estado: "",
     tipo_produto: "", faixa_etaria_ou_perfil: "", consultora_nome: "",
     consultora_telefone: "", consultora_foto_url: "", validade_proposta: "",
-    observacoes_gerais: "", status: "pendente",
+    observacoes_gerais: "", status: "pendente", idades_beneficiarios: "",
   });
 
   const [operadoras, setOperadoras] = useState<OperadoraForm[]>([{ ...emptyOperadora, ordem_exibicao: 1 }]);
@@ -80,6 +80,7 @@ export default function PropostaFormPage() {
       validade_proposta: proposta.validade_proposta || "",
       observacoes_gerais: proposta.observacoes_gerais || "",
       status: proposta.status,
+      idades_beneficiarios: (proposta as any).idades_beneficiarios || "",
     });
 
     const { data: ops } = await supabase
@@ -109,11 +110,42 @@ export default function PropostaFormPage() {
     }
   };
 
-  const updateForm = (field: string, value: string) => setForm({ ...form, [field]: value });
+  const updateForm = (field: string, value: string) => {
+    const newForm = { ...form, [field]: value };
+    setForm(newForm);
+    
+    // Auto-recalculate valor_mensal when idades change
+    if (field === "idades_beneficiarios") {
+      recalcularValores(value, operadoras);
+    }
+  };
+
+  const recalcularValores = (idadesText: string, ops: OperadoraForm[]) => {
+    const idades = parseIdades(idadesText);
+    if (idades.length === 0) return;
+    const updated = ops.map((op) => {
+      const faixas = parseFaixasEtarias(op.faixas_etarias);
+      if (faixas.length === 0) return op;
+      const { total } = calcularTotalPorFaixas(idades, faixas);
+      return { ...op, valor_mensal: total.toFixed(2) };
+    });
+    setOperadoras(updated);
+  };
 
   const updateOperadora = (index: number, field: string, value: string | number) => {
     const updated = [...operadoras];
     (updated[index] as any)[field] = value;
+    
+    // Recalculate if faixas_etarias changed
+    if (field === "faixas_etarias" && form.idades_beneficiarios) {
+      const idades = parseIdades(form.idades_beneficiarios);
+      const faixas = parseFaixasEtarias(value as string);
+      if (idades.length > 0 && faixas.length > 0) {
+        const { total } = calcularTotalPorFaixas(idades, faixas);
+        updated[index].valor_mensal = total.toFixed(2);
+      }
+    }
+    
     setOperadoras(updated);
   };
 
@@ -159,6 +191,18 @@ export default function PropostaFormPage() {
           faixas_etarias: extracted.faixas_etarias || newOperadoras[index].faixas_etarias,
           previsao_reajuste_faixa: extracted.previsao_reajuste_faixa || newOperadoras[index].previsao_reajuste_faixa,
         };
+        
+        // Auto-calculate valor_mensal if idades are set
+        if (form.idades_beneficiarios) {
+          const idades = parseIdades(form.idades_beneficiarios);
+          const faixasText = extracted.faixas_etarias || newOperadoras[index].faixas_etarias;
+          const faixas = parseFaixasEtarias(faixasText);
+          if (idades.length > 0 && faixas.length > 0) {
+            const { total } = calcularTotalPorFaixas(idades, faixas);
+            newOperadoras[index].valor_mensal = total.toFixed(2);
+          }
+        }
+        
         setOperadoras(newOperadoras);
 
         // Preencher dados do cliente se campos estiverem vazios
@@ -222,7 +266,7 @@ export default function PropostaFormPage() {
           ...form,
           consultora_foto_url: consultorPhotoUrl,
           validade_proposta: form.validade_proposta || null,
-        }).eq("id", id!);
+        } as any).eq("id", id!);
         if (error) throw error;
         propostaId = id!;
 
@@ -236,7 +280,7 @@ export default function PropostaFormPage() {
           slug,
           consultora_foto_url: consultorPhotoUrl,
           validade_proposta: form.validade_proposta || null,
-        }).select().single();
+        } as any).select().single();
         if (error) throw error;
         propostaId = data.id;
       }
@@ -315,6 +359,11 @@ export default function PropostaFormPage() {
             <div className="space-y-2">
               <Label>Tipo de Produto</Label>
               <Input value={form.tipo_produto} onChange={(e) => updateForm("tipo_produto", e.target.value)} placeholder="Ex: Plano de Saúde, Seguro de Vida..." />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>Idades dos Beneficiários</Label>
+              <Input value={form.idades_beneficiarios} onChange={(e) => updateForm("idades_beneficiarios", e.target.value)} placeholder="Ex: 35, 28, 5, 62 (separadas por vírgula)" />
+              <p className="text-xs text-muted-foreground">Informe as idades para calcular automaticamente o valor total por plano</p>
             </div>
           </CardContent>
         </Card>
