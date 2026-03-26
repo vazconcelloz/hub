@@ -1,35 +1,26 @@
 
 
-## Plano: Melhorar exibição da rede credenciada, remover botão individual e garantir todos os planos
+## Plano: Corrigir parser de faixas etárias e botão PDF
+
+### Problemas identificados
+
+1. **Soma errada**: O parser `parseFaixasEtarias` não lida com o formato brasileiro de valores. Valores como `R$1.021.63` viram `102163` em vez de `1021.63`. Além disso, faixas como `59+` não são reconhecidas pelo regex.
+
+2. **PDF não abre**: O bucket `operadora-pdfs` provavelmente não está configurado como público. O `getPublicUrl` gera a URL mas o bucket precisa ser público para funcionar sem autenticação.
 
 ### Mudanças
 
-1. **Rede credenciada — máximo 5 hospitais, exibição visual melhorada**
-   - Na edge function, atualizar o prompt para instruir a IA a retornar no máximo 5 hospitais/laboratórios mais próximos
-   - Na página pública, exibir a rede credenciada como lista com ícones em vez de texto corrido
-
-2. **Remover botão "Tenho interesse nesta opção"**
-   - Remover o botão WhatsApp individual de cada card de operadora (linhas 183-188)
-   - Manter apenas o botão "Ver PDF da Operadora" e o botão final de contato com a consultora
-
-3. **Garantir que todos os planos da proposta são exibidos**
-   - Verificar que a query não limita os resultados — já usa `.order("ordem_exibicao")` sem limit, então todos os planos devem aparecer. Vou verificar se há algum filtro no formulário admin que esteja impedindo o salvamento de operadoras.
-
-### Arquivos a modificar
-
-| Arquivo | Mudança |
-|---------|---------|
-| `supabase/functions/extract-pdf-data/index.ts` | Atualizar descrição do campo `rede_credenciada_resumo` para limitar a 5 hospitais mais próximos; atualizar prompt de enriquecimento |
-| `src/pages/PublicPropostaPage.tsx` | Remover botão "Tenho interesse nesta opção"; reformatar rede credenciada como lista com ícones (cada hospital em uma linha com bullet); limitar visualmente a 5 itens |
+| Arquivo | O que muda |
+|---------|-----------|
+| `src/lib/proposal-utils.ts` | Corrigir `parseFaixasEtarias` para: (a) tratar formato `1.021,63` e `1.021.63` corretamente; (b) suportar faixas abertas como `59+` ou `59-99` |
+| **Migration SQL** | Criar policy de storage ou tornar o bucket `operadora-pdfs` público via SQL |
+| `supabase/functions/extract-pdf-data/index.ts` | Padronizar o formato de saída das faixas etárias para usar vírgula como decimal (formato BR consistente: `1.021,63`) e sempre usar range com máximo (ex: `59-99` em vez de `59+`) |
 
 ### Detalhes técnicos
 
-**Edge function** — campo `rede_credenciada_resumo`:
-- Descrição atualizada: "Liste no máximo 5 hospitais e laboratórios da rede credenciada mais próximos da região do cliente, um por linha. Apenas nomes."
-- Prompt de enriquecimento: "Liste os 5 principais hospitais da rede {operadora} na região de {cidade}/{estado}. Um por linha, apenas nomes."
+**Parser corrigido** — nova lógica para `parseFaixasEtarias`:
+- Regex atualizado para aceitar `59+` como faixa (max = 99)
+- Lógica de parse do valor: detectar se o último separador é ponto ou vírgula para distinguir milhares de decimais. Ex: `1.021,63` -> `1021.63`; `1.021.63` -> `1021.63` (último ponto = decimal); `412.35` -> `412.35`
 
-**Página pública** — rede credenciada:
-- Separar o texto por quebras de linha e renderizar como lista com `CheckCircle` icons
-- Limitar a exibição a 5 itens no máximo
-- Remover completamente o bloco do botão WhatsApp individual por operadora
+**Bucket público** — executar via migration ou storage API para garantir que o bucket `operadora-pdfs` permite leitura pública (sem autenticação), assim o link "Ver PDF da Operadora" funciona na página pública.
 
