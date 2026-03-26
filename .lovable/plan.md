@@ -1,31 +1,22 @@
 
 
-## Plano: Extração automática de dados do PDF da operadora via IA
+## Plano: Extrair dados do cliente (nome, cidade, estado) do PDF
 
-### Problema
-Hoje a consultora precisa preencher manualmente todos os campos de cada operadora (nome, plano, valor, coparticipação, etc.). O objetivo é que, ao fazer upload do PDF, os campos sejam preenchidos automaticamente usando IA.
+### O que muda
 
-### Como vai funcionar
+Quando a IA extrair dados do PDF da operadora, além dos campos da operadora, ela também tentará identificar dados do cliente (nome, cidade, estado) que frequentemente aparecem nos documentos de cotação. Se encontrados e os campos do formulário estiverem vazios, serão preenchidos automaticamente.
 
-1. **Fluxo do usuário**: A consultora faz upload do PDF da operadora → aparece um botão "Extrair dados do PDF" com indicador de loading → os campos são preenchidos automaticamente → ela pode revisar e ajustar antes de salvar.
+### Arquivos a modificar
 
-2. **Edge Function `extract-pdf-data`**: Recebe o PDF como base64, envia para o Lovable AI (Gemini) com um prompt estruturado pedindo para extrair os campos da operadora. Usa tool calling para garantir resposta JSON estruturada com os campos: `operadora_nome`, `plano_nome`, `valor_mensal`, `coparticipacao`, `acomodacao`, `abrangencia`, `reembolso`, `resumo_cobertura`, `rede_credenciada_resumo`.
-
-3. **Frontend (`PropostaFormPage.tsx`)**: Ao selecionar um PDF, além de guardar o arquivo, dispara a extração. Mostra estado de "Extraindo dados..." no card da operadora. Quando os dados chegam, preenche os campos automaticamente. A consultora pode editar qualquer campo antes de salvar.
-
-### Arquivos a criar/modificar
-
-| Arquivo | Ação |
-|---------|------|
-| `supabase/functions/extract-pdf-data/index.ts` | Criar edge function que recebe PDF e retorna dados extraídos via Lovable AI |
-| `src/pages/PropostaFormPage.tsx` | Modificar upload de PDF para disparar extração e preencher campos |
+| Arquivo | Mudança |
+|---------|---------|
+| `supabase/functions/extract-pdf-data/index.ts` | Adicionar 3 campos ao schema do tool calling: `cliente_nome`, `cliente_cidade`, `cliente_estado` |
+| `src/pages/PropostaFormPage.tsx` | Após receber os dados extraídos, preencher `nome_cliente`, `cidade` e `estado` no formulário (apenas se estiverem vazios) |
 
 ### Detalhes técnicos
 
-- O PDF é convertido para base64 no frontend e enviado à edge function
-- A edge function usa o modelo `google/gemini-2.5-flash` (bom com documentos, rápido e econômico)
-- Usa tool calling para structured output confiável
-- O `LOVABLE_API_KEY` já está configurado como secret
-- Campos que a IA não conseguir extrair ficam vazios para preenchimento manual
-- O destaque comercial não é extraído (é decisão da consultora)
+- Na edge function, os novos campos são opcionais no schema (não estão em `required`)
+- O prompt do sistema já é genérico o suficiente; basta adicionar os campos com descrições claras
+- No frontend, os dados do cliente só preenchem campos vazios para não sobrescrever dados já digitados pela consultora
+- Se o PDF não contiver dados do cliente, os campos simplesmente continuam vazios
 
