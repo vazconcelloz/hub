@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Save, ArrowLeft, Plus, Trash2, Upload, GripVertical } from "lucide-react";
+import { Save, ArrowLeft, Plus, Trash2, Upload, GripVertical, Sparkles, Loader2 } from "lucide-react";
 
 const ESTADOS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
@@ -55,6 +55,7 @@ export default function PropostaFormPage() {
 
   const [operadoras, setOperadoras] = useState<OperadoraForm[]>([{ ...emptyOperadora, ordem_exibicao: 1 }]);
   const [consultorPhoto, setConsultorPhoto] = useState<File | null>(null);
+  const [extractingIndex, setExtractingIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (isEdit) loadProposta();
@@ -120,10 +121,58 @@ export default function PropostaFormPage() {
     setOperadoras(operadoras.filter((_, i) => i !== index));
   };
 
-  const handlePdfUpload = (index: number, file: File) => {
+  const handlePdfUpload = async (index: number, file: File) => {
     const updated = [...operadoras];
     updated[index].pdf_file = file;
     setOperadoras(updated);
+
+    // Auto-extract data from PDF
+    setExtractingIndex(index);
+    try {
+      const base64 = await fileToBase64(file);
+      const response = await supabase.functions.invoke("extract-pdf-data", {
+        body: { pdf_base64: base64 },
+      });
+
+      if (response.error) throw new Error(response.error.message);
+      
+      const extracted = response.data?.data;
+      if (extracted) {
+        const newOperadoras = [...operadoras];
+        newOperadoras[index] = {
+          ...newOperadoras[index],
+          pdf_file: file,
+          operadora_nome: extracted.operadora_nome || newOperadoras[index].operadora_nome,
+          plano_nome: extracted.plano_nome || newOperadoras[index].plano_nome,
+          valor_mensal: extracted.valor_mensal?.toString() || newOperadoras[index].valor_mensal,
+          coparticipacao: extracted.coparticipacao || newOperadoras[index].coparticipacao,
+          acomodacao: extracted.acomodacao || newOperadoras[index].acomodacao,
+          abrangencia: extracted.abrangencia || newOperadoras[index].abrangencia,
+          reembolso: extracted.reembolso || newOperadoras[index].reembolso,
+          resumo_cobertura: extracted.resumo_cobertura || newOperadoras[index].resumo_cobertura,
+          rede_credenciada_resumo: extracted.rede_credenciada_resumo || newOperadoras[index].rede_credenciada_resumo,
+        };
+        setOperadoras(newOperadoras);
+        toast({ title: "Dados extraídos!", description: `Campos preenchidos automaticamente para ${extracted.operadora_nome || "a operadora"}. Revise antes de salvar.` });
+      }
+    } catch (err: any) {
+      console.error("PDF extraction error:", err);
+      toast({ title: "Extração automática falhou", description: "Preencha os campos manualmente.", variant: "destructive" });
+    } finally {
+      setExtractingIndex(null);
+    }
+  };
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(",")[1]);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleConsultorPhotoUpload = (file: File) => {
@@ -325,7 +374,16 @@ export default function PropostaFormPage() {
           </div>
 
           {operadoras.map((op, index) => (
-            <Card key={index} className="relative">
+            <Card key={index} className={`relative ${extractingIndex === index ? "ring-2 ring-primary/50" : ""}`}>
+              {extractingIndex === index && (
+                <div className="absolute inset-0 bg-background/60 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+                  <div className="flex items-center gap-3 text-primary font-medium">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Sparkles className="w-5 h-5 animate-pulse" />
+                    Extraindo dados do PDF...
+                  </div>
+                </div>
+              )}
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base flex items-center gap-2">
