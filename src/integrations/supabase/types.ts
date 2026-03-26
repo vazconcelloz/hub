@@ -14,7 +14,131 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      proposta_operadoras: {
+        Row: {
+          abrangencia: string | null
+          acomodacao: string | null
+          coparticipacao: string | null
+          created_at: string
+          destaque_comercial: string | null
+          id: string
+          operadora_nome: string
+          ordem_exibicao: number
+          pdf_url: string | null
+          plano_nome: string | null
+          proposta_id: string
+          rede_credenciada_resumo: string | null
+          reembolso: string | null
+          resumo_cobertura: string | null
+          updated_at: string
+          valor_mensal: number | null
+        }
+        Insert: {
+          abrangencia?: string | null
+          acomodacao?: string | null
+          coparticipacao?: string | null
+          created_at?: string
+          destaque_comercial?: string | null
+          id?: string
+          operadora_nome: string
+          ordem_exibicao?: number
+          pdf_url?: string | null
+          plano_nome?: string | null
+          proposta_id: string
+          rede_credenciada_resumo?: string | null
+          reembolso?: string | null
+          resumo_cobertura?: string | null
+          updated_at?: string
+          valor_mensal?: number | null
+        }
+        Update: {
+          abrangencia?: string | null
+          acomodacao?: string | null
+          coparticipacao?: string | null
+          created_at?: string
+          destaque_comercial?: string | null
+          id?: string
+          operadora_nome?: string
+          ordem_exibicao?: number
+          pdf_url?: string | null
+          plano_nome?: string | null
+          proposta_id?: string
+          rede_credenciada_resumo?: string | null
+          reembolso?: string | null
+          resumo_cobertura?: string | null
+          updated_at?: string
+          valor_mensal?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposta_operadoras_proposta_id_fkey"
+            columns: ["proposta_id"]
+            isOneToOne: false
+            referencedRelation: "propostas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      propostas: {
+        Row: {
+          cidade: string | null
+          consultora_foto_url: string | null
+          consultora_nome: string | null
+          consultora_telefone: string | null
+          created_at: string
+          estado: string | null
+          faixa_etaria_ou_perfil: string | null
+          id: string
+          nome_cliente: string
+          observacoes_gerais: string | null
+          slug: string
+          status: string
+          telefone_cliente: string | null
+          tipo_produto: string | null
+          updated_at: string
+          user_id: string
+          validade_proposta: string | null
+        }
+        Insert: {
+          cidade?: string | null
+          consultora_foto_url?: string | null
+          consultora_nome?: string | null
+          consultora_telefone?: string | null
+          created_at?: string
+          estado?: string | null
+          faixa_etaria_ou_perfil?: string | null
+          id?: string
+          nome_cliente: string
+          observacoes_gerais?: string | null
+          slug: string
+          status?: string
+          telefone_cliente?: string | null
+          tipo_produto?: string | null
+          updated_at?: string
+          user_id: string
+          validade_proposta?: string | null
+        }
+        Update: {
+          cidade?: string | null
+          consultora_foto_url?: string | null
+          consultora_nome?: string | null
+          consultora_telefone?: string | null
+          created_at?: string
+          estado?: string | null
+          faixa_etaria_ou_perfil?: string | null
+          id?: string
+          nome_cliente?: string
+          observacoes_gerais?: string | null
+          slug?: string
+          status?: string
+          telefone_cliente?: string | null
+          tipo_produto?: string | null
+          updated_at?: string
+          user_id?: string
+          validade_proposta?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
