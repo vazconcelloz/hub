@@ -193,6 +193,33 @@ export default function PublicPropostaPage() {
         </div>
       </section>
 
+      {/* Faixas Etárias e Reajustes */}
+      {operadoras.some((op) => (op as any).faixas_etarias) && (
+        <section className="container pb-8">
+          <h2 className="text-xl font-bold mb-4">Faixas Etárias e Reajustes</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {operadoras.filter((op) => (op as any).faixas_etarias).map((op) => (
+              <Card key={op.id} className="p-6">
+                <h3 className="font-bold text-foreground mb-3">{op.operadora_nome}</h3>
+                {op.plano_nome && <p className="text-sm text-muted-foreground mb-3">{op.plano_nome}</p>}
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Valores por Faixa Etária</p>
+                    <div className="text-sm text-foreground whitespace-pre-line">{(op as any).faixas_etarias}</div>
+                  </div>
+                  {(op as any).previsao_reajuste_faixa && (
+                    <div className="pt-3 border-t">
+                      <p className="text-sm font-medium text-muted-foreground mb-1">Previsão de Reajuste</p>
+                      <p className="text-sm text-foreground">{(op as any).previsao_reajuste_faixa}</p>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Observations */}
       {proposta.observacoes_gerais && (
         <section className="container pb-8">

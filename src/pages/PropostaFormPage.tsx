@@ -462,6 +462,14 @@ export default function PropostaFormPage() {
                   <Textarea value={op.rede_credenciada_resumo} onChange={(e) => updateOperadora(index, "rede_credenciada_resumo", e.target.value)} rows={2} />
                 </div>
                 <div className="space-y-2 md:col-span-2">
+                  <Label>Faixas Etárias</Label>
+                  <Textarea value={op.faixas_etarias} onChange={(e) => updateOperadora(index, "faixas_etarias", e.target.value)} rows={2} placeholder="Ex: 0-18: R$250 | 19-23: R$310 | 24-28: R$380..." />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Previsão de Reajuste por Faixa</Label>
+                  <Textarea value={op.previsao_reajuste_faixa} onChange={(e) => updateOperadora(index, "previsao_reajuste_faixa", e.target.value)} rows={2} placeholder="Ex: Reajuste médio de 15-20% entre faixas..." />
+                </div>
+                <div className="space-y-2 md:col-span-2">
                   <Label>PDF da Operadora</Label>
                   <div className="flex items-center gap-3">
                     {op.pdf_url && !op.pdf_file && (
