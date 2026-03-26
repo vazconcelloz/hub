@@ -14,9 +14,7 @@ export default function Index() {
           <h1 className="text-4xl md:text-5xl font-bold max-w-2xl mx-auto leading-tight">
             Propostas de seguros que encantam seus clientes
           </h1>
-          <p className="text-lg opacity-90 max-w-xl mx-auto">
-            Crie cotações comparativas profissionais em minutos. Envie links elegantes e feche mais contratos.
-          </p>
+          <p className="text-lg opacity-90 max-w-xl mx-auto">Crie estudos comparativos em minutos.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
             <Link to="/login">
               <Button variant="accent" size="lg" className="text-base px-8">
@@ -32,9 +30,21 @@ export default function Index() {
       <section className="container py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
           {[
-            { icon: FileText, title: "Propostas comparativas", desc: "Compare operadoras lado a lado com visual profissional e elegante." },
-            { icon: MessageCircle, title: "WhatsApp integrado", desc: "Botão direto para o WhatsApp da consultora em cada proposta." },
-            { icon: Zap, title: "Link instantâneo", desc: "Gere links públicos únicos e envie para o cliente em segundos." },
+            {
+              icon: FileText,
+              title: "Propostas comparativas",
+              desc: "Compare operadoras lado a lado com visual profissional e elegante.",
+            },
+            {
+              icon: MessageCircle,
+              title: "WhatsApp integrado",
+              desc: "Botão direto para o WhatsApp da consultora em cada proposta.",
+            },
+            {
+              icon: Zap,
+              title: "Link instantâneo",
+              desc: "Gere links públicos únicos e envie para o cliente em segundos.",
+            },
           ].map((f) => (
             <div key={f.title} className="text-center space-y-3 p-6">
               <div className="w-12 h-12 mx-auto rounded-xl bg-accent/10 flex items-center justify-center">
@@ -48,7 +58,7 @@ export default function Index() {
       </section>
 
       <footer className="border-t py-6 text-center text-sm text-muted-foreground">
-        <p>Corretora Digital — Sua plataforma de propostas inteligentes</p>
+        <p>FBN Digital — Sua plataforma de propostas inteligentes</p>
       </footer>
     </div>
   );
