@@ -1,35 +1,35 @@
 
 
-## Plano: Somar valores das faixas etárias cotadas e apresentar total por plano
+## Plano: Melhorar exibição da rede credenciada, remover botão individual e garantir todos os planos
 
-### Problema atual
-As faixas etárias são extraídas como texto livre. Não há como saber quais idades estão sendo cotadas, nem calcular o valor total somando os valores individuais de cada beneficiário por plano.
+### Mudanças
 
-### O que muda
+1. **Rede credenciada — máximo 5 hospitais, exibição visual melhorada**
+   - Na edge function, atualizar o prompt para instruir a IA a retornar no máximo 5 hospitais/laboratórios mais próximos
+   - Na página pública, exibir a rede credenciada como lista com ícones em vez de texto corrido
 
-1. **Adicionar campo "Idades dos beneficiários"** na seção Dados do Cliente (ex: "35, 28, 5") — essas são as idades das pessoas que estão sendo cotadas
-2. **Extrair faixas etárias de forma estruturada** — a IA já extrai as faixas, mas vamos garantir um formato parseável (ex: "0-18: 250.00 | 19-23: 310.00 | ...")
-3. **Calcular automaticamente** o valor total por plano: para cada idade informada, encontrar a faixa correspondente, pegar o valor, e somar
-4. **Exibir na proposta pública** uma tabela com o detalhamento (cada beneficiário, sua faixa, o valor) e o total por plano
+2. **Remover botão "Tenho interesse nesta opção"**
+   - Remover o botão WhatsApp individual de cada card de operadora (linhas 183-188)
+   - Manter apenas o botão "Ver PDF da Operadora" e o botão final de contato com a consultora
+
+3. **Garantir que todos os planos da proposta são exibidos**
+   - Verificar que a query não limita os resultados — já usa `.order("ordem_exibicao")` sem limit, então todos os planos devem aparecer. Vou verificar se há algum filtro no formulário admin que esteja impedindo o salvamento de operadoras.
 
 ### Arquivos a modificar
 
 | Arquivo | Mudança |
 |---------|---------|
-| **Migration SQL** | Adicionar coluna `idades_beneficiarios` (text) na tabela `propostas` |
-| `src/pages/PropostaFormPage.tsx` | Adicionar campo "Idades dos beneficiários" no card de dados do cliente; atualizar `valor_mensal` automaticamente com a soma das faixas quando as idades e faixas estiverem preenchidas |
-| `src/pages/PublicPropostaPage.tsx` | Na seção de faixas etárias, exibir tabela com cada beneficiário, sua faixa, valor individual, e o **valor total** por plano |
-| `src/lib/proposal-utils.ts` | Adicionar funções utilitárias: `parseFaixasEtarias(text)` para converter o texto em array de `{min, max, valor}` e `calcularTotalPorFaixas(idades[], faixas[])` para retornar o detalhamento e total |
+| `supabase/functions/extract-pdf-data/index.ts` | Atualizar descrição do campo `rede_credenciada_resumo` para limitar a 5 hospitais mais próximos; atualizar prompt de enriquecimento |
+| `src/pages/PublicPropostaPage.tsx` | Remover botão "Tenho interesse nesta opção"; reformatar rede credenciada como lista com ícones (cada hospital em uma linha com bullet); limitar visualmente a 5 itens |
 
 ### Detalhes técnicos
 
-**Campo de idades**: texto simples com idades separadas por vírgula (ex: "35, 28, 5, 62"). Armazenado na tabela `propostas`.
+**Edge function** — campo `rede_credenciada_resumo`:
+- Descrição atualizada: "Liste no máximo 5 hospitais e laboratórios da rede credenciada mais próximos da região do cliente, um por linha. Apenas nomes."
+- Prompt de enriquecimento: "Liste os 5 principais hospitais da rede {operadora} na região de {cidade}/{estado}. Um por linha, apenas nomes."
 
-**Parser de faixas**: converte texto como `"0-18: R$250,00 | 19-23: R$310,50"` em estrutura `[{min: 0, max: 18, valor: 250}, {min: 19, max: 23, valor: 310.5}]`.
-
-**Cálculo do total**: para cada idade, encontra a faixa que contém aquela idade (min <= idade <= max) e soma os valores. O `valor_mensal` da operadora pode ser atualizado automaticamente com essa soma.
-
-**Exibição na proposta pública**: para cada operadora, mostrar:
-- Tabela: Beneficiário | Idade | Faixa | Valor
-- Linha final: **Total mensal: R$ X.XXX,XX**
+**Página pública** — rede credenciada:
+- Separar o texto por quebras de linha e renderizar como lista com `CheckCircle` icons
+- Limitar a exibição a 5 itens no máximo
+- Remover completamente o bloco do botão WhatsApp individual por operadora
 
