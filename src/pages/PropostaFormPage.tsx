@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { generateSlug } from "@/lib/proposal-utils";
+import { generateSlug, parseFaixasEtarias, parseIdades, calcularTotalPorFaixas } from "@/lib/proposal-utils";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
