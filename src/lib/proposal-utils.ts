@@ -67,18 +67,52 @@ export interface BeneficiarioDetalhe {
   valor: number;
 }
 
+function parseValorBR(str: string): number {
+  // Handle Brazilian currency formats: "1.021,63" or "1.021.63" or "412,35" or "412.35"
+  const s = str.trim();
+  const lastComma = s.lastIndexOf(",");
+  const lastDot = s.lastIndexOf(".");
+  
+  if (lastComma > lastDot) {
+    // Comma is decimal separator: "1.021,63" -> remove dots, replace comma
+    return parseFloat(s.replace(/\./g, "").replace(",", "."));
+  } else if (lastDot > lastComma) {
+    // Check if dot is decimal or thousands separator
+    const afterDot = s.substring(lastDot + 1);
+    if (afterDot.length <= 2) {
+      // Dot is decimal: "1.021.63" or "412.35" — remove all dots except last
+      const parts = s.split(".");
+      const decimal = parts.pop()!;
+      return parseFloat(parts.join("") + "." + decimal);
+    }
+    // Dot is thousands separator: "1.021" (no decimals)
+    return parseFloat(s.replace(/\./g, ""));
+  }
+  // No separators or only one type
+  return parseFloat(s.replace(/\./g, "").replace(",", "."));
+}
+
 export function parseFaixasEtarias(text: string | null): FaixaEtaria[] {
   if (!text) return [];
   const faixas: FaixaEtaria[] = [];
-  // Supports formats like "0-18: R$250,00 | 19-23: R$310,50" or "0-18: 250.00 | 19-23: 310.50"
   const parts = text.split("|").map((p) => p.trim()).filter(Boolean);
   for (const part of parts) {
+    // Support "59+" as open-ended range (max = 99)
+    const matchOpen = part.match(/(\d+)\s*\+\s*:\s*R?\$?\s*([\d.,]+)/i);
+    if (matchOpen) {
+      const min = parseInt(matchOpen[1]);
+      const valor = parseValorBR(matchOpen[2]);
+      if (!isNaN(min) && !isNaN(valor)) {
+        faixas.push({ min, max: 99, valor });
+      }
+      continue;
+    }
+    // Support "0-18: R$250,00" or "0-18: 250.00"
     const match = part.match(/(\d+)\s*[-–a]\s*(\d+)\s*:\s*R?\$?\s*([\d.,]+)/i);
     if (match) {
       const min = parseInt(match[1]);
       const max = parseInt(match[2]);
-      const valorStr = match[3].replace(/\./g, "").replace(",", ".");
-      const valor = parseFloat(valorStr);
+      const valor = parseValorBR(match[3]);
       if (!isNaN(min) && !isNaN(max) && !isNaN(valor)) {
         faixas.push({ min, max, valor });
       }

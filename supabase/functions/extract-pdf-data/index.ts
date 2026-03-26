@@ -113,7 +113,7 @@ Extraia APENAS dados que estejam claramente presentes no documento. Não invente
                   faixas_etarias: {
                     type: "string",
                     description:
-                      "Tabela de faixas etárias e valores mensais encontrada no PDF. Formato: '0-18: R$250 | 19-23: R$310 | 24-28: R$380 | 29-33: R$420 | 34-38: R$480 | 39-43: R$560 | 44-48: R$680 | 49-53: R$850 | 54-58: R$1100 | 59+: R$1500'. Extraia TODAS as faixas e valores que aparecerem no documento.",
+                      "Tabela de faixas etárias e valores mensais encontrada no PDF. Formato OBRIGATÓRIO: '0-18: R$250,00 | 19-23: R$310,50 | 24-28: R$380,00 | 29-33: R$420,00 | 34-38: R$480,00 | 39-43: R$560,00 | 44-48: R$680,00 | 49-53: R$850,00 | 54-58: R$1.100,00 | 59-99: R$1.500,00'. Use SEMPRE vírgula como separador decimal (formato brasileiro). Para a última faixa, use 99 como idade máxima (ex: 59-99 em vez de 59+). Extraia TODAS as faixas e valores que aparecerem no documento.",
                   },
                   previsao_reajuste_faixa: {
                     type: "string",
