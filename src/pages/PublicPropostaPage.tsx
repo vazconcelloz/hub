@@ -164,14 +164,26 @@ export default function PublicPropostaPage() {
                   )}
                   {op.rede_credenciada_resumo && (
                     <div className="pt-2 border-t">
-                      <p className="text-muted-foreground text-xs mb-1">Rede Credenciada</p>
-                      <p className="text-foreground">{op.rede_credenciada_resumo}</p>
+                      <p className="text-muted-foreground text-xs mb-2">Rede Credenciada</p>
+                      <ul className="space-y-1.5">
+                        {op.rede_credenciada_resumo
+                          .split(/[\n,;]+/)
+                          .map((h) => h.replace(/^[-•*\d.)\s]+/, "").trim())
+                          .filter((h) => h.length > 2)
+                          .slice(0, 5)
+                          .map((hospital, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                              <CheckCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                              <span>{hospital}</span>
+                            </li>
+                          ))}
+                      </ul>
                     </div>
                   )}
                 </div>
 
                 {/* Actions */}
-                <div className="mt-5 space-y-2">
+                <div className="mt-5">
                   {op.pdf_url && (
                     <a href={op.pdf_url} target="_blank" rel="noopener noreferrer">
                       <Button variant="outline" className="w-full" size="sm">
@@ -180,12 +192,6 @@ export default function PublicPropostaPage() {
                       </Button>
                     </a>
                   )}
-                  <a href={operadoraWhatsapp(op.operadora_nome)} target="_blank" rel="noopener noreferrer">
-                    <Button variant="whatsapp" className="w-full mt-2" size="sm">
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Tenho interesse nesta opção
-                    </Button>
-                  </a>
                 </div>
               </div>
             </Card>

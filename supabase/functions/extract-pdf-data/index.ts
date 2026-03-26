@@ -108,7 +108,7 @@ Extraia APENAS dados que estejam claramente presentes no documento. Não invente
                   rede_credenciada_resumo: {
                     type: "string",
                     description:
-                      "Lista dos principais hospitais, laboratórios e clínicas da rede credenciada, priorizando os mais próximos da região do cliente. Inclua nomes específicos.",
+                      "Liste no máximo 5 hospitais e laboratórios da rede credenciada mais próximos da região do cliente, um por linha. Apenas nomes, sem descrições adicionais.",
                   },
                   faixas_etarias: {
                     type: "string",
@@ -196,7 +196,7 @@ Extraia APENAS dados que estejam claramente presentes no documento. Não invente
               },
               {
                 role: "user",
-                content: `Liste os 5 principais hospitais e 3 principais laboratórios da rede credenciada da operadora ${operadoraNome} na região de ${clienteCidade}${clienteEstado ? "/" + clienteEstado : ""}. Formato: nome do hospital/laboratório, um por linha. Apenas nomes reais e conhecidos.`,
+                content: `Liste os 5 principais hospitais da rede credenciada da operadora ${operadoraNome} na região de ${clienteCidade}${clienteEstado ? "/" + clienteEstado : ""}. Um por linha, apenas nomes reais e conhecidos. Máximo 5.`,
               },
             ],
           }),
