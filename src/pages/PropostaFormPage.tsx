@@ -190,6 +190,7 @@ export default function PropostaFormPage() {
           rede_credenciada_resumo: extracted.rede_credenciada_resumo || newOperadoras[index].rede_credenciada_resumo,
           faixas_etarias: extracted.faixas_etarias || newOperadoras[index].faixas_etarias,
           previsao_reajuste_faixa: extracted.previsao_reajuste_faixa || newOperadoras[index].previsao_reajuste_faixa,
+        };
         
         // Auto-calculate valor_mensal if idades are set
         if (form.idades_beneficiarios) {
