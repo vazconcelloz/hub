@@ -1,39 +1,35 @@
 
 
-## Plano: Faixas etárias do PDF + previsão de reajuste no final da proposta
+## Plano: Somar valores das faixas etárias cotadas e apresentar total por plano
+
+### Problema atual
+As faixas etárias são extraídas como texto livre. Não há como saber quais idades estão sendo cotadas, nem calcular o valor total somando os valores individuais de cada beneficiário por plano.
 
 ### O que muda
 
-1. **Remover** o campo "Faixa Etária / Perfil" da seção "Dados do Cliente" no formulário admin
-2. **Extrair faixas etárias do PDF** via IA — adicionar campo `faixas_etarias` ao schema de extração
-3. **Armazenar faixas etárias** em novo campo na tabela `proposta_operadoras`
-4. **Exibir no final da proposta pública** uma seção com as faixas etárias usadas e uma previsão de reajuste por mudança de faixa
+1. **Adicionar campo "Idades dos beneficiários"** na seção Dados do Cliente (ex: "35, 28, 5") — essas são as idades das pessoas que estão sendo cotadas
+2. **Extrair faixas etárias de forma estruturada** — a IA já extrai as faixas, mas vamos garantir um formato parseável (ex: "0-18: 250.00 | 19-23: 310.00 | ...")
+3. **Calcular automaticamente** o valor total por plano: para cada idade informada, encontrar a faixa correspondente, pegar o valor, e somar
+4. **Exibir na proposta pública** uma tabela com o detalhamento (cada beneficiário, sua faixa, o valor) e o total por plano
 
-### Arquivos a criar/modificar
+### Arquivos a modificar
 
 | Arquivo | Mudança |
 |---------|---------|
-| **Migration SQL** | Adicionar coluna `faixas_etarias` (text) na tabela `proposta_operadoras`; remover obrigatoriedade de `faixa_etaria_ou_perfil` em `propostas` se necessário |
-| `supabase/functions/extract-pdf-data/index.ts` | Adicionar `faixas_etarias` e `previsao_reajuste_faixa` ao schema do tool calling — extrair tabela de faixas etárias e valores do PDF |
-| `src/pages/PropostaFormPage.tsx` | Remover campo "Faixa Etária / Perfil" do card de dados do cliente; adicionar campo readonly de faixas etárias no card de cada operadora (preenchido via extração); salvar no banco |
-| `src/pages/PublicPropostaPage.tsx` | Adicionar seção no final (antes das observações) mostrando tabela de faixas etárias usadas + previsão de reajuste por troca de faixa |
-| `src/lib/proposal-utils.ts` | Adicionar tipos atualizados |
+| **Migration SQL** | Adicionar coluna `idades_beneficiarios` (text) na tabela `propostas` |
+| `src/pages/PropostaFormPage.tsx` | Adicionar campo "Idades dos beneficiários" no card de dados do cliente; atualizar `valor_mensal` automaticamente com a soma das faixas quando as idades e faixas estiverem preenchidas |
+| `src/pages/PublicPropostaPage.tsx` | Na seção de faixas etárias, exibir tabela com cada beneficiário, sua faixa, valor individual, e o **valor total** por plano |
+| `src/lib/proposal-utils.ts` | Adicionar funções utilitárias: `parseFaixasEtarias(text)` para converter o texto em array de `{min, max, valor}` e `calcularTotalPorFaixas(idades[], faixas[])` para retornar o detalhamento e total |
 
 ### Detalhes técnicos
 
-**Edge function** — novos campos no tool calling:
-- `faixas_etarias`: string descrevendo as faixas e valores encontrados no PDF (ex: "0-18: R$250 | 19-23: R$310 | 24-28: R$380...")
-- `previsao_reajuste_faixa`: string com explicação de como o valor muda ao trocar de faixa etária
+**Campo de idades**: texto simples com idades separadas por vírgula (ex: "35, 28, 5, 62"). Armazenado na tabela `propostas`.
 
-**Banco de dados** — migration:
-- `ALTER TABLE proposta_operadoras ADD COLUMN faixas_etarias text;`
-- `ALTER TABLE proposta_operadoras ADD COLUMN previsao_reajuste_faixa text;`
+**Parser de faixas**: converte texto como `"0-18: R$250,00 | 19-23: R$310,50"` em estrutura `[{min: 0, max: 18, valor: 250}, {min: 19, max: 23, valor: 310.5}]`.
 
-**Página pública** — nova seção "Faixas Etárias e Reajustes":
-- Para cada operadora que tem dados de faixa, exibir uma tabela/lista com as faixas e valores
-- Abaixo, mostrar a previsão de reajuste explicando como o valor muda conforme a idade
+**Cálculo do total**: para cada idade, encontra a faixa que contém aquela idade (min <= idade <= max) e soma os valores. O `valor_mensal` da operadora pode ser atualizado automaticamente com essa soma.
 
-**Formulário admin**:
-- Remove o input "Faixa Etária / Perfil" do card de dados do cliente
-- Adiciona campo textarea readonly (ou editável) "Faixas Etárias" em cada card de operadora, preenchido pela extração do PDF
+**Exibição na proposta pública**: para cada operadora, mostrar:
+- Tabela: Beneficiário | Idade | Faixa | Valor
+- Linha final: **Total mensal: R$ X.XXX,XX**
 
