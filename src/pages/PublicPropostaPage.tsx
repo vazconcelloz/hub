@@ -1,7 +1,17 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Proposta, Operadora, formatCurrency, formatPhone, DESTAQUE_LABELS, DESTAQUE_COLORS, parseFaixasEtarias, parseIdades, calcularTotalPorFaixas } from "@/lib/proposal-utils";
+import {
+  Proposta,
+  Operadora,
+  formatCurrency,
+  formatPhone,
+  DESTAQUE_LABELS,
+  DESTAQUE_COLORS,
+  parseFaixasEtarias,
+  parseIdades,
+  calcularTotalPorFaixas,
+} from "@/lib/proposal-utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -21,10 +31,18 @@ export default function PublicPropostaPage() {
   }, [slug]);
 
   const loadProposta = async () => {
-    if (!slug) { setNotFound(true); setLoading(false); return; }
-    
+    if (!slug) {
+      setNotFound(true);
+      setLoading(false);
+      return;
+    }
+
     const { data: prop } = await supabase.from("propostas").select("*").eq("slug", slug).single();
-    if (!prop) { setNotFound(true); setLoading(false); return; }
+    if (!prop) {
+      setNotFound(true);
+      setLoading(false);
+      return;
+    }
     setProposta(prop);
 
     const { data: ops } = await supabase
@@ -42,8 +60,10 @@ export default function PublicPropostaPage() {
     return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
   };
 
-  const generalWhatsapp = () => whatsappLink("Olá! Vi minha proposta e gostaria de falar sobre as opções apresentadas.");
-  const operadoraWhatsapp = (nome: string) => whatsappLink(`Olá! Vi minha proposta e quero falar sobre a opção da operadora ${nome}.`);
+  const generalWhatsapp = () =>
+    whatsappLink("Olá! Vi minha proposta e gostaria de falar sobre as opções apresentadas.");
+  const operadoraWhatsapp = (nome: string) =>
+    whatsappLink(`Olá! Vi minha proposta e quero falar sobre a opção da operadora ${nome}.`);
 
   if (loading) {
     return (
@@ -71,22 +91,31 @@ export default function PublicPropostaPage() {
           <div className="w-14 h-14 mx-auto rounded-xl bg-white/10 backdrop-blur flex items-center justify-center mb-4">
             <Shield className="w-8 h-8" />
           </div>
-          <p className="text-sm uppercase tracking-widest opacity-80">Cotação Personalizada</p>
-          <h1 className="text-3xl md:text-4xl font-bold">
-            Sua cotação foi preparada
-          </h1>
+          <p className="text-sm uppercase tracking-widest opacity-80">Estudo Personalizado</p>
+          <h1 className="text-3xl md:text-4xl font-bold">O seu estudo está pronto!</h1>
           <p className="text-lg opacity-90 max-w-xl mx-auto">
-            Olá, <span className="font-semibold">{proposta.nome_cliente}</span>! Preparamos uma proposta personalizada com as melhores opções para você.
+            Olá, <span className="font-semibold">{proposta.nome_cliente}</span>! Preparamos uma proposta personalizada
+            com as melhores opções para você.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4 text-sm opacity-80 pt-2">
             {proposta.cidade && (
-              <span className="flex items-center gap-1"><MapPin className="w-4 h-4" />{proposta.cidade}{proposta.estado ? ` - ${proposta.estado}` : ""}</span>
+              <span className="flex items-center gap-1">
+                <MapPin className="w-4 h-4" />
+                {proposta.cidade}
+                {proposta.estado ? ` - ${proposta.estado}` : ""}
+              </span>
             )}
             {proposta.validade_proposta && (
-              <span className="flex items-center gap-1"><Calendar className="w-4 h-4" />Válida até {format(new Date(proposta.validade_proposta), "dd/MM/yyyy", { locale: ptBR })}</span>
+              <span className="flex items-center gap-1">
+                <Calendar className="w-4 h-4" />
+                Válida até {format(new Date(proposta.validade_proposta), "dd/MM/yyyy", { locale: ptBR })}
+              </span>
             )}
             {proposta.tipo_produto && (
-              <span className="flex items-center gap-1"><Heart className="w-4 h-4" />{proposta.tipo_produto}</span>
+              <span className="flex items-center gap-1">
+                <Heart className="w-4 h-4" />
+                {proposta.tipo_produto}
+              </span>
             )}
           </div>
         </div>
@@ -109,7 +138,9 @@ export default function PublicPropostaPage() {
               {/* Badge */}
               {op.destaque_comercial && DESTAQUE_LABELS[op.destaque_comercial] && (
                 <div className="absolute top-0 right-0">
-                  <Badge className={`rounded-none rounded-bl-lg px-3 py-1 text-xs font-semibold ${DESTAQUE_COLORS[op.destaque_comercial]}`}>
+                  <Badge
+                    className={`rounded-none rounded-bl-lg px-3 py-1 text-xs font-semibold ${DESTAQUE_COLORS[op.destaque_comercial]}`}
+                  >
                     {DESTAQUE_LABELS[op.destaque_comercial]}
                   </Badge>
                 </div>
@@ -204,68 +235,80 @@ export default function PublicPropostaPage() {
         <section className="container pb-8">
           <h2 className="text-xl font-bold mb-4">Faixas Etárias e Reajustes</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {operadoras.filter((op) => (op as any).faixas_etarias).map((op) => {
-              const faixas = parseFaixasEtarias((op as any).faixas_etarias);
-              const idades = parseIdades((proposta as any).idades_beneficiarios);
-              const temCalculo = faixas.length > 0 && idades.length > 0;
-              const resultado = temCalculo ? calcularTotalPorFaixas(idades, faixas) : null;
+            {operadoras
+              .filter((op) => (op as any).faixas_etarias)
+              .map((op) => {
+                const faixas = parseFaixasEtarias((op as any).faixas_etarias);
+                const idades = parseIdades((proposta as any).idades_beneficiarios);
+                const temCalculo = faixas.length > 0 && idades.length > 0;
+                const resultado = temCalculo ? calcularTotalPorFaixas(idades, faixas) : null;
 
-              return (
-                <Card key={op.id} className="p-6">
-                  <h3 className="font-bold text-foreground mb-3">{op.operadora_nome}</h3>
-                  {op.plano_nome && <p className="text-sm text-muted-foreground mb-3">{op.plano_nome}</p>}
-                  <div className="space-y-3">
-                    {/* Tabela de detalhamento por beneficiário */}
-                    {resultado && (
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground mb-2">Detalhamento por Beneficiário</p>
-                        <div className="border rounded-lg overflow-hidden">
-                          <table className="w-full text-sm">
-                            <thead>
-                              <tr className="bg-muted/50">
-                                <th className="text-left px-3 py-2 font-medium text-muted-foreground">Beneficiário</th>
-                                <th className="text-left px-3 py-2 font-medium text-muted-foreground">Idade</th>
-                                <th className="text-left px-3 py-2 font-medium text-muted-foreground">Faixa</th>
-                                <th className="text-right px-3 py-2 font-medium text-muted-foreground">Valor</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {resultado.detalhes.map((d, i) => (
-                                <tr key={i} className="border-t">
-                                  <td className="px-3 py-2 text-foreground">Beneficiário {i + 1}</td>
-                                  <td className="px-3 py-2 text-foreground">{d.idade} anos</td>
-                                  <td className="px-3 py-2 text-foreground">{d.faixa}</td>
-                                  <td className="px-3 py-2 text-right font-medium text-foreground">{formatCurrency(d.valor)}</td>
+                return (
+                  <Card key={op.id} className="p-6">
+                    <h3 className="font-bold text-foreground mb-3">{op.operadora_nome}</h3>
+                    {op.plano_nome && <p className="text-sm text-muted-foreground mb-3">{op.plano_nome}</p>}
+                    <div className="space-y-3">
+                      {/* Tabela de detalhamento por beneficiário */}
+                      {resultado && (
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground mb-2">
+                            Detalhamento por Beneficiário
+                          </p>
+                          <div className="border rounded-lg overflow-hidden">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="bg-muted/50">
+                                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">
+                                    Beneficiário
+                                  </th>
+                                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Idade</th>
+                                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Faixa</th>
+                                  <th className="text-right px-3 py-2 font-medium text-muted-foreground">Valor</th>
                                 </tr>
-                              ))}
-                            </tbody>
-                            <tfoot>
-                              <tr className="border-t bg-muted/30">
-                                <td colSpan={3} className="px-3 py-2 font-bold text-foreground">Total Mensal</td>
-                                <td className="px-3 py-2 text-right font-bold text-primary text-base">{formatCurrency(resultado.total)}</td>
-                              </tr>
-                            </tfoot>
-                          </table>
+                              </thead>
+                              <tbody>
+                                {resultado.detalhes.map((d, i) => (
+                                  <tr key={i} className="border-t">
+                                    <td className="px-3 py-2 text-foreground">Beneficiário {i + 1}</td>
+                                    <td className="px-3 py-2 text-foreground">{d.idade} anos</td>
+                                    <td className="px-3 py-2 text-foreground">{d.faixa}</td>
+                                    <td className="px-3 py-2 text-right font-medium text-foreground">
+                                      {formatCurrency(d.valor)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                              <tfoot>
+                                <tr className="border-t bg-muted/30">
+                                  <td colSpan={3} className="px-3 py-2 font-bold text-foreground">
+                                    Total Mensal
+                                  </td>
+                                  <td className="px-3 py-2 text-right font-bold text-primary text-base">
+                                    {formatCurrency(resultado.total)}
+                                  </td>
+                                </tr>
+                              </tfoot>
+                            </table>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {/* Faixas completas */}
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Tabela de Faixas Etárias</p>
-                      <div className="text-sm text-foreground whitespace-pre-line">{(op as any).faixas_etarias}</div>
+                      {/* Faixas completas */}
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-1">Tabela de Faixas Etárias</p>
+                        <div className="text-sm text-foreground whitespace-pre-line">{(op as any).faixas_etarias}</div>
+                      </div>
+
+                      {(op as any).previsao_reajuste_faixa && (
+                        <div className="pt-3 border-t">
+                          <p className="text-sm font-medium text-muted-foreground mb-1">Previsão de Reajuste</p>
+                          <p className="text-sm text-foreground">{(op as any).previsao_reajuste_faixa}</p>
+                        </div>
+                      )}
                     </div>
-
-                    {(op as any).previsao_reajuste_faixa && (
-                      <div className="pt-3 border-t">
-                        <p className="text-sm font-medium text-muted-foreground mb-1">Previsão de Reajuste</p>
-                        <p className="text-sm text-foreground">{(op as any).previsao_reajuste_faixa}</p>
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              );
-            })}
+                  </Card>
+                );
+              })}
           </div>
         </section>
       )}
@@ -307,12 +350,7 @@ export default function PublicPropostaPage() {
 
       {/* Fixed WhatsApp Button */}
       {proposta.consultora_telefone && (
-        <a
-          href={generalWhatsapp()}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="fixed bottom-6 right-6 z-50"
-        >
+        <a href={generalWhatsapp()} target="_blank" rel="noopener noreferrer" className="fixed bottom-6 right-6 z-50">
           <Button variant="whatsapp" size="lg" className="rounded-full shadow-xl h-14 px-6 text-base">
             <MessageCircle className="w-5 h-5 mr-2" />
             Falar no WhatsApp
