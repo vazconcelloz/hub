@@ -268,7 +268,7 @@ export default function PropostaFormPage() {
           slug,
           consultora_foto_url: consultorPhotoUrl,
           validade_proposta: form.validade_proposta || null,
-        }).select().single();
+        } as any).select().single();
         if (error) throw error;
         propostaId = data.id;
       }
