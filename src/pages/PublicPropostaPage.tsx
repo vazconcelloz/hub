@@ -198,24 +198,68 @@ export default function PublicPropostaPage() {
         <section className="container pb-8">
           <h2 className="text-xl font-bold mb-4">Faixas Etárias e Reajustes</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {operadoras.filter((op) => (op as any).faixas_etarias).map((op) => (
-              <Card key={op.id} className="p-6">
-                <h3 className="font-bold text-foreground mb-3">{op.operadora_nome}</h3>
-                {op.plano_nome && <p className="text-sm text-muted-foreground mb-3">{op.plano_nome}</p>}
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Valores por Faixa Etária</p>
-                    <div className="text-sm text-foreground whitespace-pre-line">{(op as any).faixas_etarias}</div>
-                  </div>
-                  {(op as any).previsao_reajuste_faixa && (
-                    <div className="pt-3 border-t">
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Previsão de Reajuste</p>
-                      <p className="text-sm text-foreground">{(op as any).previsao_reajuste_faixa}</p>
+            {operadoras.filter((op) => (op as any).faixas_etarias).map((op) => {
+              const faixas = parseFaixasEtarias((op as any).faixas_etarias);
+              const idades = parseIdades((proposta as any).idades_beneficiarios);
+              const temCalculo = faixas.length > 0 && idades.length > 0;
+              const resultado = temCalculo ? calcularTotalPorFaixas(idades, faixas) : null;
+
+              return (
+                <Card key={op.id} className="p-6">
+                  <h3 className="font-bold text-foreground mb-3">{op.operadora_nome}</h3>
+                  {op.plano_nome && <p className="text-sm text-muted-foreground mb-3">{op.plano_nome}</p>}
+                  <div className="space-y-3">
+                    {/* Tabela de detalhamento por beneficiário */}
+                    {resultado && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">Detalhamento por Beneficiário</p>
+                        <div className="border rounded-lg overflow-hidden">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="bg-muted/50">
+                                <th className="text-left px-3 py-2 font-medium text-muted-foreground">Beneficiário</th>
+                                <th className="text-left px-3 py-2 font-medium text-muted-foreground">Idade</th>
+                                <th className="text-left px-3 py-2 font-medium text-muted-foreground">Faixa</th>
+                                <th className="text-right px-3 py-2 font-medium text-muted-foreground">Valor</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {resultado.detalhes.map((d, i) => (
+                                <tr key={i} className="border-t">
+                                  <td className="px-3 py-2 text-foreground">Beneficiário {i + 1}</td>
+                                  <td className="px-3 py-2 text-foreground">{d.idade} anos</td>
+                                  <td className="px-3 py-2 text-foreground">{d.faixa}</td>
+                                  <td className="px-3 py-2 text-right font-medium text-foreground">{formatCurrency(d.valor)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot>
+                              <tr className="border-t bg-muted/30">
+                                <td colSpan={3} className="px-3 py-2 font-bold text-foreground">Total Mensal</td>
+                                <td className="px-3 py-2 text-right font-bold text-primary text-base">{formatCurrency(resultado.total)}</td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Faixas completas */}
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-1">Tabela de Faixas Etárias</p>
+                      <div className="text-sm text-foreground whitespace-pre-line">{(op as any).faixas_etarias}</div>
                     </div>
-                  )}
-                </div>
-              </Card>
-            ))}
+
+                    {(op as any).previsao_reajuste_faixa && (
+                      <div className="pt-3 border-t">
+                        <p className="text-sm font-medium text-muted-foreground mb-1">Previsão de Reajuste</p>
+                        <p className="text-sm text-foreground">{(op as any).previsao_reajuste_faixa}</p>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
           </div>
         </section>
       )}

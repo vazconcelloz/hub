@@ -348,6 +348,11 @@ export default function PropostaFormPage() {
               <Label>Tipo de Produto</Label>
               <Input value={form.tipo_produto} onChange={(e) => updateForm("tipo_produto", e.target.value)} placeholder="Ex: Plano de Saúde, Seguro de Vida..." />
             </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>Idades dos Beneficiários</Label>
+              <Input value={form.idades_beneficiarios} onChange={(e) => updateForm("idades_beneficiarios", e.target.value)} placeholder="Ex: 35, 28, 5, 62 (separadas por vírgula)" />
+              <p className="text-xs text-muted-foreground">Informe as idades para calcular automaticamente o valor total por plano</p>
+            </div>
           </CardContent>
         </Card>
 
