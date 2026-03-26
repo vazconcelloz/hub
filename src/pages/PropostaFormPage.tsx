@@ -175,34 +175,57 @@ export default function PropostaFormPage() {
       
       const extracted = response.data?.data;
       if (extracted) {
-        const newOperadoras = [...operadoras];
-        newOperadoras[index] = {
-          ...newOperadoras[index],
-          pdf_file: file,
-          operadora_nome: extracted.operadora_nome || newOperadoras[index].operadora_nome,
-          plano_nome: extracted.plano_nome || newOperadoras[index].plano_nome,
-          valor_mensal: extracted.valor_mensal?.toString() || newOperadoras[index].valor_mensal,
-          coparticipacao: extracted.coparticipacao || newOperadoras[index].coparticipacao,
-          acomodacao: extracted.acomodacao || newOperadoras[index].acomodacao,
-          abrangencia: extracted.abrangencia || newOperadoras[index].abrangencia,
-          reembolso: extracted.reembolso || newOperadoras[index].reembolso,
-          resumo_cobertura: extracted.resumo_cobertura || newOperadoras[index].resumo_cobertura,
-          rede_credenciada_resumo: extracted.rede_credenciada_resumo || newOperadoras[index].rede_credenciada_resumo,
-          faixas_etarias: extracted.faixas_etarias || newOperadoras[index].faixas_etarias,
-          previsao_reajuste_faixa: extracted.previsao_reajuste_faixa || newOperadoras[index].previsao_reajuste_faixa,
+        const sharedFields = {
+          operadora_nome: extracted.operadora_nome || "",
+          coparticipacao: extracted.coparticipacao || "",
+          acomodacao: extracted.acomodacao || "",
+          abrangencia: extracted.abrangencia || "",
+          reembolso: extracted.reembolso || "",
+          resumo_cobertura: extracted.resumo_cobertura || "",
+          rede_credenciada_resumo: extracted.rede_credenciada_resumo || "",
+          previsao_reajuste_faixa: extracted.previsao_reajuste_faixa || "",
         };
-        
-        // Auto-calculate valor_mensal if idades are set
-        if (form.idades_beneficiarios) {
-          const idades = parseIdades(form.idades_beneficiarios);
-          const faixasText = extracted.faixas_etarias || newOperadoras[index].faixas_etarias;
-          const faixas = parseFaixasEtarias(faixasText);
-          if (idades.length > 0 && faixas.length > 0) {
-            const { total } = calcularTotalPorFaixas(idades, faixas);
-            newOperadoras[index].valor_mensal = total.toFixed(2);
-          }
+
+        const planos = extracted.planos && Array.isArray(extracted.planos) && extracted.planos.length > 0
+          ? extracted.planos
+          : [{ plano_nome: extracted.plano_nome || "", faixas_etarias: extracted.faixas_etarias || "" }];
+
+        const newOperadoras: OperadoraForm[] = [];
+        // Keep operadoras before the current index
+        for (let i = 0; i < index; i++) {
+          newOperadoras.push(operadoras[i]);
         }
-        
+
+        // Create one operadora per extracted plan
+        for (let p = 0; p < planos.length; p++) {
+          const plano = planos[p];
+          const op: OperadoraForm = {
+            ...emptyOperadora,
+            ...sharedFields,
+            pdf_file: file,
+            plano_nome: plano.plano_nome || "",
+            faixas_etarias: plano.faixas_etarias || "",
+            ordem_exibicao: newOperadoras.length + 1,
+          };
+
+          // Auto-calculate valor_mensal if idades are set
+          if (form.idades_beneficiarios) {
+            const idades = parseIdades(form.idades_beneficiarios);
+            const faixas = parseFaixasEtarias(plano.faixas_etarias || "");
+            if (idades.length > 0 && faixas.length > 0) {
+              const { total } = calcularTotalPorFaixas(idades, faixas);
+              op.valor_mensal = total.toFixed(2);
+            }
+          }
+
+          newOperadoras.push(op);
+        }
+
+        // Keep operadoras after the current index
+        for (let i = index + 1; i < operadoras.length; i++) {
+          newOperadoras.push({ ...operadoras[i], ordem_exibicao: newOperadoras.length + 1 });
+        }
+
         setOperadoras(newOperadoras);
 
         // Preencher dados do cliente se campos estiverem vazios
@@ -213,7 +236,8 @@ export default function PropostaFormPage() {
           estado: prev.estado || extracted.cliente_estado || "",
         }));
 
-        toast({ title: "Dados extraídos!", description: `Campos preenchidos automaticamente para ${extracted.operadora_nome || "a operadora"}. Revise antes de salvar.` });
+        const planoCount = planos.length;
+        toast({ title: "Dados extraídos!", description: `${planoCount} plano${planoCount > 1 ? "s" : ""} extraído${planoCount > 1 ? "s" : ""} de ${extracted.operadora_nome || "a operadora"}. Revise antes de salvar.` });
       }
     } catch (err: any) {
       console.error("PDF extraction error:", err);

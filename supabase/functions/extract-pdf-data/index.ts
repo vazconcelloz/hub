@@ -42,14 +42,15 @@ serve(async (req) => {
             role: "system",
             content: `Você é um especialista em extrair dados de documentos PDF de operadoras de planos de saúde e seguros no Brasil.
 Analise o conteúdo do PDF e extraia as informações solicitadas. Se não conseguir identificar algum campo, retorne string vazia para texto ou null para valor numérico.
-Extraia APENAS dados que estejam claramente presentes no documento. Não invente dados.${locationContext}`,
+Extraia APENAS dados que estejam claramente presentes no documento. Não invente dados.
+IMPORTANTE: Um PDF pode conter MÚLTIPLOS planos (ex: Amil Black I QP R1, R2, R3 e Amil Black S2500 QP R1, R2). Extraia TODOS os planos encontrados no documento, cada um com suas próprias faixas etárias e valores.${locationContext}`,
           },
           {
             role: "user",
             content: [
               {
                 type: "text",
-                text: "Extraia os dados deste PDF de operadora de plano de saúde/seguro usando a função extract_operator_data.",
+                text: "Extraia os dados deste PDF de operadora de plano de saúde/seguro usando a função extract_multiple_plans. Se houver múltiplos planos na tabela (ex: colunas diferentes para planos diferentes), extraia TODOS separadamente.",
               },
               {
                 type: "image_url",
@@ -64,9 +65,9 @@ Extraia APENAS dados que estejam claramente presentes no documento. Não invente
           {
             type: "function",
             function: {
-              name: "extract_operator_data",
+              name: "extract_multiple_plans",
               description:
-                "Extrai dados estruturados de um PDF de operadora de plano de saúde ou seguro",
+                "Extrai dados estruturados de um PDF de operadora de plano de saúde ou seguro, suportando múltiplos planos em um único documento",
               parameters: {
                 type: "object",
                 properties: {
@@ -74,19 +75,9 @@ Extraia APENAS dados que estejam claramente presentes no documento. Não invente
                     type: "string",
                     description: "Nome da operadora (ex: Amil, SulAmérica, Bradesco Saúde)",
                   },
-                  plano_nome: {
-                    type: "string",
-                    description: "Nome do plano específico (ex: Amil 400 QC Nacional)",
-                  },
-                  valor_mensal: {
-                    type: "number",
-                    description:
-                      "Valor mensal do plano em reais. Se houver múltiplas faixas, use o valor mais relevante ou a média.",
-                  },
                   coparticipacao: {
                     type: "string",
-                    description:
-                      "Informações sobre coparticipação (ex: 'Sim, 30% em consultas e exames' ou 'Sem coparticipação')",
+                    description: "Informações sobre coparticipação (ex: 'Sim, 30% em consultas e exames' ou 'Sem coparticipação')",
                   },
                   acomodacao: {
                     type: "string",
@@ -102,23 +93,15 @@ Extraia APENAS dados que estejam claramente presentes no documento. Não invente
                   },
                   resumo_cobertura: {
                     type: "string",
-                    description:
-                      "Resumo das coberturas principais (consultas, exames, internação, etc.)",
+                    description: "Resumo das coberturas principais (consultas, exames, internação, etc.)",
                   },
                   rede_credenciada_resumo: {
                     type: "string",
-                    description:
-                      "Liste no máximo 5 hospitais e laboratórios da rede credenciada mais próximos da região do cliente, um por linha. Apenas nomes, sem descrições adicionais.",
-                  },
-                  faixas_etarias: {
-                    type: "string",
-                    description:
-                      "Tabela de faixas etárias e valores mensais encontrada no PDF. Formato OBRIGATÓRIO: '0-18: R$250,00 | 19-23: R$310,50 | 24-28: R$380,00 | 29-33: R$420,00 | 34-38: R$480,00 | 39-43: R$560,00 | 44-48: R$680,00 | 49-53: R$850,00 | 54-58: R$1.100,00 | 59-99: R$1.500,00'. Use SEMPRE vírgula como separador decimal (formato brasileiro). Para a última faixa, use 99 como idade máxima (ex: 59-99 em vez de 59+). Extraia TODAS as faixas e valores que aparecerem no documento.",
+                    description: "Liste no máximo 5 hospitais e laboratórios da rede credenciada mais próximos da região do cliente, um por linha. Apenas nomes, sem descrições adicionais.",
                   },
                   previsao_reajuste_faixa: {
                     type: "string",
-                    description:
-                      "Previsão de reajuste por mudança de faixa etária. Explique brevemente como o valor muda ao trocar de faixa, incluindo percentuais de aumento entre faixas quando disponível. Ex: 'Reajuste médio de 15-20% entre faixas até 48 anos. A partir dos 49 anos, o reajuste pode chegar a 30-40% por faixa.'",
+                    description: "Previsão de reajuste por mudança de faixa etária.",
                   },
                   cliente_nome: {
                     type: "string",
@@ -132,8 +115,26 @@ Extraia APENAS dados que estejam claramente presentes no documento. Não invente
                     type: "string",
                     description: "Estado (UF) do cliente mencionado no documento (ex: SP, RJ, MG)",
                   },
+                  planos: {
+                    type: "array",
+                    description: "Array com TODOS os planos encontrados no documento. Cada plano tem seu nome e suas faixas etárias com valores.",
+                    items: {
+                      type: "object",
+                      properties: {
+                        plano_nome: {
+                          type: "string",
+                          description: "Nome do plano específico (ex: Amil Black I QP R1, Amil Black S2500 QP R2)",
+                        },
+                        faixas_etarias: {
+                          type: "string",
+                          description: "Tabela de faixas etárias e valores mensais para ESTE plano. Formato OBRIGATÓRIO: '0-18: R$921,64 | 19-23: R$1.015,44 | 24-28: R$1.218,53 | 29-33: R$1.340,39 | 34-38: R$1.657,59 | 39-43: R$1.989,11 | 44-48: R$2.585,84 | 49-53: R$3.361,59 | 54-58: R$4.034,44 | 59-99: R$5.646,72'. Use SEMPRE vírgula como separador decimal (formato brasileiro). Para a última faixa, use 99 como idade máxima.",
+                        },
+                      },
+                      required: ["plano_nome", "faixas_etarias"],
+                    },
+                  },
                 },
-                required: ["operadora_nome"],
+                required: ["operadora_nome", "planos"],
                 additionalProperties: false,
               },
             },
@@ -141,7 +142,7 @@ Extraia APENAS dados que estejam claramente presentes no documento. Não invente
         ],
         tool_choice: {
           type: "function",
-          function: { name: "extract_operator_data" },
+          function: { name: "extract_multiple_plans" },
         },
       }),
     });
@@ -173,7 +174,7 @@ Extraia APENAS dados que estejam claramente presentes no documento. Não invente
 
     const extractedData = JSON.parse(toolCall.function.arguments);
 
-    // Enrich rede_credenciada_resumo if empty/short and we have location + operator info
+    // Enrich rede_credenciada_resumo if empty/short
     const redeResumo = extractedData.rede_credenciada_resumo || "";
     const operadoraNome = extractedData.operadora_nome || "";
     const clienteCidade = cidade || extractedData.cliente_cidade || "";
