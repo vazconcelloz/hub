@@ -262,6 +262,9 @@ export default function PropostaFormPage() {
           destaque_comercial: op.destaque_comercial || null,
           ordem_exibicao: i + 1,
           pdf_url: pdfUrl || null,
+          faixas_etarias: op.faixas_etarias || null,
+          previsao_reajuste_faixa: op.previsao_reajuste_faixa || null,
+        } as any);
         });
       }
 
