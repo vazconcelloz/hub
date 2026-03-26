@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Proposta, Operadora, formatCurrency, formatPhone, DESTAQUE_LABELS, DESTAQUE_COLORS } from "@/lib/proposal-utils";
+import { Proposta, Operadora, formatCurrency, formatPhone, DESTAQUE_LABELS, DESTAQUE_COLORS, parseFaixasEtarias, parseIdades, calcularTotalPorFaixas } from "@/lib/proposal-utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
