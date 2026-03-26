@@ -1,33 +1,39 @@
 
 
-## Plano: Buscar melhores hospitais próximos à cidade do cliente
+## Plano: Faixas etárias do PDF + previsão de reajuste no final da proposta
 
 ### O que muda
 
-Ao extrair dados do PDF, o campo `rede_credenciada_resumo` será enriquecido com uma busca inteligente: a IA receberá a cidade/estado do cliente como contexto e será instruída a priorizar os melhores hospitais e laboratórios mais próximos daquela região ao descrever a rede credenciada.
+1. **Remover** o campo "Faixa Etária / Perfil" da seção "Dados do Cliente" no formulário admin
+2. **Extrair faixas etárias do PDF** via IA — adicionar campo `faixas_etarias` ao schema de extração
+3. **Armazenar faixas etárias** em novo campo na tabela `proposta_operadoras`
+4. **Exibir no final da proposta pública** uma seção com as faixas etárias usadas e uma previsão de reajuste por mudança de faixa
 
-### Abordagem
-
-Em vez de criar uma chamada separada, vamos passar a cidade e estado do cliente como contexto adicional no prompt da edge function `extract-pdf-data`. Assim a IA, ao interpretar o PDF, já foca nos hospitais/clínicas mais relevantes para aquela localidade.
-
-Além disso, adicionaremos um segundo passo: após a extração do PDF, se o campo `rede_credenciada_resumo` veio vazio ou genérico, uma segunda chamada à IA enriquece esse campo usando o nome da operadora + cidade para listar os principais hospitais da rede naquela região.
-
-### Arquivos a modificar
+### Arquivos a criar/modificar
 
 | Arquivo | Mudança |
 |---------|---------|
-| `supabase/functions/extract-pdf-data/index.ts` | Receber `cidade` e `estado` como parâmetros opcionais; incluir no prompt para a IA priorizar hospitais próximos; adicionar segunda chamada de enriquecimento se rede credenciada ficou vazia |
-| `src/pages/PropostaFormPage.tsx` | Enviar `cidade` e `estado` atuais do formulário junto com o PDF na chamada à edge function |
+| **Migration SQL** | Adicionar coluna `faixas_etarias` (text) na tabela `proposta_operadoras`; remover obrigatoriedade de `faixa_etaria_ou_perfil` em `propostas` se necessário |
+| `supabase/functions/extract-pdf-data/index.ts` | Adicionar `faixas_etarias` e `previsao_reajuste_faixa` ao schema do tool calling — extrair tabela de faixas etárias e valores do PDF |
+| `src/pages/PropostaFormPage.tsx` | Remover campo "Faixa Etária / Perfil" do card de dados do cliente; adicionar campo readonly de faixas etárias no card de cada operadora (preenchido via extração); salvar no banco |
+| `src/pages/PublicPropostaPage.tsx` | Adicionar seção no final (antes das observações) mostrando tabela de faixas etárias usadas + previsão de reajuste por troca de faixa |
+| `src/lib/proposal-utils.ts` | Adicionar tipos atualizados |
 
 ### Detalhes técnicos
 
-**Edge function** — alterações no `extract-pdf-data`:
-- Aceitar `{ pdf_base64, cidade?, estado? }` no body
-- Incluir no prompt do sistema: "O cliente está localizado em {cidade}/{estado}. Ao descrever a rede credenciada, priorize os melhores hospitais, laboratórios e clínicas mais próximos dessa região."
-- Após a extração principal, se `rede_credenciada_resumo` estiver vazio/curto, fazer uma segunda chamada pedindo: "Liste os 5 principais hospitais e laboratórios da rede {operadora_nome} na região de {cidade}/{estado}"
-- Retornar o campo enriquecido junto com os demais dados
+**Edge function** — novos campos no tool calling:
+- `faixas_etarias`: string descrevendo as faixas e valores encontrados no PDF (ex: "0-18: R$250 | 19-23: R$310 | 24-28: R$380...")
+- `previsao_reajuste_faixa`: string com explicação de como o valor muda ao trocar de faixa etária
 
-**Frontend** — alteração no `PropostaFormPage.tsx`:
-- Na chamada `supabase.functions.invoke("extract-pdf-data", ...)`, incluir `cidade: form.cidade, estado: form.estado` no body
-- Se a cidade for preenchida pela própria extração do PDF (campo vazio antes), usar esse valor para o enriquecimento na mesma chamada
+**Banco de dados** — migration:
+- `ALTER TABLE proposta_operadoras ADD COLUMN faixas_etarias text;`
+- `ALTER TABLE proposta_operadoras ADD COLUMN previsao_reajuste_faixa text;`
+
+**Página pública** — nova seção "Faixas Etárias e Reajustes":
+- Para cada operadora que tem dados de faixa, exibir uma tabela/lista com as faixas e valores
+- Abaixo, mostrar a previsão de reajuste explicando como o valor muda conforme a idade
+
+**Formulário admin**:
+- Remove o input "Faixa Etária / Perfil" do card de dados do cliente
+- Adiciona campo textarea readonly (ou editável) "Faixas Etárias" em cada card de operadora, preenchido pela extração do PDF
 
