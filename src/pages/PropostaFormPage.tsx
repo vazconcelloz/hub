@@ -36,6 +36,7 @@ const emptyOperadora: OperadoraForm = {
   operadora_nome: "", plano_nome: "", valor_mensal: "", coparticipacao: "",
   acomodacao: "", abrangencia: "", reembolso: "", resumo_cobertura: "",
   rede_credenciada_resumo: "", destaque_comercial: "", ordem_exibicao: 0, pdf_url: "",
+  faixas_etarias: "", previsao_reajuste_faixa: "",
 };
 
 export default function PropostaFormPage() {
