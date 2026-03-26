@@ -267,7 +267,6 @@ export default function PropostaFormPage() {
           previsao_reajuste_faixa: op.previsao_reajuste_faixa || null,
         } as any);
       }
-      }
 
       toast({ title: isEdit ? "Proposta atualizada!" : "Proposta criada!" });
       navigate("/admin");
