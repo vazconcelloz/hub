@@ -190,7 +190,18 @@ export default function PropostaFormPage() {
           rede_credenciada_resumo: extracted.rede_credenciada_resumo || newOperadoras[index].rede_credenciada_resumo,
           faixas_etarias: extracted.faixas_etarias || newOperadoras[index].faixas_etarias,
           previsao_reajuste_faixa: extracted.previsao_reajuste_faixa || newOperadoras[index].previsao_reajuste_faixa,
-        };
+        
+        // Auto-calculate valor_mensal if idades are set
+        if (form.idades_beneficiarios) {
+          const idades = parseIdades(form.idades_beneficiarios);
+          const faixasText = extracted.faixas_etarias || newOperadoras[index].faixas_etarias;
+          const faixas = parseFaixasEtarias(faixasText);
+          if (idades.length > 0 && faixas.length > 0) {
+            const { total } = calcularTotalPorFaixas(idades, faixas);
+            newOperadoras[index].valor_mensal = total.toFixed(2);
+          }
+        }
+        
         setOperadoras(newOperadoras);
 
         // Preencher dados do cliente se campos estiverem vazios
