@@ -196,7 +196,7 @@ Extraia APENAS dados que estejam claramente presentes no documento. Não invente
               },
               {
                 role: "user",
-                content: `Liste os 5 principais hospitais e 3 principais laboratórios da rede credenciada da operadora ${operadoraNome} na região de ${clienteCidade}${clienteEstado ? "/" + clienteEstado : ""}. Formato: nome do hospital/laboratório, um por linha. Apenas nomes reais e conhecidos.`,
+                content: `Liste os 5 principais hospitais da rede credenciada da operadora ${operadoraNome} na região de ${clienteCidade}${clienteEstado ? "/" + clienteEstado : ""}. Um por linha, apenas nomes reais e conhecidos. Máximo 5.`,
               },
             ],
           }),
