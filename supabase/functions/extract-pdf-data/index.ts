@@ -182,10 +182,10 @@ IMPORTANTE: Um PDF pode conter MÚLTIPLOS planos (ex: Amil Black I QP R1, R2, R3
 
     if (redeResumo.length < 50 && operadoraNome && (clienteCidade || clienteEstado)) {
       try {
-        const enrichResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        const enrichResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`, {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            Authorization: `Bearer ${GEMINI_API_KEY}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
