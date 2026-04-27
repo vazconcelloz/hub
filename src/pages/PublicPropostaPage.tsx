@@ -518,12 +518,14 @@ export default function PublicPropostaPage() {
                 <th className="text-left px-4 py-3 font-semibold w-56 align-top border-r border-border bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
                   Planos
                 </th>
-                {ops.map((op) => (
+                {ops.map((op) => {
+                  const planoCellColor = getCellColorClass((op as any).cores_celulas, "plano_nome");
+                  return (
                   <th
                     key={op.id}
                     className={cn(
                       "text-left px-4 py-3 font-semibold align-top border-r border-white/10 last:border-r-0 min-w-[180px]",
-                      headerClassFor(op)
+                      planoCellColor || headerClassFor(op)
                     )}
                   >
                     <div className="space-y-1">
