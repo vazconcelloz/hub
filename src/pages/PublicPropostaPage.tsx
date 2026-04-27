@@ -44,7 +44,8 @@ type EditableOperadoraField =
   | "resumo_cobertura"
   | "rede_credenciada_resumo"
   | "destaque_comercial"
-  | "cor_coluna";
+  | "cor_coluna"
+  | "cores_celulas";
 
 export default function PublicPropostaPage() {
   const { slug } = useParams();
