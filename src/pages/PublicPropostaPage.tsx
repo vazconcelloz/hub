@@ -661,6 +661,36 @@ export default function PublicPropostaPage() {
     );
   };
 
+  // Seletor de cor para a OPERADORA inteira (aplica a todos os planos do grupo)
+  const OperadoraColorPicker = ({ operadoraNome, planos }: { operadoraNome: string; planos: Operadora[] }) => {
+    // pega a cor mais comum entre os planos como "atual"
+    const current = (planos.find((p) => (p as any).cor_coluna)?.cor_coluna ?? null) as string | null;
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className={cn(
+              "h-7 px-2 text-[11px] gap-1 shrink-0",
+              current && COLUNA_COLORS[current]?.header
+            )}
+            title="Cor desta operadora"
+          >
+            <Palette className={cn("w-3 h-3", current ? "text-white" : "text-muted-foreground")} />
+            Cor da operadora
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64 p-3">
+          <p className="text-xs font-medium mb-2">Cor da operadora "{operadoraNome}"</p>
+          <p className="text-[10px] text-muted-foreground mb-2">Aplica a todos os planos desta tabela.</p>
+          {renderPalette(current, (k) => updateOperadoraColor(operadoraNome, k))}
+        </PopoverContent>
+      </Popover>
+    );
+  };
+
   // Seletor de cor de uma célula individual
   const CellColorPicker = ({ op, field, label = "Cor" }: { op: Operadora; field: string; label?: string }) => {
     const current = getCellColorKey((op as any).cores_celulas, field);
