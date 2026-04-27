@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { generateSlug, parseFaixasEtarias, parseIdades, calcularTotalPorFaixas } from "@/lib/proposal-utils";
+import { generateSlug, parseFaixasEtarias, parseIdades, calcularTotalPorFaixas, agruparPorOperadora } from "@/lib/proposal-utils";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,14 @@ const emptyOperadora: OperadoraForm = {
   acomodacao: "", abrangencia: "", reembolso: "", resumo_cobertura: "",
   rede_credenciada_resumo: "", destaque_comercial: "", ordem_exibicao: 0, pdf_url: "",
   faixas_etarias: "", previsao_reajuste_faixa: "", cor_coluna: "",
+};
+
+const limparNomePlano = (planoNome: string, operadoraNome: string) => {
+  const plano = (planoNome || "").trim().replace(/\s+/g, " ");
+  const operadora = (operadoraNome || "").trim();
+  if (!plano || !operadora) return plano;
+  const escaped = operadora.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return plano.replace(new RegExp(`^${escaped}\\s*[-–—:]?\\s*`, "i"), "").trim() || plano;
 };
 
 export default function PropostaFormPage() {
@@ -160,6 +168,10 @@ export default function PropostaFormPage() {
     setOperadoras(operadoras.filter((_, i) => i !== index));
   };
 
+  const operadorasAgrupadas = agruparPorOperadora(
+    operadoras.map((op, index) => ({ ...op, _index: index }))
+  );
+
   const handlePdfUpload = async (index: number, file: File) => {
     const updated = [...operadoras];
     updated[index].pdf_file = file;
@@ -191,6 +203,7 @@ export default function PropostaFormPage() {
           previsao_reajuste_faixa: extracted.previsao_reajuste_faixa || "",
         };
 
+        const operadoraNome = extracted.operadora_nome || operadoras[index]?.operadora_nome || "";
         const planos = extracted.planos && Array.isArray(extracted.planos) && extracted.planos.length > 0
           ? extracted.planos
           : [{ plano_nome: extracted.plano_nome || "", faixas_etarias: extracted.faixas_etarias || "" }];
@@ -214,7 +227,8 @@ export default function PropostaFormPage() {
             ...(plano.reembolso ? { reembolso: plano.reembolso } : {}),
             ...(plano.resumo_cobertura ? { resumo_cobertura: plano.resumo_cobertura } : {}),
             pdf_file: file,
-            plano_nome: plano.plano_nome || "",
+            operadora_nome: operadoraNome,
+            plano_nome: limparNomePlano(plano.plano_nome || "", operadoraNome),
             faixas_etarias: plano.faixas_etarias || "",
             ordem_exibicao: newOperadoras.length + 1,
           };
@@ -477,14 +491,25 @@ export default function PropostaFormPage() {
           </CardContent>
         </Card>
 
-        {/* Operadoras */}
+        {/* Operadoras e planos */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">Operadoras</h2>
+            <h2 className="text-xl font-bold">Operadoras e Planos</h2>
             <Button type="button" variant="outline" onClick={addOperadora}>
-              <Plus className="w-4 h-4 mr-2" /> Adicionar Operadora
+              <Plus className="w-4 h-4 mr-2" /> Adicionar Plano/Operadora
             </Button>
           </div>
+
+          {operadorasAgrupadas.length > 0 && (
+            <div className="rounded-lg border bg-muted/30 p-3 text-sm text-muted-foreground">
+              {operadorasAgrupadas.map((grupo) => (
+                <div key={grupo.nome} className="flex items-center justify-between gap-3 py-1">
+                  <span className="font-medium text-foreground">{grupo.nome}</span>
+                  <span>{grupo.planos.length} plano{grupo.planos.length > 1 ? "s" : ""}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {operadoras.map((op, index) => (
             <Card key={index} className={`relative ${extractingIndex === index ? "ring-2 ring-primary/50" : ""}`}>
@@ -501,7 +526,7 @@ export default function PropostaFormPage() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base flex items-center gap-2">
                     <GripVertical className="w-4 h-4 text-muted-foreground" />
-                    Operadora {index + 1}
+                    Plano {index + 1}{op.operadora_nome ? ` · ${op.operadora_nome}` : ""}
                   </CardTitle>
                   {operadoras.length > 1 && (
                     <Button type="button" variant="ghost" size="icon" onClick={() => removeOperadora(index)}>

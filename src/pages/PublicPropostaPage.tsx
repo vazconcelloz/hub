@@ -474,7 +474,6 @@ export default function PublicPropostaPage() {
                         </>
                       ) : (
                         <>
-                          <div className="text-sm font-medium leading-tight opacity-90">{op.operadora_nome}</div>
                           {op.plano_nome && (
                             <div className="text-base leading-tight font-bold">{op.plano_nome}</div>
                           )}
@@ -708,7 +707,6 @@ export default function PublicPropostaPage() {
                           </div>
                         ) : (
                           <>
-                            <p className="text-xs opacity-90">{op.operadora_nome}</p>
                             {op.plano_nome && <h3 className="font-bold text-lg leading-tight">{op.plano_nome}</h3>}
                           </>
                         )}
