@@ -208,6 +208,28 @@ export default function PublicPropostaPage() {
   const view = editMode && draftProposta ? draftProposta : proposta;
   const viewOpsRaw = editMode ? draftOperadoras : operadoras;
 
+  // Para o cliente (não-admin), consolida planos com o mesmo `grupo_soma` num único plano virtual
+  // que mostra a soma das mensalidades. No modo admin, mostramos sempre todos individualmente.
+  const viewOps = useMemo<Operadora[]>(() => {
+    if (editMode) return viewOpsRaw;
+    const consolidados = consolidarGruposSoma(viewOpsRaw as any);
+    return consolidados.map((entry) => {
+      if (!entry.isGrupo) return entry.representante as Operadora;
+      const rep = entry.representante as Operadora;
+      const total = somarValoresMensais(entry.membros as any);
+      const nomes = entry.membros
+        .map((m: any) => (m.plano_nome ? String(m.plano_nome).trim() : ""))
+        .filter(Boolean)
+        .join(" + ");
+      return {
+        ...rep,
+        id: `grupo-${entry.grupoLabel}-${rep.id}`,
+        valor_mensal: total,
+        plano_nome: nomes || rep.plano_nome,
+      } as Operadora;
+    });
+  }, [editMode, viewOpsRaw]);
+
   const whatsappLink = (message: string) => {
     if (!proposta?.consultora_telefone) return "#";
     const phone = formatPhone(proposta.consultora_telefone);
