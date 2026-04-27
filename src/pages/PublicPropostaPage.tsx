@@ -1122,8 +1122,11 @@ export default function PublicPropostaPage() {
       <section className="container py-8 md:py-10 hidden md:block space-y-8">
         {grupos.map((g) => (
           <div key={g.nome} className="space-y-3">
-            <div className="flex items-baseline justify-between gap-3">
-              <h2 className="text-xl md:text-2xl font-bold text-foreground tracking-tight">{g.nome}</h2>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h2 className="text-xl md:text-2xl font-bold text-foreground tracking-tight">{g.nome}</h2>
+                {editMode && <OperadoraColorPicker operadoraNome={g.nome} planos={g.planos} />}
+              </div>
               <span className="text-xs uppercase tracking-wider text-muted-foreground">
                 {g.planos.length} {g.planos.length === 1 ? "plano" : "planos"}
               </span>
