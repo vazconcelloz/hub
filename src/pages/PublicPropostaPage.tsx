@@ -728,11 +728,8 @@ export default function PublicPropostaPage() {
               })}
             </tbody>
             <tfoot>
-              <tr className="bg-primary text-primary-foreground">
-                <td className={cn(
-                  "px-4 py-4 font-bold uppercase tracking-wide text-sm border-r border-primary-foreground/10",
-                  rotuloColClass
-                )}>
+              <tr className={cn("text-primary-foreground", rotuloColClass || "bg-primary")}>
+                <td className="px-4 py-4 font-bold uppercase tracking-wide text-sm border-r border-primary-foreground/10">
                   Mensalidade Total
                 </td>
                 {ops.map((op, i) => {
