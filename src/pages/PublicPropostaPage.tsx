@@ -585,7 +585,8 @@ export default function PublicPropostaPage() {
                     key={op.id}
                     className={cn(
                       "text-left px-4 py-3 font-semibold align-top border-r border-white/10 last:border-r-0 min-w-[180px]",
-                      planoCellColor || headerClassFor(op)
+                      planoCellColor || (op as any).cor_coluna ? headerClassFor(op) : (rotuloColClass || headerClassFor(op)),
+                      planoCellColor && planoCellColor
                     )}
                   >
                     <div className="space-y-1">
