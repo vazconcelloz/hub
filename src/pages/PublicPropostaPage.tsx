@@ -14,6 +14,8 @@ import {
   getCellColorClass,
   getCellColorKey,
   agruparPorOperadora,
+  consolidarGruposSoma,
+  somarValoresMensais,
   parseFaixasEtarias,
   parseIdades,
   calcularTotalPorFaixas,
