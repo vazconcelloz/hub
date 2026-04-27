@@ -512,7 +512,38 @@ export default function PublicPropostaPage() {
     );
   };
 
-  // Resolve as classes de cor para um plano (cai pro primary se não tiver cor)
+  // Cor do rótulo (coluna esquerda) — vem da proposta, não do plano
+  const coresRotulos = ((view as any)?.cores_rotulos ?? {}) as Record<string, string>;
+  const getRotuloColorClass = (field: string): string => {
+    const key = coresRotulos[field];
+    if (!key) return "";
+    return COLUNA_COLORS[key]?.cell ?? "";
+  };
+  const RowLabelColorPicker = ({ field }: { field: string }) => {
+    const current = coresRotulos[field] ?? null;
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className={cn(
+              "h-6 w-6 p-0 border shadow-sm shrink-0 bg-background hover:bg-muted",
+              current && COLUNA_COLORS[current]?.header
+            )}
+            title="Cor desta linha (rótulo)"
+          >
+            <Palette className={cn("w-3 h-3", current ? "text-white" : "text-muted-foreground")} />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64 p-3">
+          <p className="text-xs font-medium mb-2">Cor do rótulo desta linha</p>
+          {renderPalette(current, (k) => updateRotuloColor(field, k))}
+        </PopoverContent>
+      </Popover>
+    );
+  };
   const headerClassFor = (op: Operadora) => {
     const c = getColunaColor((op as any).cor_coluna);
     return c ? c.header : "bg-primary text-primary-foreground";
