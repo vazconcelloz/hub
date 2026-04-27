@@ -1,0 +1,1 @@
+ALTER TABLE public.proposta_operadoras ADD COLUMN IF NOT EXISTS grupo_soma text;

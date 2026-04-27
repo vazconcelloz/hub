@@ -32,6 +32,7 @@ interface OperadoraForm {
   faixas_etarias: string;
   previsao_reajuste_faixa: string;
   cor_coluna: string;
+  grupo_soma: string;
   pdf_file?: File;
 }
 
@@ -39,7 +40,7 @@ const emptyOperadora: OperadoraForm = {
   operadora_nome: "", plano_nome: "", valor_mensal: "", coparticipacao: "",
   acomodacao: "", abrangencia: "", reembolso: "", resumo_cobertura: "",
   rede_credenciada_resumo: "", destaque_comercial: "", ordem_exibicao: 0, pdf_url: "",
-  faixas_etarias: "", previsao_reajuste_faixa: "", cor_coluna: "",
+  faixas_etarias: "", previsao_reajuste_faixa: "", cor_coluna: "", grupo_soma: "",
 };
 
 const limparNomePlano = (planoNome: string, operadoraNome: string) => {
@@ -116,6 +117,7 @@ export default function PropostaFormPage() {
         faixas_etarias: (op as any).faixas_etarias || "",
         previsao_reajuste_faixa: (op as any).previsao_reajuste_faixa || "",
         cor_coluna: (op as any).cor_coluna || "",
+        grupo_soma: (op as any).grupo_soma || "",
       })));
     }
   };
@@ -373,6 +375,7 @@ export default function PropostaFormPage() {
           faixas_etarias: op.faixas_etarias || null,
           previsao_reajuste_faixa: op.previsao_reajuste_faixa || null,
           cor_coluna: op.cor_coluna || null,
+          grupo_soma: op.grupo_soma?.trim() || null,
         } as any);
       }
 
@@ -576,6 +579,19 @@ export default function PropostaFormPage() {
                       <SelectItem value="custo_beneficio">Melhor Custo-Benefício</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-2 md:col-span-2 rounded-md border border-dashed border-amber-300 bg-amber-50/50 p-3">
+                  <Label className="text-amber-900 font-semibold">Grupo de Soma (apenas admin)</Label>
+                  <Input
+                    value={op.grupo_soma}
+                    onChange={(e) => updateOperadora(index, "grupo_soma", e.target.value)}
+                    placeholder='Ex: "Sócios+Funcionários" — planos com o MESMO rótulo serão somados em um único card para o cliente'
+                    className="bg-white"
+                  />
+                  <p className="text-[11px] text-amber-800 leading-snug">
+                    Use o mesmo rótulo em 2 ou mais planos para que o cliente veja UM card consolidado com a soma das mensalidades.
+                    Deixe vazio para exibir o plano isoladamente. <strong>O cliente nunca vê esse rótulo.</strong>
+                  </p>
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label>Resumo de Cobertura</Label>

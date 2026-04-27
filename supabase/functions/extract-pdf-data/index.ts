@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"];
+const GEMINI_MODELS = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"];
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -124,18 +124,50 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `Você é um especialista em extrair dados de documentos PDF de operadoras de planos de saúde e seguros no Brasil.
-Analise CUIDADOSAMENTE todo o conteúdo do PDF (incluindo cabeçalhos, rodapés, tabelas, notas de rodapé e textos pequenos) e extraia TODAS as informações solicitadas.
-REGRA CRÍTICA — UMA OPERADORA, MÚLTIPLOS PLANOS: Um único PDF é SEMPRE de UMA ÚNICA operadora (ex: Amil, SulAmérica, Bradesco). Nunca crie múltiplas "operadoras". Se o PDF tem vários planos da mesma marca (ex: Amil Black I QP R1, Amil Black S2500 QP R2), todos vão dentro do array 'planos[]' compartilhando o mesmo 'operadora_nome'. NÃO repita o nome da operadora dentro de cada 'plano_nome' (ex: use 'Black I QP R1' e não 'Amil Black I QP R1' se a operadora já é 'Amil').
-REGRA DE PREENCHIMENTO POR PLANO: Cada plano pode ter características próprias (coparticipação, acomodação, abrangência, reembolso). Quando o PDF mostrar uma tabela comparativa lado a lado com valores DIFERENTES por plano, preencha esses campos DENTRO de cada item de planos[]. Quando o campo for único e válido para todos, deixe nos campos de nível superior (que servirão de fallback).
-REGRA DE PREENCHIMENTO: Faça o MÁXIMO ESFORÇO para preencher TODOS os campos. Procure por sinônimos e variações:
-- "coparticipação" pode aparecer como "copart", "com participação", "sem coparticipação", "fator moderador".
-- "acomodação" pode aparecer como "padrão de acomodação", "internação em apartamento/enfermaria", "quarto privativo", "quarto coletivo".
-- "reembolso" pode aparecer como "livre escolha", "reembolso integral", "reembolso parcial", "sem reembolso", "tabela de reembolso".
-- "abrangência" pode aparecer como "área de atuação", "área geográfica", "cobertura territorial".
-- "valor_mensal" (mensalidade total do plano): SEMPRE PROCURE PRIORITARIAMENTE por "Valor Total", "Total Mensal", "Mensalidade Total", "Total a Pagar", "Valor da Mensalidade", "Mensalidade", "Preço Total", "Total do Plano", "Valor Final", "Total Geral". Costuma estar em destaque (negrito, fonte maior) no rodapé da proposta ou abaixo da tabela de faixas etárias. Se encontrar, EXTRAIA esse valor para o campo valor_mensal do plano correspondente.
-Só retorne string vazia se REALMENTE não houver nenhuma informação no documento sobre o campo. NUNCA invente dados que não estejam comprovadamente no PDF.
-IMPORTANTE: Um PDF pode conter MÚLTIPLOS planos (ex: Amil Black I QP R1, R2, R3 e Amil Black S2500 QP R1, R2). Extraia TODOS os planos encontrados no documento, cada um com suas próprias faixas etárias e valores.${locationContext}`,
+            content: `Você é um especialista SÊNIOR em extrair dados de PDFs de cotações de planos de saúde e seguros no Brasil. Sua leitura precisa ser MINUCIOSA e COMPLETA — leia capa, cabeçalhos, rodapés, todas as tabelas, notas de rodapé, observações e textos em letra pequena.
+
+═══════════════════════════════════════
+REGRA #1 — UMA OPERADORA POR PDF, MÚLTIPLOS PLANOS
+═══════════════════════════════════════
+Um PDF é SEMPRE de UMA ÚNICA operadora (Amil, SulAmérica, Bradesco Saúde, Hapvida, NotreDame, Unimed, Porto Seguro, etc.). NUNCA divida em múltiplas operadoras.
+Se o PDF apresenta vários planos da MESMA marca (ex: "Amil Black I QP R1", "Amil Black S2500 QP R2", "Amil 200 QC", "Amil 400 QP"), TODOS vão no array 'planos[]' com o mesmo 'operadora_nome'.
+NUNCA repita o nome da operadora em 'plano_nome'. Se 'operadora_nome' = "Amil", use 'plano_nome' = "Black I QP R1" (não "Amil Black I QP R1").
+
+═══════════════════════════════════════
+REGRA #2 — TABELAS COMPARATIVAS LADO A LADO
+═══════════════════════════════════════
+Quando o PDF mostrar uma tabela com VÁRIAS COLUNAS (cada coluna = um plano), extraia CADA COLUNA como um item separado em 'planos[]'. Compare cada linha da tabela e preencha os campos correspondentes (coparticipação, acomodação, abrangência, reembolso, valor) DENTRO de cada plano. Se um campo é IGUAL para todos os planos da tabela, repita-o em cada plano OU deixe no nível superior (será usado como fallback).
+
+═══════════════════════════════════════
+REGRA #3 — VALOR MENSAL (PRIORIDADE MÁXIMA)
+═══════════════════════════════════════
+Para 'valor_mensal' de cada plano, PROCURE OBRIGATORIAMENTE por (em ordem de prioridade):
+1. "Valor Total", "Total Mensal", "Mensalidade Total", "Total a Pagar", "Total Geral", "Total do Plano", "Valor Final", "Soma Total", "Total Consolidado"
+2. "Valor da Mensalidade", "Mensalidade", "Preço Total", "Custo Total", "Investimento Mensal"
+3. Valores em DESTAQUE (negrito, fonte maior, caixa colorida) no rodapé/canto da proposta ou logo após a tabela de faixas etárias.
+
+Esses totais costumam aparecer DEPOIS da tabela de faixas etárias, em destaque visual. EXTRAIA SEMPRE esse valor consolidado quando existir. Use APENAS números (ex: 1234.56), sem R$ nem pontos de milhar.
+
+═══════════════════════════════════════
+REGRA #4 — SINÔNIMOS DOS CAMPOS
+═══════════════════════════════════════
+- COPARTICIPAÇÃO: "copart", "com/sem participação", "fator moderador", "participação do beneficiário", "% sobre procedimentos". Se houver QUALQUER percentual ou taxa por uso → "Sim". Se mencionar explicitamente "sem coparticipação" ou "integral" → "Não".
+- ACOMODAÇÃO: "padrão de acomodação", "tipo de internação", "quarto", "leito", "apto"/"apartamento" (privativo) vs "enfermaria"/"coletivo" (compartilhado). "QP" ou "QPR" geralmente = Apartamento; "QC" geralmente = Enfermaria/Coletivo.
+- ABRANGÊNCIA: "área de atuação", "área geográfica", "cobertura territorial", "região de atendimento". Valores comuns: "Nacional", "Estadual - SP", "Regional - Grande SP", "Grupo de municípios".
+- REEMBOLSO: "livre escolha", "reembolso integral/parcial", "tabela de reembolso", "múltiplo do CH", "U$" ou "USS". Se mencionar valor de reembolso → "Sim" ou "Parcial". Se "sem reembolso" → "Não".
+- REDE CREDENCIADA: liste APENAS 3 hospitais MAIS RELEVANTES E RECONHECIDOS (referência de alta complexidade, grande porte) na região do cliente. Um nome por linha, sem descrições.
+
+═══════════════════════════════════════
+REGRA #5 — FAIXAS ETÁRIAS
+═══════════════════════════════════════
+Extraia a tabela COMPLETA de faixas etárias com valores. Formato OBRIGATÓRIO (separe com " | "):
+"0-18: R$921,64 | 19-23: R$1.015,44 | ... | 59-99: R$5.646,72"
+Use vírgula como separador decimal (formato BRL). A última faixa SEMPRE vai até 99.
+
+═══════════════════════════════════════
+REGRA #6 — HONESTIDADE
+═══════════════════════════════════════
+NUNCA invente dados. Se um campo não aparece comprovadamente no PDF, deixe vazio. Mas FAÇA O MÁXIMO ESFORÇO para encontrar a informação antes de desistir — releia o documento procurando sinônimos e variações.${locationContext}`,
           },
           {
             role: "user",

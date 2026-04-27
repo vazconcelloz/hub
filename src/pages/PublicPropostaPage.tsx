@@ -14,6 +14,8 @@ import {
   getCellColorClass,
   getCellColorKey,
   agruparPorOperadora,
+  consolidarGruposSoma,
+  somarValoresMensais,
   parseFaixasEtarias,
   parseIdades,
   calcularTotalPorFaixas,
@@ -45,7 +47,8 @@ type EditableOperadoraField =
   | "rede_credenciada_resumo"
   | "destaque_comercial"
   | "cor_coluna"
-  | "cores_celulas";
+  | "cores_celulas"
+  | "grupo_soma";
 
 export default function PublicPropostaPage() {
   const { slug } = useParams();
@@ -161,7 +164,7 @@ export default function PublicPropostaPage() {
         const fieldsToCheck: EditableOperadoraField[] = [
           "operadora_nome","plano_nome","valor_mensal","coparticipacao","acomodacao",
           "abrangencia","reembolso","resumo_cobertura","rede_credenciada_resumo",
-          "destaque_comercial","cor_coluna","cores_celulas",
+          "destaque_comercial","cor_coluna","cores_celulas","grupo_soma",
         ];
         const changed = fieldsToCheck.some((f) => {
           const a = (original as any)[f];
@@ -186,6 +189,7 @@ export default function PublicPropostaPage() {
             destaque_comercial: draft.destaque_comercial,
             cor_coluna: (draft as any).cor_coluna,
             cores_celulas: (draft as any).cores_celulas ?? null,
+            grupo_soma: ((draft as any).grupo_soma || "").trim() || null,
           } as any)
           .eq("id", draft.id);
         if (e2) throw e2;
@@ -204,7 +208,29 @@ export default function PublicPropostaPage() {
   };
 
   const view = editMode && draftProposta ? draftProposta : proposta;
-  const viewOps = editMode ? draftOperadoras : operadoras;
+  const viewOpsRaw = editMode ? draftOperadoras : operadoras;
+
+  // Para o cliente (não-admin), consolida planos com o mesmo `grupo_soma` num único plano virtual
+  // que mostra a soma das mensalidades. No modo admin, mostramos sempre todos individualmente.
+  const viewOps = useMemo<Operadora[]>(() => {
+    if (editMode) return viewOpsRaw;
+    const consolidados = consolidarGruposSoma(viewOpsRaw as any);
+    return consolidados.map((entry) => {
+      if (!entry.isGrupo) return entry.representante as Operadora;
+      const rep = entry.representante as Operadora;
+      const total = somarValoresMensais(entry.membros as any);
+      const nomes = entry.membros
+        .map((m: any) => (m.plano_nome ? String(m.plano_nome).trim() : ""))
+        .filter(Boolean)
+        .join(" + ");
+      return {
+        ...rep,
+        id: `grupo-${entry.grupoLabel}-${rep.id}`,
+        valor_mensal: total,
+        plano_nome: nomes || rep.plano_nome,
+      } as Operadora;
+    });
+  }, [editMode, viewOpsRaw]);
 
   const whatsappLink = (message: string) => {
     if (!proposta?.consultora_telefone) return "#";
@@ -489,6 +515,13 @@ export default function PublicPropostaPage() {
                             className="h-7 text-xs text-foreground"
                             placeholder="Plano"
                           />
+                          <Input
+                            value={(op as any).grupo_soma ?? ""}
+                            onChange={(e) => updateDraftOperadora(op.id, "grupo_soma" as any, e.target.value)}
+                            className="h-6 text-[10px] text-foreground bg-amber-50 border-amber-300"
+                            placeholder='Grupo soma (ex: "Sócios+Func")'
+                            title="Planos com o mesmo rótulo serão somados em um único card para o cliente. O cliente NÃO vê esse rótulo."
+                          />
                           <div className="flex items-center gap-1 flex-wrap">
                             <Select
                               value={op.destaque_comercial ?? "none"}
@@ -764,6 +797,12 @@ export default function PublicPropostaPage() {
                           <div className="space-y-1">
                             <Input value={op.operadora_nome ?? ""} onChange={(e) => updateDraftOperadora(op.id, "operadora_nome", e.target.value)} className="h-8 text-sm text-foreground" />
                             <Input value={op.plano_nome ?? ""} onChange={(e) => updateDraftOperadora(op.id, "plano_nome", e.target.value)} className="h-7 text-xs text-foreground" placeholder="Plano" />
+                            <Input
+                              value={(op as any).grupo_soma ?? ""}
+                              onChange={(e) => updateDraftOperadora(op.id, "grupo_soma" as any, e.target.value)}
+                              className="h-6 text-[10px] text-foreground bg-amber-50 border-amber-300"
+                              placeholder='Grupo soma (admin)'
+                            />
                             <ColorPicker op={op} />
                           </div>
                         ) : (

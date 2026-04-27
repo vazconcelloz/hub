@@ -105,6 +105,67 @@ export function agruparPorOperadora<T extends { operadora_nome: string }>(ops: T
   return ordem.map((nome) => ({ nome, planos: mapa.get(nome)! }));
 }
 
+// Agrupa planos pelo campo `grupo_soma` (modo cliente).
+// Planos sem grupo_soma ou com grupo vazio ficam sozinhos.
+// Planos com o mesmo grupo_soma (case-insensitive, trimmed) são consolidados em um único item virtual,
+// somando os valores mensais e listando os nomes individuais.
+export interface PlanoConsolidado<T> {
+  representante: T;        // primeiro plano do grupo (usado para texto, cores, etc.)
+  membros: T[];            // todos os planos do grupo
+  grupoLabel: string | null;
+  isGrupo: boolean;        // true se tiver mais de um membro somado
+}
+
+export function consolidarGruposSoma<T extends { id: string; grupo_soma?: string | null; valor_mensal?: number | null }>(
+  ops: T[]
+): PlanoConsolidado<T>[] {
+  const ordem: string[] = [];
+  const mapa = new Map<string, T[]>();
+  const isolados: PlanoConsolidado<T>[] = [];
+  const resultadoOrdenado: Array<{ key: string; tipo: "grupo" | "isolado"; iso?: PlanoConsolidado<T> }> = [];
+
+  for (const op of ops) {
+    const grupoRaw = (op.grupo_soma || "").trim();
+    if (!grupoRaw) {
+      const iso: PlanoConsolidado<T> = { representante: op, membros: [op], grupoLabel: null, isGrupo: false };
+      resultadoOrdenado.push({ key: `iso-${op.id}`, tipo: "isolado", iso });
+      continue;
+    }
+    const key = grupoRaw.toLowerCase();
+    if (!mapa.has(key)) {
+      mapa.set(key, []);
+      ordem.push(key);
+      resultadoOrdenado.push({ key, tipo: "grupo" });
+    }
+    mapa.get(key)!.push(op);
+  }
+
+  return resultadoOrdenado.map((entry) => {
+    if (entry.tipo === "isolado") return entry.iso!;
+    const membros = mapa.get(entry.key)!;
+    const label = (membros[0].grupo_soma || "").trim();
+    return {
+      representante: membros[0],
+      membros,
+      grupoLabel: label,
+      isGrupo: membros.length > 1,
+    };
+  });
+}
+
+// Soma valores mensais de um conjunto de planos (ignora nulos).
+export function somarValoresMensais<T extends { valor_mensal?: number | null }>(membros: T[]): number | null {
+  let total = 0;
+  let achou = false;
+  for (const m of membros) {
+    if (typeof m.valor_mensal === "number" && !isNaN(m.valor_mensal)) {
+      total += m.valor_mensal;
+      achou = true;
+    }
+  }
+  return achou ? total : null;
+}
+
 export function generateSlug(): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
