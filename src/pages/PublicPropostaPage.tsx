@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -38,7 +38,8 @@ type EditableOperadoraField =
 
 export default function PublicPropostaPage() {
   const { slug } = useParams();
-  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { user, loading: authLoading } = useAuth();
   const [proposta, setProposta] = useState<Proposta | null>(null);
   const [operadoras, setOperadoras] = useState<Operadora[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,9 +51,14 @@ export default function PublicPropostaPage() {
   const [draftProposta, setDraftProposta] = useState<Proposta | null>(null);
   const [draftOperadoras, setDraftOperadoras] = useState<Operadora[]>([]);
 
-  // Qualquer usuário autenticado no portal pode tentar editar.
-  // O RLS do banco garante que só o dono real consegue salvar de fato.
-  const canEdit = useMemo(() => !!user && !!proposta, [user, proposta]);
+  const isPortalPreview = searchParams.get("portal") === "1";
+
+  // Só mostra edição quando a visualização foi aberta de dentro do portal.
+  // O RLS do banco continua garantindo que apenas o dono real consiga salvar.
+  const canEdit = useMemo(
+    () => isPortalPreview && !authLoading && !!user && !!proposta,
+    [isPortalPreview, authLoading, user, proposta]
+  );
 
   useEffect(() => {
     loadProposta();
@@ -185,6 +191,8 @@ export default function PublicPropostaPage() {
 
   // Calcula o total mensal de uma operadora (usa valor_mensal ou faixas etárias)
   const getTotalMensal = (op: Operadora): number | null => {
+    if (op.valor_mensal !== null && op.valor_mensal !== undefined) return op.valor_mensal;
+
     const faixasRaw = (op as any).faixas_etarias as string | null;
     const idadesRaw = (view as any)?.idades_beneficiarios as string | null;
     if (faixasRaw && idadesRaw) {
@@ -194,7 +202,7 @@ export default function PublicPropostaPage() {
         return calcularTotalPorFaixas(idades, faixas).total;
       }
     }
-    return op.valor_mensal ?? null;
+    return null;
   };
 
   if (loading) {
