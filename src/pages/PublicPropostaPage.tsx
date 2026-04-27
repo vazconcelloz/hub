@@ -745,7 +745,9 @@ export default function PublicPropostaPage() {
                             {podePintarCelula(crit.field) && <CellColorPicker op={op} field={crit.field} label="Cor" />}
                           </div>
                         ) : (
-                          renderCellValue(op[crit.field as keyof Operadora] as string | null)
+                          crit.field === "faixas_etarias"
+                            ? renderFaixasEtarias(op[crit.field as keyof Operadora] as string | null)
+                            : renderCellValue(op[crit.field as keyof Operadora] as string | null)
                         )}
                       </td>
                     );
