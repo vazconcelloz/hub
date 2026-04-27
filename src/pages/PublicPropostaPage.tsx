@@ -937,29 +937,33 @@ export default function PublicPropostaPage() {
                         {DESTAQUE_LABELS[op.destaque_comercial]}
                       </Badge>
                     )}
-                    <div className="mt-3 pt-3 border-t border-white/20">
+                    <div className={cn("mt-3 pt-3 border-t border-white/20 -mx-4 -mb-4 px-4 pb-4", mensCellColor)}>
                       <p className="text-xs opacity-80 uppercase tracking-wide">
                         Mensalidade Total{grupoInfo ? " (grupo)" : ""}
                       </p>
                       {editMode ? (
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={op.valor_mensal ?? ""}
-                          onChange={(e) =>
-                            updateDraftOperadora(op.id, "valor_mensal", e.target.value === "" ? null : parseFloat(e.target.value))
-                          }
-                          className="h-9 text-base mt-1 text-foreground"
-                        />
+                        <div className="flex items-start gap-1.5 mt-1">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={op.valor_mensal ?? ""}
+                            onChange={(e) =>
+                              updateDraftOperadora(op.id, "valor_mensal", e.target.value === "" ? null : parseFloat(e.target.value))
+                            }
+                            className="h-9 text-base text-foreground"
+                          />
+                          <CellColorPicker op={op} field="valor_mensal" />
+                        </div>
                       ) : (
                         <p className="text-2xl font-bold">{total !== null ? formatCurrency(total) : "—"}</p>
                       )}
                     </div>
                   </div>
                   <div className="p-4 space-y-3 text-sm">
-                    {criterios.map((crit) => {
+                    {criteriosVisiveis.map((crit) => {
                       const v = op[crit.field as keyof Operadora] as string | null;
                       if (!editMode && !v) return null;
+                      const oculta = linhasOcultas.includes(crit.field as string);
                       const cellColor = getCellColorClass((op as any).cores_celulas, crit.field);
                       return (
                         <div
