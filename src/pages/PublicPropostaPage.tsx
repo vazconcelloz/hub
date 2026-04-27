@@ -206,7 +206,7 @@ export default function PublicPropostaPage() {
   };
 
   const view = editMode && draftProposta ? draftProposta : proposta;
-  const viewOps = editMode ? draftOperadoras : operadoras;
+  const viewOpsRaw = editMode ? draftOperadoras : operadoras;
 
   const whatsappLink = (message: string) => {
     if (!proposta?.consultora_telefone) return "#";
