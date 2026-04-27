@@ -331,6 +331,17 @@ export default function PublicPropostaPage() {
     { label: "Rede credenciada", field: "rede_credenciada_resumo", type: "textarea" },
   ];
 
+  const camposComCorCelula = new Set<string>([
+    "plano_nome",
+    "acomodacao",
+    "abrangencia",
+    "reembolso",
+    "rede_credenciada_resumo",
+    "valor_mensal",
+  ]);
+
+  const podePintarCelula = (field: string) => camposComCorCelula.has(field);
+
   const linhasOcultas = ((view as any)?.linhas_ocultas ?? []) as string[];
   // Em edit mode, mostra todas as linhas (admin vê tudo, com botão para ocultar/exibir).
   // No modo cliente, oculta as que estiverem em linhas_ocultas.
@@ -461,21 +472,24 @@ export default function PublicPropostaPage() {
   };
 
   // Seletor de cor de uma célula individual
-  const CellColorPicker = ({ op, field }: { op: Operadora; field: string }) => {
+  const CellColorPicker = ({ op, field, label = "Cor" }: { op: Operadora; field: string; label?: string }) => {
     const current = getCellColorKey((op as any).cores_celulas, field);
     return (
       <Popover>
         <PopoverTrigger asChild>
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="sm"
             className={cn(
-              "h-6 w-6 rounded border flex items-center justify-center hover:bg-muted shrink-0",
+              "h-7 px-2 text-[11px] gap-1 border shadow-sm shrink-0 bg-background text-foreground hover:bg-muted",
               current && COLUNA_COLORS[current]?.header
             )}
             title="Cor da célula"
           >
             <Palette className={cn("w-3 h-3", current ? "text-white" : "text-muted-foreground")} />
-          </button>
+            {label}
+          </Button>
         </PopoverTrigger>
         <PopoverContent className="w-64 p-3">
           <p className="text-xs font-medium mb-2">Cor desta célula</p>
