@@ -19,6 +19,7 @@ export type Database = {
           abrangencia: string | null
           acomodacao: string | null
           coparticipacao: string | null
+          coparticipacao_detalhes: Json | null
           cor_coluna: string | null
           cores_celulas: Json | null
           created_at: string
@@ -42,6 +43,7 @@ export type Database = {
           abrangencia?: string | null
           acomodacao?: string | null
           coparticipacao?: string | null
+          coparticipacao_detalhes?: Json | null
           cor_coluna?: string | null
           cores_celulas?: Json | null
           created_at?: string
@@ -65,6 +67,7 @@ export type Database = {
           abrangencia?: string | null
           acomodacao?: string | null
           coparticipacao?: string | null
+          coparticipacao_detalhes?: Json | null
           cor_coluna?: string | null
           cores_celulas?: Json | null
           created_at?: string

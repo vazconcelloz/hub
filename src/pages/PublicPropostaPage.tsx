@@ -48,7 +48,32 @@ type EditableOperadoraField =
   | "destaque_comercial"
   | "cor_coluna"
   | "cores_celulas"
+  | "coparticipacao_detalhes"
   | "grupo_soma";
+
+interface CoparticipacaoItem {
+  item: string;
+  valor: string;
+}
+
+const COPARTICIPACAO_ITENS_PADRAO: CoparticipacaoItem[] = [
+  { item: "Consulta", valor: "" },
+  { item: "Exames simples", valor: "" },
+  { item: "Exames complexos", valor: "" },
+  { item: "Terapias", valor: "" },
+  { item: "Pronto-socorro", valor: "" },
+  { item: "Internação", valor: "" },
+];
+
+function parseCoparticipacaoDetalhes(val: any): CoparticipacaoItem[] {
+  if (!val) return [];
+  if (Array.isArray(val)) {
+    return val
+      .filter((x) => x && typeof x === "object" && typeof x.item === "string")
+      .map((x) => ({ item: String(x.item), valor: String(x.valor ?? "") }));
+  }
+  return [];
+}
 
 export default function PublicPropostaPage() {
   const { slug } = useParams();
@@ -186,12 +211,12 @@ export default function PublicPropostaPage() {
         const fieldsToCheck: EditableOperadoraField[] = [
           "operadora_nome","plano_nome","valor_mensal","coparticipacao","acomodacao",
           "abrangencia","reembolso","resumo_cobertura","rede_credenciada_resumo",
-          "destaque_comercial","cor_coluna","cores_celulas","grupo_soma",
+          "destaque_comercial","cor_coluna","cores_celulas","coparticipacao_detalhes","grupo_soma",
         ];
         const changed = fieldsToCheck.some((f) => {
           const a = (original as any)[f];
           const b = (draft as any)[f];
-          if (f === "cores_celulas") return JSON.stringify(a ?? null) !== JSON.stringify(b ?? null);
+          if (f === "cores_celulas" || f === "coparticipacao_detalhes") return JSON.stringify(a ?? null) !== JSON.stringify(b ?? null);
           return a !== b;
         });
         if (!changed) continue;
@@ -211,6 +236,7 @@ export default function PublicPropostaPage() {
             destaque_comercial: draft.destaque_comercial,
             cor_coluna: (draft as any).cor_coluna,
             cores_celulas: (draft as any).cores_celulas ?? null,
+            coparticipacao_detalhes: (draft as any).coparticipacao_detalhes ?? null,
             grupo_soma: ((draft as any).grupo_soma || "").trim() || null,
           } as any)
           .eq("id", draft.id);
@@ -414,7 +440,103 @@ export default function PublicPropostaPage() {
     );
   };
 
+  // Renderiza a célula de Coparticipação (modo cliente). Quando Sim/Parcial e há detalhes, mostra mini-tabela em gaveta.
+  const renderCoparticipacao = (op: Operadora) => {
+    const valor = (op.coparticipacao ?? "").trim();
+    const detalhes = parseCoparticipacaoDetalhes((op as any).coparticipacao_detalhes).filter((d) => d.valor.trim());
+    const eSimOuParcial = /^(sim|parcial)$/i.test(valor);
+    const labelTopo = valor || "—";
 
+    if (!eSimOuParcial || detalhes.length === 0) {
+      return <span className="whitespace-pre-line">{labelTopo}</span>;
+    }
+    return (
+      <div className="space-y-1.5">
+        <div className="font-medium">{labelTopo}</div>
+        <details className="group rounded-md border border-border/60 bg-background/40 overflow-hidden">
+          <summary className="cursor-pointer list-none px-2 py-1.5 text-xs font-medium flex items-center gap-1.5 hover:bg-muted/40 select-none">
+            <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
+            Ver detalhes ({detalhes.length})
+          </summary>
+          <table className="w-full text-xs border-t border-border/60">
+            <tbody>
+              {detalhes.map((d, i) => (
+                <tr key={i} className={i % 2 ? "bg-muted/40" : ""}>
+                  <td className="px-2 py-1 whitespace-nowrap">{d.item}</td>
+                  <td className="px-2 py-1 text-right tabular-nums whitespace-nowrap font-medium">{d.valor}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </details>
+      </div>
+    );
+  };
+
+  // Editor (admin) da tabela de coparticipação por tipo. Aparece quando coparticipação for Sim/Parcial.
+  const CoparticipacaoEditor = ({ op }: { op: Operadora }) => {
+    const valor = ((op as any).coparticipacao ?? "").trim();
+    const eSimOuParcial = /^(sim|parcial)$/i.test(valor);
+    if (!eSimOuParcial) return null;
+
+    const atual = parseCoparticipacaoDetalhes((op as any).coparticipacao_detalhes);
+    const lista = atual.length > 0 ? atual : COPARTICIPACAO_ITENS_PADRAO;
+
+    const update = (next: CoparticipacaoItem[]) => {
+      const limpos = next.filter((d) => d.item.trim() || d.valor.trim());
+      updateDraftOperadora(op.id, "coparticipacao_detalhes" as any, limpos.length > 0 ? limpos : null);
+    };
+
+    return (
+      <div className="mt-2 rounded-md border border-border/60 bg-background/40 p-2 space-y-1.5">
+        <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+          Detalhes da coparticipação
+        </div>
+        {lista.map((d, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <Input
+              value={d.item}
+              onChange={(e) => {
+                const next = [...lista];
+                next[i] = { ...next[i], item: e.target.value };
+                update(next);
+              }}
+              placeholder="Item"
+              className="h-7 text-xs flex-1"
+            />
+            <Input
+              value={d.valor}
+              onChange={(e) => {
+                const next = [...lista];
+                next[i] = { ...next[i], valor: e.target.value };
+                update(next);
+              }}
+              placeholder="ex: 30% ou R$ 25"
+              className="h-7 text-xs w-32"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const next = lista.filter((_, idx) => idx !== i);
+                update(next);
+              }}
+              className="h-7 w-7 rounded border flex items-center justify-center hover:bg-muted shrink-0"
+              title="Remover"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() => update([...lista, { item: "", valor: "" }])}
+          className="text-xs flex items-center gap-1 text-primary hover:underline"
+        >
+          <Plus className="w-3 h-3" /> Adicionar linha
+        </button>
+      </div>
+    );
+  };
   const renderEditableCell = (op: Operadora, crit: typeof criterios[number]) => {
     const value = (op[crit.field as keyof Operadora] as string | null) ?? "";
     if (crit.type === "sim_nao") {
@@ -423,6 +545,7 @@ export default function PublicPropostaPage() {
           <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="Sim">Sim</SelectItem>
+            <SelectItem value="Parcial">Parcial</SelectItem>
             <SelectItem value="Não">Não</SelectItem>
           </SelectContent>
         </Select>
@@ -749,14 +872,19 @@ export default function PublicPropostaPage() {
                         )}
                       >
                         {editMode ? (
-                          <div className="flex items-start gap-1.5">
-                            <div className="flex-1 min-w-0">{renderEditableCell(op, crit)}</div>
-                            {podePintarCelula(crit.field) && <CellColorPicker op={op} field={crit.field} label="Cor" />}
+                          <div className="space-y-1">
+                            <div className="flex items-start gap-1.5">
+                              <div className="flex-1 min-w-0">{renderEditableCell(op, crit)}</div>
+                              {podePintarCelula(crit.field) && <CellColorPicker op={op} field={crit.field} label="Cor" />}
+                            </div>
+                            {crit.field === "coparticipacao" && <CoparticipacaoEditor op={op} />}
                           </div>
                         ) : (
                           crit.field === "faixas_etarias"
                             ? renderFaixasEtarias(op[crit.field as keyof Operadora] as string | null)
-                            : renderCellValue(op[crit.field as keyof Operadora] as string | null)
+                            : crit.field === "coparticipacao"
+                              ? renderCoparticipacao(op)
+                              : renderCellValue(op[crit.field as keyof Operadora] as string | null)
                         )}
                       </td>
                     );
@@ -1081,8 +1209,19 @@ export default function PublicPropostaPage() {
                               </div>
                             )}
                           </div>
-                          <div className="text-foreground">
-                            {editMode ? renderEditableCell(op, crit) : (crit.field === "faixas_etarias" ? renderFaixasEtarias(v) : renderCellValue(v))}
+                          <div className="text-foreground space-y-1">
+                            {editMode ? (
+                              <>
+                                {renderEditableCell(op, crit)}
+                                {crit.field === "coparticipacao" && <CoparticipacaoEditor op={op} />}
+                              </>
+                            ) : (
+                              crit.field === "faixas_etarias"
+                                ? renderFaixasEtarias(v)
+                                : crit.field === "coparticipacao"
+                                  ? renderCoparticipacao(op)
+                                  : renderCellValue(v)
+                            )}
                           </div>
                         </div>
                       );
