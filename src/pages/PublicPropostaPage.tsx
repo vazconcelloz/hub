@@ -484,7 +484,12 @@ export default function PublicPropostaPage() {
   // Quando `showOperadoraInHeader` é true, exibe o nome da operadora junto ao plano (usado no modal de comparação misturando operadoras).
   const renderComparativeTable = (ops: Operadora[], opts: { showOperadoraInHeader?: boolean } = {}) => {
     const { showOperadoraInHeader = false } = opts;
-    const totais = ops.map((op) => totalById.get(op.id) ?? null);
+    // Para cada plano, usa o total do grupo de soma (se aplicável) — isso garante que
+    // o cálculo de "economia vs. mais caro" e o destaque maior valor considerem o total do grupo.
+    const totais = ops.map((op) => {
+      const grupo = grupoSomaInfoById.get(op.id);
+      return grupo ? grupo.total : (totalById.get(op.id) ?? null);
+    });
     const maior = Math.max(...totais.filter((t): t is number => t !== null), 0);
     const algum = totais.some((t) => t !== null);
 
