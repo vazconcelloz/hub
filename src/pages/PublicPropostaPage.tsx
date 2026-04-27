@@ -627,32 +627,46 @@ export default function PublicPropostaPage() {
                 <td className="px-4 py-4 font-bold uppercase tracking-wide text-sm border-r border-primary-foreground/10">
                   Mensalidade Total
                 </td>
-                {ops.map((op, i) => (
-                  <td key={op.id} className="px-4 py-4 font-bold text-lg border-r border-primary-foreground/10 last:border-r-0">
-                    {editMode ? (
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={op.valor_mensal ?? ""}
-                        onChange={(e) =>
-                          updateDraftOperadora(
-                            op.id,
-                            "valor_mensal",
-                            e.target.value === "" ? null : parseFloat(e.target.value)
-                          )
-                        }
-                        className="h-9 text-base text-foreground"
-                        placeholder="0,00"
-                      />
-                    ) : totais[i] !== null ? formatCurrency(totais[i]) : "—"}
-                  </td>
-                ))}
+                {ops.map((op, i) => {
+                  const grupoInfo = grupoSomaInfoById.get(op.id);
+                  const valorExibido = grupoInfo ? grupoInfo.total : totais[i];
+                  return (
+                    <td key={op.id} className="px-4 py-4 font-bold text-lg border-r border-primary-foreground/10 last:border-r-0 align-top">
+                      {editMode ? (
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={op.valor_mensal ?? ""}
+                          onChange={(e) =>
+                            updateDraftOperadora(
+                              op.id,
+                              "valor_mensal",
+                              e.target.value === "" ? null : parseFloat(e.target.value)
+                            )
+                          }
+                          className="h-9 text-base text-foreground"
+                          placeholder="0,00"
+                        />
+                      ) : (
+                        <div>
+                          {valorExibido !== null ? formatCurrency(valorExibido) : "—"}
+                          {grupoInfo && (
+                            <div className="text-[10px] font-normal opacity-80 mt-0.5 normal-case tracking-normal">
+                              total do grupo
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  );
+                })}
               </tr>
               {!editMode && algum && ops.length > 1 && (
                 <tr className="bg-accent/20">
                   <td className="px-4 py-3 font-medium text-foreground border-r border-border">Economia vs. mais caro</td>
                   {ops.map((op, i) => {
-                    const t = totais[i];
+                    const grupoInfo = grupoSomaInfoById.get(op.id);
+                    const t = grupoInfo ? grupoInfo.total : totais[i];
                     const economia = t !== null ? maior - t : 0;
                     return (
                       <td key={op.id} className="px-4 py-3 font-semibold text-foreground border-r border-border last:border-r-0">
