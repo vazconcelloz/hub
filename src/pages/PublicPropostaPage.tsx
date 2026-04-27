@@ -141,6 +141,15 @@ export default function PublicPropostaPage() {
     );
   };
 
+  const toggleLinhaOculta = (field: string) => {
+    setDraftProposta((p) => {
+      if (!p) return p;
+      const atual = ((p as any).linhas_ocultas ?? []) as string[];
+      const next = atual.includes(field) ? atual.filter((f) => f !== field) : [...atual, field];
+      return { ...p, linhas_ocultas: next } as any;
+    });
+  };
+
   const handleSave = async () => {
     if (!draftProposta || !proposta) return;
     setSaving(true);
