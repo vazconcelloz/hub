@@ -573,8 +573,14 @@ export default function PublicPropostaPage() {
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr>
-                <th className="text-left px-4 py-3 font-semibold w-56 align-top border-r border-border bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
-                  Planos
+                <th className={cn(
+                  "text-left px-4 py-3 font-semibold w-56 align-top border-r border-border text-xs uppercase tracking-wide",
+                  getRotuloColorClass("plano_nome") || "bg-muted/60 text-muted-foreground"
+                )}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span>Planos</span>
+                    {editMode && <RowLabelColorPicker field="plano_nome" />}
+                  </div>
                 </th>
                 {ops.map((op) => {
                   const planoCellColor = getCellColorClass((op as any).cores_celulas, "plano_nome");
