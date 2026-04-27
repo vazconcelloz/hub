@@ -171,7 +171,10 @@ export default function PropostaFormPage() {
         body: { pdf_base64: base64, cidade: form.cidade, estado: form.estado },
       });
 
-      if (response.error) throw new Error(response.error.message);
+      if (response.error) {
+        const message = (response.data as { error?: string } | null)?.error || response.error.message;
+        throw new Error(message);
+      }
       
       const extracted = response.data?.data;
       if (extracted) {
@@ -241,7 +244,7 @@ export default function PropostaFormPage() {
       }
     } catch (err: any) {
       console.error("PDF extraction error:", err);
-      toast({ title: "Extração automática falhou", description: "Preencha os campos manualmente.", variant: "destructive" });
+      toast({ title: "Extração automática falhou", description: err?.message || "Preencha os campos manualmente.", variant: "destructive" });
     } finally {
       setExtractingIndex(null);
     }
