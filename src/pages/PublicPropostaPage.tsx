@@ -913,7 +913,7 @@ export default function PublicPropostaPage() {
                             />
                             <div className="flex items-center gap-1 flex-wrap">
                               <ColorPicker op={op} />
-                              <CellColorPicker op={op} field="plano_nome" />
+                              <CellColorPicker op={op} field="plano_nome" label="Cor do plano" />
                             </div>
                           </div>
                         ) : (
@@ -966,7 +966,7 @@ export default function PublicPropostaPage() {
                             }
                             className="h-9 text-base text-foreground"
                           />
-                          <CellColorPicker op={op} field="valor_mensal" />
+                          <CellColorPicker op={op} field="valor_mensal" label="Cor" />
                         </div>
                       ) : (
                         <p className="text-2xl font-bold">{total !== null ? formatCurrency(total) : "—"}</p>
@@ -1002,7 +1002,7 @@ export default function PublicPropostaPage() {
                                 >
                                   {oculta ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                                 </button>
-                                <CellColorPicker op={op} field={crit.field} />
+                                {podePintarCelula(crit.field) && <CellColorPicker op={op} field={crit.field} label="Cor" />}
                               </div>
                             )}
                           </div>
