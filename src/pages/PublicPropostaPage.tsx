@@ -224,6 +224,18 @@ export default function PublicPropostaPage() {
     );
   };
 
+  // Aplica a mesma cor de coluna a todos os planos de uma operadora.
+  // Permite que cada operadora tenha sua cor independente das demais.
+  const updateOperadoraColor = (operadoraNome: string, colorKey: string | null) => {
+    setDraftOperadoras((ops) =>
+      ops.map((o) =>
+        (o.operadora_nome ?? "").trim().toLowerCase() === operadoraNome.trim().toLowerCase()
+          ? ({ ...o, cor_coluna: colorKey } as any)
+          : o
+      )
+    );
+  };
+
   const updateCellColor = (id: string, field: string, colorKey: string | null) => {
     setDraftOperadoras((ops) =>
       ops.map((o) => {
