@@ -670,23 +670,30 @@ export default function PublicPropostaPage() {
                 {ops.map((op, i) => {
                   const grupoInfo = grupoSomaInfoById.get(op.id);
                   const valorExibido = grupoInfo ? grupoInfo.total : totais[i];
+                  const mensCellColor = getCellColorClass((op as any).cores_celulas, "valor_mensal");
                   return (
-                    <td key={op.id} className="px-4 py-4 font-bold text-lg border-r border-primary-foreground/10 last:border-r-0 align-top">
+                    <td key={op.id} className={cn(
+                      "px-4 py-4 font-bold text-lg border-r border-primary-foreground/10 last:border-r-0 align-top",
+                      mensCellColor
+                    )}>
                       {editMode ? (
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={op.valor_mensal ?? ""}
-                          onChange={(e) =>
-                            updateDraftOperadora(
-                              op.id,
-                              "valor_mensal",
-                              e.target.value === "" ? null : parseFloat(e.target.value)
-                            )
-                          }
-                          className="h-9 text-base text-foreground"
-                          placeholder="0,00"
-                        />
+                        <div className="flex items-start gap-1.5">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={op.valor_mensal ?? ""}
+                            onChange={(e) =>
+                              updateDraftOperadora(
+                                op.id,
+                                "valor_mensal",
+                                e.target.value === "" ? null : parseFloat(e.target.value)
+                              )
+                            }
+                            className="h-9 text-base text-foreground"
+                            placeholder="0,00"
+                          />
+                          <CellColorPicker op={op} field="valor_mensal" />
+                        </div>
                       ) : (
                         <div>
                           {valorExibido !== null ? formatCurrency(valorExibido) : "—"}
