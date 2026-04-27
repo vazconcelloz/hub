@@ -15,7 +15,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Shield, MessageCircle, FileText, CheckCircle, MapPin, Calendar, Heart } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Shield, MessageCircle, FileText, MapPin, Calendar, Heart } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -62,8 +68,20 @@ export default function PublicPropostaPage() {
 
   const generalWhatsapp = () =>
     whatsappLink("Olá! Vi minha proposta e gostaria de falar sobre as opções apresentadas.");
-  const operadoraWhatsapp = (nome: string) =>
-    whatsappLink(`Olá! Vi minha proposta e quero falar sobre a opção da operadora ${nome}.`);
+
+  // Calcula o total mensal de uma operadora (usa valor_mensal ou faixas etárias)
+  const getTotalMensal = (op: Operadora): number | null => {
+    const faixasRaw = (op as any).faixas_etarias as string | null;
+    const idadesRaw = (proposta as any)?.idades_beneficiarios as string | null;
+    if (faixasRaw && idadesRaw) {
+      const faixas = parseFaixasEtarias(faixasRaw);
+      const idades = parseIdades(idadesRaw);
+      if (faixas.length > 0 && idades.length > 0) {
+        return calcularTotalPorFaixas(idades, faixas).total;
+      }
+    }
+    return op.valor_mensal ?? null;
+  };
 
   if (loading) {
     return (
@@ -83,19 +101,54 @@ export default function PublicPropostaPage() {
     );
   }
 
+  // Pré-calcula totais e a maior mensalidade (para a linha de economia)
+  const totais = operadoras.map((op) => getTotalMensal(op));
+  const maiorTotal = Math.max(...totais.filter((t): t is number => t !== null), 0);
+  const algumComTotal = totais.some((t) => t !== null);
+
+  // Define as linhas de critério da tabela comparativa
+  const criterios: { label: string; value: (op: Operadora) => string | null | undefined }[] = [
+    { label: "Coparticipação", value: (op) => op.coparticipacao },
+    { label: "Acomodação", value: (op) => op.acomodacao },
+    { label: "Abrangência", value: (op) => op.abrangencia },
+    { label: "Reembolso", value: (op) => op.reembolso },
+    { label: "Cobertura", value: (op) => op.resumo_cobertura },
+    { label: "Rede credenciada", value: (op) => op.rede_credenciada_resumo },
+  ];
+
+  const renderCellValue = (val: string | null | undefined) => {
+    if (!val || !val.trim()) return <span className="text-muted-foreground">—</span>;
+    // Para listas (rede credenciada), quebra em linhas
+    if (val.includes("\n") || val.split(/[,;]/).length > 2) {
+      const items = val
+        .split(/[\n,;]+/)
+        .map((s) => s.replace(/^[-•*\d.)\s]+/, "").trim())
+        .filter((s) => s.length > 1)
+        .slice(0, 5);
+      return (
+        <ul className="text-xs space-y-1 text-left">
+          {items.map((s, i) => (
+            <li key={i}>• {s}</li>
+          ))}
+        </ul>
+      );
+    }
+    return <span className="whitespace-pre-line">{val}</span>;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero */}
       <header className="gradient-hero text-primary-foreground">
-        <div className="container py-10 md:py-16 text-center space-y-4">
-          <div className="w-14 h-14 mx-auto rounded-xl bg-white/10 backdrop-blur flex items-center justify-center mb-4">
-            <Shield className="w-8 h-8" />
+        <div className="container py-8 md:py-12 text-center space-y-3">
+          <div className="w-12 h-12 mx-auto rounded-xl bg-white/10 backdrop-blur flex items-center justify-center mb-2">
+            <Shield className="w-7 h-7" />
           </div>
-          <p className="text-sm uppercase tracking-widest opacity-80">Estudo Personalizado</p>
-          <h1 className="text-3xl md:text-4xl font-bold">O seu estudo está pronto!</h1>
-          <p className="text-lg opacity-90 max-w-xl mx-auto">
-            Olá, <span className="font-semibold">{proposta.nome_cliente}</span>! Preparamos uma proposta personalizada
-            com as melhores opções para você.
+          <p className="text-xs uppercase tracking-widest opacity-80">Estudo Personalizado</p>
+          <h1 className="text-2xl md:text-4xl font-bold">Comparativo de Planos — Todas as Opções</h1>
+          <p className="text-base md:text-lg opacity-90 max-w-xl mx-auto">
+            Olá, <span className="font-semibold">{proposta.nome_cliente}</span>! Confira lado a lado as melhores opções
+            para o seu perfil.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4 text-sm opacity-80 pt-2">
             {proposta.cidade && (
@@ -121,120 +174,186 @@ export default function PublicPropostaPage() {
         </div>
       </header>
 
-      {/* Operadoras */}
-      <section className="container py-8 md:py-12">
-        <h2 className="text-xl md:text-2xl font-bold text-center mb-2">Compare as opções disponíveis</h2>
-        <p className="text-muted-foreground text-center mb-8 max-w-lg mx-auto">
-          Analisamos as principais operadoras e selecionamos as melhores opções para o seu perfil.
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {operadoras.map((op, idx) => (
-            <Card
-              key={op.id}
-              className="relative overflow-hidden hover:shadow-premium transition-all duration-300 flex flex-col"
-              style={{ animationDelay: `${idx * 100}ms` }}
-            >
-              {/* Badge */}
-              {op.destaque_comercial && DESTAQUE_LABELS[op.destaque_comercial] && (
-                <div className="absolute top-0 right-0">
-                  <Badge
-                    className={`rounded-none rounded-bl-lg px-3 py-1 text-xs font-semibold ${DESTAQUE_COLORS[op.destaque_comercial]}`}
+      {/* ====== TABELA COMPARATIVA (desktop/tablet) ====== */}
+      <section className="container py-8 md:py-10 hidden md:block">
+        <div className="rounded-lg border border-border overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="bg-primary text-primary-foreground">
+                  <th className="text-left px-4 py-4 font-semibold w-56 align-top border-r border-primary-foreground/10">
+                    Critério
+                  </th>
+                  {operadoras.map((op) => (
+                    <th
+                      key={op.id}
+                      className="text-left px-4 py-4 font-semibold align-top border-r border-primary-foreground/10 last:border-r-0 min-w-[180px]"
+                    >
+                      <div className="space-y-1">
+                        <div className="text-base leading-tight">{op.operadora_nome}</div>
+                        {op.plano_nome && (
+                          <div className="text-xs font-normal opacity-90">{op.plano_nome}</div>
+                        )}
+                        {op.destaque_comercial && DESTAQUE_LABELS[op.destaque_comercial] && (
+                          <Badge
+                            className={`mt-2 text-[10px] px-2 py-0.5 ${DESTAQUE_COLORS[op.destaque_comercial]}`}
+                          >
+                            {DESTAQUE_LABELS[op.destaque_comercial]}
+                          </Badge>
+                        )}
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {criterios.map((crit, rowIdx) => (
+                  <tr
+                    key={crit.label}
+                    className={rowIdx % 2 === 0 ? "bg-background" : "bg-muted/40"}
                   >
-                    {DESTAQUE_LABELS[op.destaque_comercial]}
-                  </Badge>
-                </div>
-              )}
-
-              <div className="p-6 flex-1 flex flex-col">
-                {/* Header */}
-                <div className="mb-4">
-                  <h3 className="text-lg font-bold text-foreground">{op.operadora_nome}</h3>
-                  {op.plano_nome && <p className="text-sm text-muted-foreground">{op.plano_nome}</p>}
-                </div>
-
-                {/* Price */}
-                {op.valor_mensal && (
-                  <div className="mb-5 pb-4 border-b">
-                    <p className="text-sm text-muted-foreground">Valor mensal</p>
-                    <p className="text-3xl font-bold text-primary">{formatCurrency(op.valor_mensal)}</p>
-                  </div>
+                    <td className="px-4 py-3 font-medium text-foreground border-r border-border align-top">
+                      {crit.label}
+                    </td>
+                    {operadoras.map((op) => (
+                      <td
+                        key={op.id}
+                        className="px-4 py-3 text-foreground border-r border-border last:border-r-0 align-top"
+                      >
+                        {renderCellValue(crit.value(op))}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                {/* Mensalidade Total — linha de destaque */}
+                {algumComTotal && (
+                  <tr className="bg-primary text-primary-foreground">
+                    <td className="px-4 py-4 font-bold uppercase tracking-wide text-sm border-r border-primary-foreground/10">
+                      Mensalidade Total
+                    </td>
+                    {operadoras.map((op, i) => (
+                      <td
+                        key={op.id}
+                        className="px-4 py-4 font-bold text-lg border-r border-primary-foreground/10 last:border-r-0"
+                      >
+                        {totais[i] !== null ? formatCurrency(totais[i]) : "—"}
+                      </td>
+                    ))}
+                  </tr>
                 )}
-
-                {/* Details */}
-                <div className="space-y-3 text-sm flex-1">
-                  {op.coparticipacao && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Coparticipação</span>
-                      <span className="font-medium text-foreground text-right">{op.coparticipacao}</span>
-                    </div>
-                  )}
-                  {op.acomodacao && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Acomodação</span>
-                      <span className="font-medium text-foreground text-right">{op.acomodacao}</span>
-                    </div>
-                  )}
-                  {op.abrangencia && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Abrangência</span>
-                      <span className="font-medium text-foreground text-right">{op.abrangencia}</span>
-                    </div>
-                  )}
-                  {op.reembolso && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Reembolso</span>
-                      <span className="font-medium text-foreground text-right">{op.reembolso}</span>
-                    </div>
-                  )}
-                  {op.resumo_cobertura && (
-                    <div className="pt-2 border-t">
-                      <p className="text-muted-foreground text-xs mb-1">Cobertura</p>
-                      <p className="text-foreground">{op.resumo_cobertura}</p>
-                    </div>
-                  )}
-                  {op.rede_credenciada_resumo && (
-                    <div className="pt-2 border-t">
-                      <p className="text-muted-foreground text-xs mb-2">Rede Credenciada</p>
-                      <ul className="space-y-1.5">
-                        {op.rede_credenciada_resumo
-                          .split(/[\n,;]+/)
-                          .map((h) => h.replace(/^[-•*\d.)\s]+/, "").trim())
-                          .filter((h) => h.length > 2)
-                          .slice(0, 5)
-                          .map((hospital, i) => (
-                            <li key={i} className="flex items-start gap-2 text-sm text-foreground">
-                              <CheckCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                              <span>{hospital}</span>
-                            </li>
-                          ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className="mt-5">
-                  {op.pdf_url && (
-                    <a href={op.pdf_url} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" className="w-full" size="sm">
-                        <FileText className="w-4 h-4 mr-2" />
-                        Ver PDF da Operadora
-                      </Button>
-                    </a>
-                  )}
-                </div>
-              </div>
-            </Card>
-          ))}
+                {/* Economia */}
+                {algumComTotal && operadoras.length > 1 && (
+                  <tr className="bg-accent/20">
+                    <td className="px-4 py-3 font-medium text-foreground border-r border-border">
+                      Economia vs. mais caro
+                    </td>
+                    {operadoras.map((op, i) => {
+                      const t = totais[i];
+                      const economia = t !== null ? maiorTotal - t : 0;
+                      return (
+                        <td
+                          key={op.id}
+                          className="px-4 py-3 font-semibold text-foreground border-r border-border last:border-r-0"
+                        >
+                          {economia > 0 ? formatCurrency(economia) : "—"}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                )}
+                {/* PDFs */}
+                {operadoras.some((op) => op.pdf_url) && (
+                  <tr className="bg-muted/30">
+                    <td className="px-4 py-3 text-xs text-muted-foreground border-r border-border">
+                      Material da operadora
+                    </td>
+                    {operadoras.map((op) => (
+                      <td
+                        key={op.id}
+                        className="px-4 py-3 text-xs border-r border-border last:border-r-0"
+                      >
+                        {op.pdf_url ? (
+                          <a
+                            href={op.pdf_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-primary hover:underline"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            Ver PDF
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                )}
+              </tfoot>
+            </table>
+          </div>
         </div>
       </section>
 
-      {/* Faixas Etárias e Reajustes */}
+      {/* ====== CARDS EMPILHADOS (mobile) ====== */}
+      <section className="container py-6 md:hidden space-y-4">
+        {operadoras.map((op, i) => {
+          const total = totais[i];
+          return (
+            <Card key={op.id} className="overflow-hidden">
+              <div className="bg-primary text-primary-foreground p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="font-bold">{op.operadora_nome}</h3>
+                    {op.plano_nome && <p className="text-xs opacity-90">{op.plano_nome}</p>}
+                  </div>
+                  {op.destaque_comercial && DESTAQUE_LABELS[op.destaque_comercial] && (
+                    <Badge className={`text-[10px] ${DESTAQUE_COLORS[op.destaque_comercial]}`}>
+                      {DESTAQUE_LABELS[op.destaque_comercial]}
+                    </Badge>
+                  )}
+                </div>
+                {total !== null && (
+                  <div className="mt-3 pt-3 border-t border-primary-foreground/20">
+                    <p className="text-xs opacity-80 uppercase tracking-wide">Mensalidade Total</p>
+                    <p className="text-2xl font-bold">{formatCurrency(total)}</p>
+                  </div>
+                )}
+              </div>
+              <div className="p-4 space-y-3 text-sm">
+                {criterios.map((crit) => {
+                  const v = crit.value(op);
+                  if (!v) return null;
+                  return (
+                    <div key={crit.label} className="flex flex-col gap-1 pb-2 border-b last:border-b-0">
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        {crit.label}
+                      </span>
+                      <div className="text-foreground">{renderCellValue(v)}</div>
+                    </div>
+                  );
+                })}
+                {op.pdf_url && (
+                  <a href={op.pdf_url} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm" className="w-full mt-2">
+                      <FileText className="w-4 h-4 mr-2" />
+                      Ver PDF da Operadora
+                    </Button>
+                  </a>
+                )}
+              </div>
+            </Card>
+          );
+        })}
+      </section>
+
+      {/* ====== Detalhamento por beneficiário e faixas etárias (accordion) ====== */}
       {operadoras.some((op) => (op as any).faixas_etarias) && (
         <section className="container pb-8">
-          <h2 className="text-xl font-bold mb-4">Faixas Etárias e Reajustes</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <h2 className="text-lg md:text-xl font-bold mb-3">Detalhamento de Faixas Etárias e Reajustes</h2>
+          <Accordion type="single" collapsible className="space-y-2">
             {operadoras
               .filter((op) => (op as any).faixas_etarias)
               .map((op) => {
@@ -244,11 +363,20 @@ export default function PublicPropostaPage() {
                 const resultado = temCalculo ? calcularTotalPorFaixas(idades, faixas) : null;
 
                 return (
-                  <Card key={op.id} className="p-6">
-                    <h3 className="font-bold text-foreground mb-3">{op.operadora_nome}</h3>
-                    {op.plano_nome && <p className="text-sm text-muted-foreground mb-3">{op.plano_nome}</p>}
-                    <div className="space-y-3">
-                      {/* Tabela de detalhamento por beneficiário */}
+                  <AccordionItem
+                    key={op.id}
+                    value={op.id}
+                    className="border rounded-lg px-4 bg-card"
+                  >
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-semibold">{op.operadora_nome}</span>
+                        {op.plano_nome && (
+                          <span className="text-xs text-muted-foreground">{op.plano_nome}</span>
+                        )}
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4 pt-2">
                       {resultado && (
                         <div>
                           <p className="text-sm font-medium text-muted-foreground mb-2">
@@ -293,10 +421,11 @@ export default function PublicPropostaPage() {
                         </div>
                       )}
 
-                      {/* Faixas completas */}
                       <div>
                         <p className="text-sm font-medium text-muted-foreground mb-1">Tabela de Faixas Etárias</p>
-                        <div className="text-sm text-foreground whitespace-pre-line">{(op as any).faixas_etarias}</div>
+                        <div className="text-sm text-foreground whitespace-pre-line">
+                          {(op as any).faixas_etarias}
+                        </div>
                       </div>
 
                       {(op as any).previsao_reajuste_faixa && (
@@ -305,25 +434,25 @@ export default function PublicPropostaPage() {
                           <p className="text-sm text-foreground">{(op as any).previsao_reajuste_faixa}</p>
                         </div>
                       )}
-                    </div>
-                  </Card>
+                    </AccordionContent>
+                  </AccordionItem>
                 );
               })}
-          </div>
+          </Accordion>
         </section>
       )}
 
-      {/* Observations */}
+      {/* Observações */}
       {proposta.observacoes_gerais && (
         <section className="container pb-8">
           <Card className="p-6 bg-muted/50">
             <p className="text-sm text-muted-foreground font-medium mb-1">Observações</p>
-            <p className="text-foreground">{proposta.observacoes_gerais}</p>
+            <p className="text-foreground whitespace-pre-line">{proposta.observacoes_gerais}</p>
           </Card>
         </section>
       )}
 
-      {/* Consultant section */}
+      {/* Consultora */}
       {proposta.consultora_nome && (
         <section className="container pb-12">
           <Card className="p-6 md:p-8 text-center max-w-lg mx-auto">
@@ -348,7 +477,7 @@ export default function PublicPropostaPage() {
         </section>
       )}
 
-      {/* Fixed WhatsApp Button */}
+      {/* Botão fixo WhatsApp */}
       {proposta.consultora_telefone && (
         <a href={generalWhatsapp()} target="_blank" rel="noopener noreferrer" className="fixed bottom-6 right-6 z-50">
           <Button variant="whatsapp" size="lg" className="rounded-full shadow-xl h-14 px-6 text-base">
@@ -358,7 +487,6 @@ export default function PublicPropostaPage() {
         </a>
       )}
 
-      {/* Footer */}
       <footer className="border-t py-6 text-center text-sm text-muted-foreground">
         <p>Proposta preparada com ❤️ pela sua corretora de confiança</p>
       </footer>
