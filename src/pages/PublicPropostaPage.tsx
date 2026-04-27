@@ -1063,13 +1063,6 @@ export default function PublicPropostaPage() {
                         </div>
                       );
                     })}
-                    {!editMode && op.pdf_url && (
-                      <a href={op.pdf_url} target="_blank" rel="noopener noreferrer">
-                        <Button variant="outline" size="sm" className="w-full mt-2">
-                          <FileText className="w-4 h-4 mr-2" /> Ver PDF da Operadora
-                        </Button>
-                      </a>
-                    )}
                   </div>
                 </Card>
               );
