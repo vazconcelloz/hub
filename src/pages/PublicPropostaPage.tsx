@@ -211,12 +211,12 @@ export default function PublicPropostaPage() {
         const fieldsToCheck: EditableOperadoraField[] = [
           "operadora_nome","plano_nome","valor_mensal","coparticipacao","acomodacao",
           "abrangencia","reembolso","resumo_cobertura","rede_credenciada_resumo",
-          "destaque_comercial","cor_coluna","cores_celulas","grupo_soma",
+          "destaque_comercial","cor_coluna","cores_celulas","coparticipacao_detalhes","grupo_soma",
         ];
         const changed = fieldsToCheck.some((f) => {
           const a = (original as any)[f];
           const b = (draft as any)[f];
-          if (f === "cores_celulas") return JSON.stringify(a ?? null) !== JSON.stringify(b ?? null);
+          if (f === "cores_celulas" || f === "coparticipacao_detalhes") return JSON.stringify(a ?? null) !== JSON.stringify(b ?? null);
           return a !== b;
         });
         if (!changed) continue;
