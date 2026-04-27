@@ -684,7 +684,7 @@ export default function PublicPropostaPage() {
                       className="h-9 text-base mt-1 text-foreground"
                     />
                   ) : (
-                    total !== null && <p className="text-2xl font-bold">{formatCurrency(total)}</p>
+                    <p className="text-2xl font-bold">{total !== null ? formatCurrency(total) : "—"}</p>
                   )}
                 </div>
               </div>
