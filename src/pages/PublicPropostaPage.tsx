@@ -174,6 +174,7 @@ export default function PublicPropostaPage() {
           tipo_produto: draftProposta.tipo_produto,
           validade_proposta: draftProposta.validade_proposta,
           linhas_ocultas: (draftProposta as any).linhas_ocultas ?? [],
+          cores_rotulos: (draftProposta as any).cores_rotulos ?? null,
         } as any)
         .eq("id", proposta.id);
       if (e1) throw e1;
