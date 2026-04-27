@@ -26,7 +26,7 @@ serve(async (req) => {
     }
 
     const locationContext = cidade || estado
-      ? `\nO cliente está localizado em ${cidade || ""}${cidade && estado ? "/" : ""}${estado || ""}. Ao descrever a rede credenciada (campo rede_credenciada_resumo), PRIORIZE os melhores hospitais, laboratórios e clínicas mais próximos dessa região. Liste os nomes dos principais hospitais e laboratórios da rede nessa localidade.`
+      ? `\nO cliente está localizado em ${cidade || ""}${cidade && estado ? "/" : ""}${estado || ""}. Ao descrever a rede credenciada (campo rede_credenciada_resumo), liste APENAS os 3 hospitais MAIS RELEVANTES e reconhecidos da rede da operadora nessa região (priorize hospitais de grande porte, referência ou alta complexidade). Apenas nomes reais que constem no PDF ou que sejam comprovadamente da rede da operadora.`
       : "";
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`, {
@@ -42,7 +42,7 @@ serve(async (req) => {
             role: "system",
             content: `Você é um especialista em extrair dados de documentos PDF de operadoras de planos de saúde e seguros no Brasil.
 Analise o conteúdo do PDF e extraia as informações solicitadas. Se não conseguir identificar algum campo, retorne string vazia para texto ou null para valor numérico.
-Extraia APENAS dados que estejam claramente presentes no documento. Não invente dados.
+REGRA CRÍTICA: Extraia APENAS dados que estejam EXPLICITAMENTE presentes no documento. NUNCA invente, deduza ou complete informações que não estejam claramente escritas no PDF. Se um campo não estiver no documento, retorne string vazia.
 IMPORTANTE: Um PDF pode conter MÚLTIPLOS planos (ex: Amil Black I QP R1, R2, R3 e Amil Black S2500 QP R1, R2). Extraia TODOS os planos encontrados no documento, cada um com suas próprias faixas etárias e valores.${locationContext}`,
           },
           {
@@ -77,27 +77,28 @@ IMPORTANTE: Um PDF pode conter MÚLTIPLOS planos (ex: Amil Black I QP R1, R2, R3
                   },
                   coparticipacao: {
                     type: "string",
-                    description: "Informações sobre coparticipação (ex: 'Sim, 30% em consultas e exames' ou 'Sem coparticipação')",
+                    enum: ["Sim", "Não", ""],
+                    description: "Responda APENAS 'Sim' se o plano tiver coparticipação, ou 'Não' se não tiver. Se não conseguir identificar com clareza no documento, retorne string vazia.",
                   },
                   acomodacao: {
                     type: "string",
-                    description: "Tipo de acomodação (ex: 'Apartamento', 'Enfermaria')",
+                    description: "Tipo de acomodação (ex: 'Apartamento', 'Enfermaria'). Apenas se explícito no PDF.",
                   },
                   abrangencia: {
                     type: "string",
-                    description: "Área de abrangência (ex: 'Nacional', 'Estadual - SP', 'Regional')",
+                    description: "Área de abrangência (ex: 'Nacional', 'Estadual - SP', 'Regional'). EXTRAIA APENAS se estiver EXPLICITAMENTE escrito no PDF. Se não houver menção clara à abrangência, retorne string vazia. NÃO INVENTE.",
                   },
                   reembolso: {
                     type: "string",
-                    description: "Informações sobre reembolso, se disponível",
+                    description: "Informações sobre reembolso, apenas se explícito no PDF. Caso contrário, string vazia.",
                   },
                   resumo_cobertura: {
                     type: "string",
-                    description: "Resumo das coberturas principais (consultas, exames, internação, etc.)",
+                    description: "Resumo das coberturas principais (consultas, exames, internação, etc.), apenas se constar no PDF.",
                   },
                   rede_credenciada_resumo: {
                     type: "string",
-                    description: "Liste no máximo 5 hospitais e laboratórios da rede credenciada mais próximos da região do cliente, um por linha. Apenas nomes, sem descrições adicionais.",
+                    description: "Liste EXATAMENTE 3 hospitais (no máximo) da rede credenciada — os MAIS RELEVANTES e reconhecidos da região do cliente (priorize hospitais de grande porte, referência em alta complexidade, mais conhecidos publicamente). Um nome por linha, apenas o nome do hospital, sem descrições.",
                   },
                   previsao_reajuste_faixa: {
                     type: "string",
@@ -197,7 +198,7 @@ IMPORTANTE: Um PDF pode conter MÚLTIPLOS planos (ex: Amil Black I QP R1, R2, R3
               },
               {
                 role: "user",
-                content: `Liste os 5 principais hospitais da rede credenciada da operadora ${operadoraNome} na região de ${clienteCidade}${clienteEstado ? "/" + clienteEstado : ""}. Um por linha, apenas nomes reais e conhecidos. Máximo 5.`,
+                content: `Liste os 3 hospitais MAIS RELEVANTES e reconhecidos da rede credenciada da operadora ${operadoraNome} na região de ${clienteCidade}${clienteEstado ? "/" + clienteEstado : ""}. Priorize hospitais de grande porte, referência em alta complexidade e mais conhecidos publicamente. Um por linha, apenas o nome do hospital, sem descrições. Máximo 3.`,
               },
             ],
           }),
