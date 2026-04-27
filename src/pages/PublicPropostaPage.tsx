@@ -28,7 +28,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Shield, MessageCircle, FileText, MapPin, Calendar, Heart, Pencil, Save, X, ExternalLink, Palette, Scale, Check, Plus, Eye, EyeOff } from "lucide-react";
+import { Shield, MessageCircle, FileText, MapPin, Calendar, Heart, Pencil, Save, X, ExternalLink, Palette, Scale, Check, Plus, Eye, EyeOff, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -387,8 +387,17 @@ export default function PublicPropostaPage() {
     const faixas = parseFaixasEtarias(val);
     if (faixas.length === 0) return <span className="whitespace-pre-line text-xs">{val}</span>;
     return (
-      <div className="overflow-hidden rounded-md border border-border/60 bg-background/40">
-        <table className="w-full text-xs">
+      <details className="group rounded-md border border-border/60 bg-background/40 overflow-hidden">
+        <summary className="cursor-pointer list-none px-2 py-1.5 text-xs font-medium flex items-center justify-between gap-2 hover:bg-muted/40 select-none">
+          <span className="inline-flex items-center gap-1.5">
+            <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
+            Ver faixas ({faixas.length})
+          </span>
+          <span className="text-muted-foreground tabular-nums">
+            {formatCurrency(Math.min(...faixas.map((f) => f.valor)))}+
+          </span>
+        </summary>
+        <table className="w-full text-xs border-t border-border/60">
           <tbody>
             {faixas.map((f, i) => {
               const label = f.max >= 99 ? `${f.min}+` : `${f.min}–${f.max}`;
@@ -401,7 +410,7 @@ export default function PublicPropostaPage() {
             })}
           </tbody>
         </table>
-      </div>
+      </details>
     );
   };
 
