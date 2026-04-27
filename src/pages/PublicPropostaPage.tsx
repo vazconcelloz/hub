@@ -537,9 +537,7 @@ export default function PublicPropostaPage() {
       </div>
     );
   };
-
-
-
+  const renderEditableCell = (op: Operadora, crit: typeof criterios[number]) => {
     const value = (op[crit.field as keyof Operadora] as string | null) ?? "";
     if (crit.type === "sim_nao") {
       return (
