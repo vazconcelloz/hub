@@ -202,14 +202,7 @@ IMPORTANTE: Um PDF pode conter MÚLTIPLOS planos (ex: Amil Black I QP R1, R2, R3
 
     if (redeResumo.length < 50 && operadoraNome && (clienteCidade || clienteEstado)) {
       try {
-        const enrichResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${GEMINI_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "gemini-2.5-flash",
+        const enrichResult = await callGeminiWithFallback(GEMINI_API_KEY, {
             messages: [
               {
                 role: "system",
@@ -220,15 +213,11 @@ IMPORTANTE: Um PDF pode conter MÚLTIPLOS planos (ex: Amil Black I QP R1, R2, R3
                 content: `Liste os 3 hospitais MAIS RELEVANTES e reconhecidos da rede credenciada da operadora ${operadoraNome} na região de ${clienteCidade}${clienteEstado ? "/" + clienteEstado : ""}. Priorize hospitais de grande porte, referência em alta complexidade e mais conhecidos publicamente. Um por linha, apenas o nome do hospital, sem descrições. Máximo 3.`,
               },
             ],
-          }),
         });
 
-        if (enrichResponse.ok) {
-          const enrichResult = await enrichResponse.json();
-          const enrichedText = enrichResult.choices?.[0]?.message?.content;
-          if (enrichedText) {
-            extractedData.rede_credenciada_resumo = enrichedText.trim();
-          }
+        const enrichedText = enrichResult.choices?.[0]?.message?.content;
+        if (enrichedText) {
+          extractedData.rede_credenciada_resumo = enrichedText.trim();
         }
       } catch (enrichError) {
         console.error("Enrich error (non-fatal):", enrichError);
