@@ -100,6 +100,7 @@ export type Database = {
           consultora_foto_url: string | null
           consultora_nome: string | null
           consultora_telefone: string | null
+          cores_rotulos: Json | null
           created_at: string
           estado: string | null
           faixa_etaria_ou_perfil: string | null
@@ -121,6 +122,7 @@ export type Database = {
           consultora_foto_url?: string | null
           consultora_nome?: string | null
           consultora_telefone?: string | null
+          cores_rotulos?: Json | null
           created_at?: string
           estado?: string | null
           faixa_etaria_ou_perfil?: string | null
@@ -142,6 +144,7 @@ export type Database = {
           consultora_foto_url?: string | null
           consultora_nome?: string | null
           consultora_telefone?: string | null
+          cores_rotulos?: Json | null
           created_at?: string
           estado?: string | null
           faixa_etaria_ou_perfil?: string | null
