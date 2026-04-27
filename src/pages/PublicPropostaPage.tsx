@@ -659,7 +659,8 @@ export default function PublicPropostaPage() {
                     );
                   })}
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
             <tfoot>
               <tr className="bg-primary text-primary-foreground">
