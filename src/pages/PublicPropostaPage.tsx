@@ -542,8 +542,8 @@ export default function PublicPropostaPage() {
                 ))}
               </tbody>
               <tfoot>
-                {/* Mensalidade Total — linha de destaque */}
-                {(algumComTotal || editMode) && (
+                {/* Mensalidade Total — linha de destaque (sempre visível) */}
+                {(
                   <tr className="bg-primary text-primary-foreground">
                     <td className="px-4 py-4 font-bold uppercase tracking-wide text-sm border-r border-primary-foreground/10">
                       Mensalidade Total
