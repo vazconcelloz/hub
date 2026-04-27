@@ -908,7 +908,7 @@ export default function PublicPropostaPage() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            {renderComparativeTable(viewOps.filter((op) => selectedPlans.has(op.id)))}
+            {renderComparativeTable(viewOps.filter((op) => selectedPlans.has(op.id)), { showOperadoraInHeader: true })}
             {proposta.consultora_telefone && (
               <div className="flex justify-center pt-2">
                 <a href={compareWhatsapp()} target="_blank" rel="noopener noreferrer">
