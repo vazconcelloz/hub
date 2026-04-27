@@ -230,12 +230,15 @@ export default function PublicPropostaPage() {
   const algumComTotal = totais.some((t) => t !== null);
 
   // Define as linhas da tabela comparativa
-  const criterios: { label: string; field: EditableOperadoraField; type: "text" | "textarea" | "sim_nao" }[] = [
+  const criterios: {
+    label: string;
+    field: EditableOperadoraField;
+    type: "text" | "textarea" | "sim_nao" | "acomodacao" | "reembolso";
+  }[] = [
     { label: "Coparticipação", field: "coparticipacao", type: "sim_nao" },
-    { label: "Acomodação", field: "acomodacao", type: "text" },
+    { label: "Acomodação", field: "acomodacao", type: "acomodacao" },
     { label: "Abrangência", field: "abrangencia", type: "text" },
-    { label: "Reembolso", field: "reembolso", type: "text" },
-    { label: "Cobertura", field: "resumo_cobertura", type: "textarea" },
+    { label: "Reembolso", field: "reembolso", type: "reembolso" },
     { label: "Rede credenciada", field: "rede_credenciada_resumo", type: "textarea" },
   ];
 
