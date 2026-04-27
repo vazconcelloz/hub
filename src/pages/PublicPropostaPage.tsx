@@ -543,70 +543,6 @@ export default function PublicPropostaPage() {
     );
   };
 
-  // Editor (admin) da tabela de coparticipação por tipo. Aparece quando coparticipação for Sim/Parcial.
-  const CoparticipacaoEditor = ({ op }: { op: Operadora }) => {
-    const valor = ((op as any).coparticipacao ?? "").trim();
-    const eSimOuParcial = /^(sim|parcial)$/i.test(valor);
-    if (!eSimOuParcial) return null;
-
-    const atual = parseCoparticipacaoDetalhes((op as any).coparticipacao_detalhes);
-    const lista = atual.length > 0 ? atual : COPARTICIPACAO_ITENS_PADRAO;
-
-    const update = (next: CoparticipacaoItem[]) => {
-      const limpos = next.filter((d) => d.item.trim() || d.valor.trim());
-      updateDraftOperadora(op.id, "coparticipacao_detalhes" as any, limpos.length > 0 ? limpos : null);
-    };
-
-    return (
-      <div className="mt-2 rounded-md border border-border/60 bg-background/40 p-2 space-y-1.5">
-        <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-          Detalhes da coparticipação
-        </div>
-        {lista.map((d, i) => (
-          <div key={i} className="flex items-center gap-1.5">
-            <Input
-              value={d.item}
-              onChange={(e) => {
-                const next = [...lista];
-                next[i] = { ...next[i], item: e.target.value };
-                update(next);
-              }}
-              placeholder="Item"
-              className="h-7 text-xs flex-1"
-            />
-            <Input
-              value={d.valor}
-              onChange={(e) => {
-                const next = [...lista];
-                next[i] = { ...next[i], valor: e.target.value };
-                update(next);
-              }}
-              placeholder="ex: 30% ou R$ 25"
-              className="h-7 text-xs w-32"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                const next = lista.filter((_, idx) => idx !== i);
-                update(next);
-              }}
-              className="h-7 w-7 rounded border flex items-center justify-center hover:bg-muted shrink-0"
-              title="Remover"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={() => update([...lista, { item: "", valor: "" }])}
-          className="text-xs flex items-center gap-1 text-primary hover:underline"
-        >
-          <Plus className="w-3 h-3" /> Adicionar linha
-        </button>
-      </div>
-    );
-  };
   const renderEditableCell = (op: Operadora, crit: typeof criterios[number]) => {
     const value = (op[crit.field as keyof Operadora] as string | null) ?? "";
     if (crit.type === "sim_nao") {
@@ -947,7 +883,7 @@ export default function PublicPropostaPage() {
                               <div className="flex-1 min-w-0">{renderEditableCell(op, crit)}</div>
                               {podePintarCelula(crit.field) && <CellColorPicker op={op} field={crit.field} label="Cor" />}
                             </div>
-                            {crit.field === "coparticipacao" && <CoparticipacaoEditor op={op} />}
+                            {crit.field === "coparticipacao" && <CoparticipacaoEditor op={op} onChange={updateDraftOperadora} />}
                           </div>
                         ) : (
                           crit.field === "faixas_etarias"
@@ -1283,7 +1219,7 @@ export default function PublicPropostaPage() {
                             {editMode ? (
                               <>
                                 {renderEditableCell(op, crit)}
-                                {crit.field === "coparticipacao" && <CoparticipacaoEditor op={op} />}
+                                {crit.field === "coparticipacao" && <CoparticipacaoEditor op={op} onChange={updateDraftOperadora} />}
                               </>
                             ) : (
                               crit.field === "faixas_etarias"
