@@ -53,6 +53,50 @@ function parseToolArguments(raw: string) {
   return JSON.parse(cleaned);
 }
 
+function normalizeExtractedData(data: any) {
+  const operatorAliases: Record<string, string> = {
+    amil: "Amil",
+    bradesco: "Bradesco Saúde",
+    "bradesco saúde": "Bradesco Saúde",
+    sulamerica: "SulAmérica",
+    "sulamérica": "SulAmérica",
+    unimed: "Unimed",
+    porto: "Porto Seguro",
+    "porto seguro": "Porto Seguro",
+    notre: "NotreDame Intermédica",
+    notreDame: "NotreDame Intermédica",
+    hapvida: "Hapvida",
+  };
+
+  const stripOperatorFromPlan = (planName = "", operatorName = "") => {
+    let cleaned = String(planName).trim().replace(/\s+/g, " ");
+    if (!cleaned || !operatorName) return cleaned;
+    const tokens = [operatorName, ...Object.values(operatorAliases)].filter(Boolean);
+    for (const token of tokens) {
+      const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      cleaned = cleaned.replace(new RegExp(`^${escaped}\\s*[-–—:]?\\s*`, "i"), "").trim();
+    }
+    return cleaned || String(planName).trim();
+  };
+
+  let operatorName = String(data?.operadora_nome || "").trim();
+  const plans = Array.isArray(data?.planos) ? data.planos : [];
+  const operatorCandidates = [operatorName, ...plans.map((p: any) => String(p?.operadora_nome || p?.plano_nome || ""))].join(" ").toLowerCase();
+  for (const [needle, canonical] of Object.entries(operatorAliases)) {
+    if (operatorCandidates.includes(needle.toLowerCase())) {
+      operatorName = canonical;
+      break;
+    }
+  }
+
+  data.operadora_nome = operatorName;
+  data.planos = plans.map((plan: any) => ({
+    ...plan,
+    plano_nome: stripOperatorFromPlan(plan?.plano_nome || plan?.operadora_nome || "", operatorName),
+  }));
+  return data;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -229,7 +273,7 @@ IMPORTANTE: Um PDF pode conter MÚLTIPLOS planos (ex: Amil Black I QP R1, R2, R3
       throw new Error("AI did not return structured data");
     }
 
-    const extractedData = parseToolArguments(toolCall.function.arguments);
+    const extractedData = normalizeExtractedData(parseToolArguments(toolCall.function.arguments));
 
     // Enrich rede_credenciada_resumo if empty/short
     const redeResumo = extractedData.rede_credenciada_resumo || "";
