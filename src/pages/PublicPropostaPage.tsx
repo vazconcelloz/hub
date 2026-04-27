@@ -797,6 +797,12 @@ export default function PublicPropostaPage() {
                           <div className="space-y-1">
                             <Input value={op.operadora_nome ?? ""} onChange={(e) => updateDraftOperadora(op.id, "operadora_nome", e.target.value)} className="h-8 text-sm text-foreground" />
                             <Input value={op.plano_nome ?? ""} onChange={(e) => updateDraftOperadora(op.id, "plano_nome", e.target.value)} className="h-7 text-xs text-foreground" placeholder="Plano" />
+                            <Input
+                              value={(op as any).grupo_soma ?? ""}
+                              onChange={(e) => updateDraftOperadora(op.id, "grupo_soma" as any, e.target.value)}
+                              className="h-6 text-[10px] text-foreground bg-amber-50 border-amber-300"
+                              placeholder='Grupo soma (admin)'
+                            />
                             <ColorPicker op={op} />
                           </div>
                         ) : (
