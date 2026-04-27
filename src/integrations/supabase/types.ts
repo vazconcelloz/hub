@@ -20,6 +20,7 @@ export type Database = {
           acomodacao: string | null
           coparticipacao: string | null
           cor_coluna: string | null
+          cores_celulas: Json | null
           created_at: string
           destaque_comercial: string | null
           faixas_etarias: string | null
@@ -41,6 +42,7 @@ export type Database = {
           acomodacao?: string | null
           coparticipacao?: string | null
           cor_coluna?: string | null
+          cores_celulas?: Json | null
           created_at?: string
           destaque_comercial?: string | null
           faixas_etarias?: string | null
@@ -62,6 +64,7 @@ export type Database = {
           acomodacao?: string | null
           coparticipacao?: string | null
           cor_coluna?: string | null
+          cores_celulas?: Json | null
           created_at?: string
           destaque_comercial?: string | null
           faixas_etarias?: string | null

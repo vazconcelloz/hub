@@ -11,6 +11,8 @@ import {
   DESTAQUE_COLORS,
   COLUNA_COLORS,
   getColunaColor,
+  getCellColorClass,
+  getCellColorKey,
   agruparPorOperadora,
   parseFaixasEtarias,
   parseIdades,
@@ -42,7 +44,8 @@ type EditableOperadoraField =
   | "resumo_cobertura"
   | "rede_credenciada_resumo"
   | "destaque_comercial"
-  | "cor_coluna";
+  | "cor_coluna"
+  | "cores_celulas";
 
 export default function PublicPropostaPage() {
   const { slug } = useParams();
@@ -123,6 +126,19 @@ export default function PublicPropostaPage() {
     );
   };
 
+  const updateCellColor = (id: string, field: string, colorKey: string | null) => {
+    setDraftOperadoras((ops) =>
+      ops.map((o) => {
+        if (o.id !== id) return o;
+        const current = ((o as any).cores_celulas ?? {}) as Record<string, string>;
+        const next = { ...current };
+        if (colorKey === null) delete next[field];
+        else next[field] = colorKey;
+        return { ...o, cores_celulas: Object.keys(next).length > 0 ? next : null } as any;
+      })
+    );
+  };
+
   const handleSave = async () => {
     if (!draftProposta || !proposta) return;
     setSaving(true);
@@ -145,9 +161,14 @@ export default function PublicPropostaPage() {
         const fieldsToCheck: EditableOperadoraField[] = [
           "operadora_nome","plano_nome","valor_mensal","coparticipacao","acomodacao",
           "abrangencia","reembolso","resumo_cobertura","rede_credenciada_resumo",
-          "destaque_comercial","cor_coluna",
+          "destaque_comercial","cor_coluna","cores_celulas",
         ];
-        const changed = fieldsToCheck.some((f) => (original as any)[f] !== (draft as any)[f]);
+        const changed = fieldsToCheck.some((f) => {
+          const a = (original as any)[f];
+          const b = (draft as any)[f];
+          if (f === "cores_celulas") return JSON.stringify(a ?? null) !== JSON.stringify(b ?? null);
+          return a !== b;
+        });
         if (!changed) continue;
 
         const { error: e2 } = await supabase
@@ -164,6 +185,7 @@ export default function PublicPropostaPage() {
             rede_credenciada_resumo: draft.rede_credenciada_resumo,
             destaque_comercial: draft.destaque_comercial,
             cor_coluna: (draft as any).cor_coluna,
+            cores_celulas: (draft as any).cores_celulas ?? null,
           } as any)
           .eq("id", draft.id);
         if (e2) throw e2;
@@ -330,7 +352,39 @@ export default function PublicPropostaPage() {
     );
   };
 
-  // Seletor de cor (modo edição)
+  // Renderiza paleta de cores reutilizável.
+  const renderPalette = (currentKey: string | null, onPick: (key: string | null) => void) => (
+    <div className="grid grid-cols-5 gap-1.5">
+      <button
+        type="button"
+        onClick={() => onPick(null)}
+        className={cn(
+          "h-8 rounded border text-[10px] flex items-center justify-center bg-background hover:bg-muted",
+          !currentKey && "ring-2 ring-primary"
+        )}
+        title="Sem cor"
+      >
+        —
+      </button>
+      {Object.entries(COLUNA_COLORS).map(([key, c]) => (
+        <button
+          key={key}
+          type="button"
+          onClick={() => onPick(key)}
+          className={cn(
+            "h-8 rounded flex items-center justify-center",
+            c.header,
+            currentKey === key && "ring-2 ring-offset-1 ring-foreground"
+          )}
+          title={c.label}
+        >
+          {currentKey === key && <Check className="w-3 h-3" />}
+        </button>
+      ))}
+    </div>
+  );
+
+  // Seletor de cor da coluna inteira (modo edição)
   const ColorPicker = ({ op }: { op: Operadora }) => {
     const current = (op as any).cor_coluna as string | null;
     return (
@@ -338,39 +392,37 @@ export default function PublicPropostaPage() {
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className="h-7 text-xs gap-1 text-foreground">
             <Palette className="w-3 h-3" />
-            Cor
+            Coluna
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-56 p-3">
-          <p className="text-xs font-medium mb-2">Cor da coluna</p>
-          <div className="grid grid-cols-4 gap-2">
-            <button
-              type="button"
-              onClick={() => updateDraftOperadora(op.id, "cor_coluna", null as any)}
-              className={cn(
-                "h-9 rounded border text-[10px] flex items-center justify-center bg-background hover:bg-muted",
-                !current && "ring-2 ring-primary"
-              )}
-              title="Sem cor"
-            >
-              —
-            </button>
-            {Object.entries(COLUNA_COLORS).map(([key, c]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => updateDraftOperadora(op.id, "cor_coluna", key as any)}
-                className={cn(
-                  "h-9 rounded flex items-center justify-center",
-                  c.header,
-                  current === key && "ring-2 ring-offset-2 ring-foreground"
-                )}
-                title={c.label}
-              >
-                {current === key && <Check className="w-3.5 h-3.5" />}
-              </button>
-            ))}
-          </div>
+        <PopoverContent className="w-64 p-3">
+          <p className="text-xs font-medium mb-2">Cor da coluna inteira</p>
+          {renderPalette(current, (k) => updateDraftOperadora(op.id, "cor_coluna", k as any))}
+        </PopoverContent>
+      </Popover>
+    );
+  };
+
+  // Seletor de cor de uma célula individual
+  const CellColorPicker = ({ op, field }: { op: Operadora; field: string }) => {
+    const current = getCellColorKey((op as any).cores_celulas, field);
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "h-6 w-6 rounded border flex items-center justify-center hover:bg-muted shrink-0",
+              current && COLUNA_COLORS[current]?.header
+            )}
+            title="Cor da célula"
+          >
+            <Palette className={cn("w-3 h-3", current ? "text-white" : "text-muted-foreground")} />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64 p-3">
+          <p className="text-xs font-medium mb-2">Cor desta célula</p>
+          {renderPalette(current, (k) => updateCellColor(op.id, field, k))}
         </PopoverContent>
       </Popover>
     );
@@ -386,34 +438,20 @@ export default function PublicPropostaPage() {
     return c ? c.border : "border-primary";
   };
 
-  // ====== Renderização da tabela comparativa (reutilizada no comparador) ======
-  const renderComparativeTable = (ops: Operadora[]) => {
+  // ====== Renderização da tabela comparativa ======
+  // Por padrão é usada para uma única operadora (uma tabela por operadora).
+  // Quando `showOperadoraInHeader` é true, exibe o nome da operadora junto ao plano (usado no modal de comparação misturando operadoras).
+  const renderComparativeTable = (ops: Operadora[], opts: { showOperadoraInHeader?: boolean } = {}) => {
+    const { showOperadoraInHeader = false } = opts;
     const totais = ops.map((op) => totalById.get(op.id) ?? null);
     const maior = Math.max(...totais.filter((t): t is number => t !== null), 0);
     const algum = totais.some((t) => t !== null);
-    const grupoOps = agruparPorOperadora(ops);
 
     return (
       <div className="rounded-lg border border-border overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>
-              {/* Linha 1: nome da operadora (agrupador) */}
-              <tr className="bg-muted">
-                <th className="text-left px-4 py-2 font-semibold w-56 align-middle border-r border-border text-xs uppercase tracking-wide text-muted-foreground">
-                  Operadora
-                </th>
-                {grupoOps.map((g) => (
-                  <th
-                    key={g.nome}
-                    colSpan={g.planos.length}
-                    className="px-4 py-2 font-bold text-base text-center border-r border-border last:border-r-0 bg-secondary/40 text-foreground"
-                  >
-                    {g.nome}
-                  </th>
-                ))}
-              </tr>
-              {/* Linha 2: plano */}
               <tr>
                 <th className="text-left px-4 py-3 font-semibold w-56 align-top border-r border-border bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
                   Planos
@@ -427,7 +465,6 @@ export default function PublicPropostaPage() {
                     )}
                   >
                     <div className="space-y-1">
-                      {/* Checkbox de comparação (modo cliente apenas) */}
                       {!editMode && (
                         <label className="flex items-center gap-1.5 text-[10px] font-normal opacity-90 cursor-pointer mb-1">
                           <Checkbox
@@ -474,6 +511,9 @@ export default function PublicPropostaPage() {
                         </>
                       ) : (
                         <>
+                          {showOperadoraInHeader && op.operadora_nome && (
+                            <div className="text-[10px] uppercase tracking-wide opacity-80">{op.operadora_nome}</div>
+                          )}
                           {op.plano_nome && (
                             <div className="text-base leading-tight font-bold">{op.plano_nome}</div>
                           )}
@@ -495,16 +535,27 @@ export default function PublicPropostaPage() {
                   <td className="px-4 py-3 font-medium text-foreground border-r border-border align-top">
                     {crit.label}
                   </td>
-                  {ops.map((op) => (
-                    <td
-                      key={op.id}
-                      className="px-4 py-3 text-foreground border-r border-border last:border-r-0 align-top"
-                    >
-                      {editMode
-                        ? renderEditableCell(op, crit)
-                        : renderCellValue(op[crit.field as keyof Operadora] as string | null)}
-                    </td>
-                  ))}
+                  {ops.map((op) => {
+                    const cellColor = getCellColorClass((op as any).cores_celulas, crit.field);
+                    return (
+                      <td
+                        key={op.id}
+                        className={cn(
+                          "px-4 py-3 text-foreground border-r border-border last:border-r-0 align-top",
+                          cellColor
+                        )}
+                      >
+                        {editMode ? (
+                          <div className="flex items-start gap-1.5">
+                            <div className="flex-1 min-w-0">{renderEditableCell(op, crit)}</div>
+                            <CellColorPicker op={op} field={crit.field} />
+                          </div>
+                        ) : (
+                          renderCellValue(op[crit.field as keyof Operadora] as string | null)
+                        )}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
@@ -678,9 +729,19 @@ export default function PublicPropostaPage() {
         </div>
       </header>
 
-      {/* Tabela comparativa (desktop) */}
-      <section className="container py-8 md:py-10 hidden md:block">
-        {renderComparativeTable(viewOps)}
+      {/* Tabela comparativa (desktop) — uma tabela por operadora */}
+      <section className="container py-8 md:py-10 hidden md:block space-y-8">
+        {grupos.map((g) => (
+          <div key={g.nome} className="space-y-3">
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className="text-xl md:text-2xl font-bold text-foreground tracking-tight">{g.nome}</h2>
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                {g.planos.length} {g.planos.length === 1 ? "plano" : "planos"}
+              </span>
+            </div>
+            {renderComparativeTable(g.planos)}
+          </div>
+        ))}
       </section>
 
       {/* Cards mobile — agrupados por operadora */}
@@ -748,9 +809,19 @@ export default function PublicPropostaPage() {
                     {criterios.map((crit) => {
                       const v = op[crit.field as keyof Operadora] as string | null;
                       if (!editMode && !v) return null;
+                      const cellColor = getCellColorClass((op as any).cores_celulas, crit.field);
                       return (
-                        <div key={crit.label} className="flex flex-col gap-1 pb-2 border-b last:border-b-0">
-                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{crit.label}</span>
+                        <div
+                          key={crit.label}
+                          className={cn(
+                            "flex flex-col gap-1 pb-2 border-b last:border-b-0 -mx-2 px-2 rounded",
+                            cellColor
+                          )}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{crit.label}</span>
+                            {editMode && <CellColorPicker op={op} field={crit.field} />}
+                          </div>
                           <div className="text-foreground">
                             {editMode ? renderEditableCell(op, crit) : renderCellValue(v)}
                           </div>
@@ -837,7 +908,7 @@ export default function PublicPropostaPage() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            {renderComparativeTable(viewOps.filter((op) => selectedPlans.has(op.id)))}
+            {renderComparativeTable(viewOps.filter((op) => selectedPlans.has(op.id)), { showOperadoraInHeader: true })}
             {proposta.consultora_telefone && (
               <div className="flex justify-center pt-2">
                 <a href={compareWhatsapp()} target="_blank" rel="noopener noreferrer">
