@@ -970,12 +970,27 @@ export default function PublicPropostaPage() {
                           key={crit.label}
                           className={cn(
                             "flex flex-col gap-1 pb-2 border-b last:border-b-0 -mx-2 px-2 rounded",
-                            cellColor
+                            cellColor,
+                            editMode && oculta && "opacity-60"
                           )}
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{crit.label}</span>
-                            {editMode && <CellColorPicker op={op} field={crit.field} />}
+                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                              {crit.label}{editMode && oculta && <span className="ml-1 normal-case">(oculta)</span>}
+                            </span>
+                            {editMode && (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleLinhaOculta(crit.field as string)}
+                                  className="h-6 w-6 rounded border flex items-center justify-center hover:bg-muted shrink-0"
+                                  title={oculta ? "Exibir esta linha" : "Ocultar do cliente"}
+                                >
+                                  {oculta ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                </button>
+                                <CellColorPicker op={op} field={crit.field} />
+                              </div>
+                            )}
                           </div>
                           <div className="text-foreground">
                             {editMode ? renderEditableCell(op, crit) : renderCellValue(v)}
