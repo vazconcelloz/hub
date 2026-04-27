@@ -165,13 +165,17 @@ IMPORTANTE: Um PDF pode conter MÚLTIPLOS planos (ex: Amil Black I QP R1, R2, R3
                   },
                   planos: {
                     type: "array",
-                    description: "Array com TODOS os planos encontrados no documento. Cada plano tem seu nome e suas faixas etárias com valores.",
+                    description: "Array com TODOS os planos encontrados no documento. Cada plano tem seu nome, valor mensal (se único) e suas faixas etárias com valores.",
                     items: {
                       type: "object",
                       properties: {
                         plano_nome: {
                           type: "string",
                           description: "Nome do plano específico (ex: Amil Black I QP R1, Amil Black S2500 QP R2)",
+                        },
+                        valor_mensal: {
+                          type: "number",
+                          description: "Valor mensal TOTAL do plano em R$ (apenas número, sem símbolos), SE o PDF apresentar um valor único de mensalidade para este plano (ex: 'Mensalidade: R$ 1.234,56'). Se o PDF só apresentar tabela de faixas etárias, deixe como 0 ou omita — o valor será calculado pelas faixas. NÃO INVENTE valores.",
                         },
                         faixas_etarias: {
                           type: "string",

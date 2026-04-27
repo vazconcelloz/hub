@@ -190,18 +190,23 @@ export default function PublicPropostaPage() {
   const generalWhatsapp = () =>
     whatsappLink("Olá! Vi minha proposta e gostaria de falar sobre as opções apresentadas.");
 
-  // Calcula o total mensal de uma operadora (usa valor_mensal ou faixas etárias)
+  // Calcula o total mensal de uma operadora (usa valor_mensal, faixas+idades, ou menor faixa como fallback)
   const getTotalMensal = (op: Operadora): number | null => {
     if (op.valor_mensal !== null && op.valor_mensal !== undefined) return op.valor_mensal;
 
     const faixasRaw = (op as any).faixas_etarias as string | null;
     const idadesRaw = (view as any)?.idades_beneficiarios as string | null;
-    if (faixasRaw && idadesRaw) {
-      const faixas = parseFaixasEtarias(faixasRaw);
+    const faixas = faixasRaw ? parseFaixasEtarias(faixasRaw) : [];
+
+    if (faixas.length > 0 && idadesRaw) {
       const idades = parseIdades(idadesRaw);
-      if (faixas.length > 0 && idades.length > 0) {
+      if (idades.length > 0) {
         return calcularTotalPorFaixas(idades, faixas).total;
       }
+    }
+    if (faixas.length > 0) {
+      const menor = Math.min(...faixas.map((f) => f.valor));
+      if (menor > 0) return menor;
     }
     return null;
   };

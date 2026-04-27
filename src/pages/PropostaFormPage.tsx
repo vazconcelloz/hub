@@ -211,13 +211,27 @@ export default function PropostaFormPage() {
             ordem_exibicao: newOperadoras.length + 1,
           };
 
-          // Auto-calculate valor_mensal if idades are set
-          if (form.idades_beneficiarios) {
+          // 1) Valor extraído diretamente pela IA (mensalidade única no PDF)
+          if (typeof plano.valor_mensal === "number" && plano.valor_mensal > 0) {
+            op.valor_mensal = plano.valor_mensal.toFixed(2);
+          }
+
+          // 2) Calcula pelo total das idades, se informadas
+          if (!op.valor_mensal && form.idades_beneficiarios) {
             const idades = parseIdades(form.idades_beneficiarios);
             const faixas = parseFaixasEtarias(plano.faixas_etarias || "");
             if (idades.length > 0 && faixas.length > 0) {
               const { total } = calcularTotalPorFaixas(idades, faixas);
-              op.valor_mensal = total.toFixed(2);
+              if (total > 0) op.valor_mensal = total.toFixed(2);
+            }
+          }
+
+          // 3) Fallback: usa o menor valor da tabela de faixas como referência
+          if (!op.valor_mensal) {
+            const faixas = parseFaixasEtarias(plano.faixas_etarias || "");
+            if (faixas.length > 0) {
+              const menor = Math.min(...faixas.map((f) => f.valor));
+              if (menor > 0) op.valor_mensal = menor.toFixed(2);
             }
           }
 
