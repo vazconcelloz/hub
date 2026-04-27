@@ -571,11 +571,11 @@ export default function PublicPropostaPage() {
               <tr>
                 <th className={cn(
                   "text-left px-4 py-3 font-semibold w-56 align-top border-r border-border text-xs uppercase tracking-wide",
-                  getRotuloColorClass("plano_nome") || "bg-muted/60 text-muted-foreground"
+                  rotuloColClass || "bg-muted/60 text-muted-foreground"
                 )}>
                   <div className="flex items-center justify-between gap-2">
                     <span>Planos</span>
-                    {editMode && <RowLabelColorPicker field="plano_nome" />}
+                    {editMode && <RotuloColumnColorPicker />}
                   </div>
                 </th>
                 {ops.map((op) => {
