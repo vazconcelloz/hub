@@ -153,7 +153,8 @@ export default function PublicPropostaPage() {
           estado: draftProposta.estado,
           tipo_produto: draftProposta.tipo_produto,
           validade_proposta: draftProposta.validade_proposta,
-        })
+          linhas_ocultas: (draftProposta as any).linhas_ocultas ?? [],
+        } as any)
         .eq("id", proposta.id);
       if (e1) throw e1;
 
