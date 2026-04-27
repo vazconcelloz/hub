@@ -880,9 +880,11 @@ export default function PublicPropostaPage() {
               const total = grupoInfo ? grupoInfo.total : (totalById.get(op.id) ?? null);
               const headerCls = headerClassFor(op);
               const borderCls = borderClassFor(op);
+              const planoCellColor = getCellColorClass((op as any).cores_celulas, "plano_nome");
+              const mensCellColor = getCellColorClass((op as any).cores_celulas, "valor_mensal");
               return (
                 <Card key={op.id} className={cn("overflow-hidden border-t-4", borderCls)}>
-                  <div className={cn("p-4", headerCls)}>
+                  <div className={cn("p-4", planoCellColor || headerCls)}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
                         {editMode ? (
