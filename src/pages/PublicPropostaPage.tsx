@@ -100,7 +100,7 @@ function CoparticipacaoEditor({
         Detalhes da coparticipação
       </div>
       {lista.map((d, i) => (
-        <div key={`${d.item}-${i}`} className="flex items-center gap-1.5">
+        <div key={i} className="flex items-center gap-1.5">
           <Input
             value={d.item}
             onChange={(e) => {
