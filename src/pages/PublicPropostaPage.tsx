@@ -613,7 +613,8 @@ export default function PublicPropostaPage() {
                       )}
                     </div>
                   </th>
-                ))}
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
