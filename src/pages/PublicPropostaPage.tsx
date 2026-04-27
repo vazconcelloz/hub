@@ -150,6 +150,17 @@ export default function PublicPropostaPage() {
     });
   };
 
+  const updateRotuloColor = (field: string, colorKey: string | null) => {
+    setDraftProposta((p) => {
+      if (!p) return p;
+      const current = ((p as any).cores_rotulos ?? {}) as Record<string, string>;
+      const next = { ...current };
+      if (colorKey === null) delete next[field];
+      else next[field] = colorKey;
+      return { ...p, cores_rotulos: Object.keys(next).length > 0 ? next : null } as any;
+    });
+  };
+
   const handleSave = async () => {
     if (!draftProposta || !proposta) return;
     setSaving(true);
