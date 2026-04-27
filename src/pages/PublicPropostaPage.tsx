@@ -542,8 +542,8 @@ export default function PublicPropostaPage() {
                 ))}
               </tbody>
               <tfoot>
-                {/* Mensalidade Total — linha de destaque */}
-                {(algumComTotal || editMode) && (
+                {/* Mensalidade Total — linha de destaque (sempre visível) */}
+                {(
                   <tr className="bg-primary text-primary-foreground">
                     <td className="px-4 py-4 font-bold uppercase tracking-wide text-sm border-r border-primary-foreground/10">
                       Mensalidade Total
@@ -684,7 +684,7 @@ export default function PublicPropostaPage() {
                       className="h-9 text-base mt-1 text-foreground"
                     />
                   ) : (
-                    total !== null && <p className="text-2xl font-bold">{formatCurrency(total)}</p>
+                    <p className="text-2xl font-bold">{total !== null ? formatCurrency(total) : "—"}</p>
                   )}
                 </div>
               </div>
