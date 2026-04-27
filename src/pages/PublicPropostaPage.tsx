@@ -802,20 +802,6 @@ export default function PublicPropostaPage() {
                   })}
                 </tr>
               )}
-              {!editMode && ops.some((op) => op.pdf_url) && (
-                <tr className="bg-muted/30">
-                  <td className="px-4 py-3 text-xs text-muted-foreground border-r border-border">Material da operadora</td>
-                  {ops.map((op) => (
-                    <td key={op.id} className="px-4 py-3 text-xs border-r border-border last:border-r-0">
-                      {op.pdf_url ? (
-                        <a href={op.pdf_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
-                          <FileText className="w-3.5 h-3.5" /> Ver PDF
-                        </a>
-                      ) : <span className="text-muted-foreground">—</span>}
-                    </td>
-                  ))}
-                </tr>
-              )}
             </tfoot>
           </table>
         </div>
