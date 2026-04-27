@@ -565,6 +565,21 @@ export default function PublicPropostaPage() {
                           {op.plano_nome && (
                             <div className="text-base leading-tight font-bold">{op.plano_nome}</div>
                           )}
+                          {(() => {
+                            const info = grupoSomaInfoById.get(op.id);
+                            if (!info) return null;
+                            const outros = info.membros
+                              .filter((m) => m.id !== op.id)
+                              .map((m) => m.plano_nome || m.operadora_nome)
+                              .filter(Boolean)
+                              .join(" + ");
+                            return (
+                              <div className={cn("mt-2 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded border", info.cor)}>
+                                <Plus className="w-2.5 h-2.5" />
+                                Somado com: {outros || "outro plano"}
+                              </div>
+                            );
+                          })()}
                           {op.destaque_comercial && DESTAQUE_LABELS[op.destaque_comercial] && (
                             <Badge className={`mt-2 text-[10px] px-2 py-0.5 ${DESTAQUE_COLORS[op.destaque_comercial]}`}>
                               {DESTAQUE_LABELS[op.destaque_comercial]}
