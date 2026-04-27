@@ -37,6 +37,46 @@ export const DESTAQUE_COLORS: Record<string, string> = {
   custo_beneficio: "bg-purple-600 text-white",
 };
 
+// Paleta de cores para colunas/cards de plano (modo administrador).
+// Cada entrada define classes para: cabeçalho da coluna, borda do card, e badge.
+export interface ColorPaletteEntry {
+  label: string;
+  header: string; // bg + text para o header da coluna/card
+  border: string; // borda colorida (top de card)
+  badge: string;  // badge sutil
+}
+
+export const COLUNA_COLORS: Record<string, ColorPaletteEntry> = {
+  navy:    { label: "Navy",    header: "bg-[hsl(220_50%_25%)] text-white",         border: "border-[hsl(220_50%_25%)]",         badge: "bg-[hsl(220_50%_25%)] text-white" },
+  gold:    { label: "Gold",    header: "bg-[hsl(42_70%_45%)] text-white",          border: "border-[hsl(42_70%_45%)]",          badge: "bg-[hsl(42_70%_45%)] text-white" },
+  emerald: { label: "Verde",   header: "bg-emerald-700 text-white",                border: "border-emerald-700",                badge: "bg-emerald-700 text-white" },
+  ruby:    { label: "Rubi",    header: "bg-rose-700 text-white",                   border: "border-rose-700",                   badge: "bg-rose-700 text-white" },
+  indigo:  { label: "Índigo",  header: "bg-indigo-700 text-white",                 border: "border-indigo-700",                 badge: "bg-indigo-700 text-white" },
+  slate:   { label: "Grafite", header: "bg-slate-700 text-white",                  border: "border-slate-700",                  badge: "bg-slate-700 text-white" },
+  teal:    { label: "Teal",    header: "bg-teal-700 text-white",                   border: "border-teal-700",                   badge: "bg-teal-700 text-white" },
+  copper:  { label: "Cobre",   header: "bg-orange-700 text-white",                 border: "border-orange-700",                 badge: "bg-orange-700 text-white" },
+};
+
+export function getColunaColor(key: string | null | undefined): ColorPaletteEntry | null {
+  if (!key) return null;
+  return COLUNA_COLORS[key] ?? null;
+}
+
+// Agrupa operadoras por nome (preserva ordem da primeira ocorrência).
+export function agruparPorOperadora<T extends { operadora_nome: string }>(ops: T[]): Array<{ nome: string; planos: T[] }> {
+  const ordem: string[] = [];
+  const mapa = new Map<string, T[]>();
+  for (const op of ops) {
+    const nome = op.operadora_nome || "Sem operadora";
+    if (!mapa.has(nome)) {
+      mapa.set(nome, []);
+      ordem.push(nome);
+    }
+    mapa.get(nome)!.push(op);
+  }
+  return ordem.map((nome) => ({ nome, planos: mapa.get(nome)! }));
+}
+
 export function generateSlug(): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";

@@ -31,6 +31,7 @@ interface OperadoraForm {
   pdf_url: string;
   faixas_etarias: string;
   previsao_reajuste_faixa: string;
+  cor_coluna: string;
   pdf_file?: File;
 }
 
@@ -38,7 +39,7 @@ const emptyOperadora: OperadoraForm = {
   operadora_nome: "", plano_nome: "", valor_mensal: "", coparticipacao: "",
   acomodacao: "", abrangencia: "", reembolso: "", resumo_cobertura: "",
   rede_credenciada_resumo: "", destaque_comercial: "", ordem_exibicao: 0, pdf_url: "",
-  faixas_etarias: "", previsao_reajuste_faixa: "",
+  faixas_etarias: "", previsao_reajuste_faixa: "", cor_coluna: "",
 };
 
 export default function PropostaFormPage() {
@@ -106,6 +107,7 @@ export default function PropostaFormPage() {
         pdf_url: op.pdf_url || "",
         faixas_etarias: (op as any).faixas_etarias || "",
         previsao_reajuste_faixa: (op as any).previsao_reajuste_faixa || "",
+        cor_coluna: (op as any).cor_coluna || "",
       })));
     }
   };
@@ -205,6 +207,12 @@ export default function PropostaFormPage() {
           const op: OperadoraForm = {
             ...emptyOperadora,
             ...sharedFields,
+            // Campos por-plano sobrescrevem os shared quando vierem preenchidos
+            ...(plano.coparticipacao ? { coparticipacao: plano.coparticipacao } : {}),
+            ...(plano.acomodacao ? { acomodacao: plano.acomodacao } : {}),
+            ...(plano.abrangencia ? { abrangencia: plano.abrangencia } : {}),
+            ...(plano.reembolso ? { reembolso: plano.reembolso } : {}),
+            ...(plano.resumo_cobertura ? { resumo_cobertura: plano.resumo_cobertura } : {}),
             pdf_file: file,
             plano_nome: plano.plano_nome || "",
             faixas_etarias: plano.faixas_etarias || "",
@@ -350,6 +358,7 @@ export default function PropostaFormPage() {
           pdf_url: pdfUrl || null,
           faixas_etarias: op.faixas_etarias || null,
           previsao_reajuste_faixa: op.previsao_reajuste_faixa || null,
+          cor_coluna: op.cor_coluna || null,
         } as any);
       }
 
