@@ -127,15 +127,17 @@ IMPORTANTE: Um PDF pode conter MÚLTIPLOS planos (ex: Amil Black I QP R1, R2, R3
                   },
                   acomodacao: {
                     type: "string",
-                    description: "Tipo de acomodação (ex: 'Apartamento', 'Enfermaria'). Apenas se explícito no PDF.",
+                    enum: ["Enfermaria", "Apartamento", ""],
+                    description: "Tipo de acomodação. Responda APENAS 'Apartamento' (quarto privativo/individual) ou 'Enfermaria' (quarto coletivo/compartilhado). Procure por termos como 'padrão de acomodação', 'internação em apartamento', 'quarto privativo', 'quarto coletivo'. Só retorne string vazia se REALMENTE não houver menção no PDF.",
                   },
                   abrangencia: {
                     type: "string",
-                    description: "Área de abrangência (ex: 'Nacional', 'Estadual - SP', 'Regional'). EXTRAIA APENAS se estiver EXPLICITAMENTE escrito no PDF. Se não houver menção clara à abrangência, retorne string vazia. NÃO INVENTE.",
+                    description: "Área de abrangência (ex: 'Nacional', 'Estadual - SP', 'Regional', 'Grupo de municípios'). Procure por 'área de atuação', 'área geográfica', 'cobertura territorial'. EXTRAIA sempre que houver qualquer menção. NÃO INVENTE.",
                   },
                   reembolso: {
                     type: "string",
-                    description: "Informações sobre reembolso, apenas se explícito no PDF. Caso contrário, string vazia.",
+                    enum: ["Sim", "Não", "Parcial", ""],
+                    description: "Responda APENAS 'Sim' (se houver reembolso integral/livre escolha), 'Não' (se o plano não oferecer reembolso) ou 'Parcial' (se houver reembolso limitado/por tabela). Procure por 'livre escolha', 'reembolso integral', 'tabela de reembolso', 'sem reembolso'. Só retorne string vazia se realmente não houver menção.",
                   },
                   resumo_cobertura: {
                     type: "string",
