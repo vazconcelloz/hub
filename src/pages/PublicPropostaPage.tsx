@@ -352,7 +352,39 @@ export default function PublicPropostaPage() {
     );
   };
 
-  // Seletor de cor (modo edição)
+  // Renderiza paleta de cores reutilizável.
+  const renderPalette = (currentKey: string | null, onPick: (key: string | null) => void) => (
+    <div className="grid grid-cols-5 gap-1.5">
+      <button
+        type="button"
+        onClick={() => onPick(null)}
+        className={cn(
+          "h-8 rounded border text-[10px] flex items-center justify-center bg-background hover:bg-muted",
+          !currentKey && "ring-2 ring-primary"
+        )}
+        title="Sem cor"
+      >
+        —
+      </button>
+      {Object.entries(COLUNA_COLORS).map(([key, c]) => (
+        <button
+          key={key}
+          type="button"
+          onClick={() => onPick(key)}
+          className={cn(
+            "h-8 rounded flex items-center justify-center",
+            c.header,
+            currentKey === key && "ring-2 ring-offset-1 ring-foreground"
+          )}
+          title={c.label}
+        >
+          {currentKey === key && <Check className="w-3 h-3" />}
+        </button>
+      ))}
+    </div>
+  );
+
+  // Seletor de cor da coluna inteira (modo edição)
   const ColorPicker = ({ op }: { op: Operadora }) => {
     const current = (op as any).cor_coluna as string | null;
     return (
@@ -360,39 +392,37 @@ export default function PublicPropostaPage() {
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className="h-7 text-xs gap-1 text-foreground">
             <Palette className="w-3 h-3" />
-            Cor
+            Coluna
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-56 p-3">
-          <p className="text-xs font-medium mb-2">Cor da coluna</p>
-          <div className="grid grid-cols-4 gap-2">
-            <button
-              type="button"
-              onClick={() => updateDraftOperadora(op.id, "cor_coluna", null as any)}
-              className={cn(
-                "h-9 rounded border text-[10px] flex items-center justify-center bg-background hover:bg-muted",
-                !current && "ring-2 ring-primary"
-              )}
-              title="Sem cor"
-            >
-              —
-            </button>
-            {Object.entries(COLUNA_COLORS).map(([key, c]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => updateDraftOperadora(op.id, "cor_coluna", key as any)}
-                className={cn(
-                  "h-9 rounded flex items-center justify-center",
-                  c.header,
-                  current === key && "ring-2 ring-offset-2 ring-foreground"
-                )}
-                title={c.label}
-              >
-                {current === key && <Check className="w-3.5 h-3.5" />}
-              </button>
-            ))}
-          </div>
+        <PopoverContent className="w-64 p-3">
+          <p className="text-xs font-medium mb-2">Cor da coluna inteira</p>
+          {renderPalette(current, (k) => updateDraftOperadora(op.id, "cor_coluna", k as any))}
+        </PopoverContent>
+      </Popover>
+    );
+  };
+
+  // Seletor de cor de uma célula individual
+  const CellColorPicker = ({ op, field }: { op: Operadora; field: string }) => {
+    const current = getCellColorKey((op as any).cores_celulas, field);
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "h-6 w-6 rounded border flex items-center justify-center hover:bg-muted shrink-0",
+              current && COLUNA_COLORS[current]?.header
+            )}
+            title="Cor da célula"
+          >
+            <Palette className={cn("w-3 h-3", current ? "text-white" : "text-muted-foreground")} />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64 p-3">
+          <p className="text-xs font-medium mb-2">Cor desta célula</p>
+          {renderPalette(current, (k) => updateCellColor(op.id, field, k))}
         </PopoverContent>
       </Popover>
     );
