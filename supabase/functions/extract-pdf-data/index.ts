@@ -175,7 +175,7 @@ IMPORTANTE: Um PDF pode conter MÚLTIPLOS planos (ex: Amil Black I QP R1, R2, R3
                         },
                         valor_mensal: {
                           type: "number",
-                          description: "Valor mensal TOTAL do plano em R$ (apenas número, sem símbolos), SE o PDF apresentar um valor único de mensalidade para este plano (ex: 'Mensalidade: R$ 1.234,56'). Se o PDF só apresentar tabela de faixas etárias, deixe como 0 ou omita — o valor será calculado pelas faixas. NÃO INVENTE valores.",
+                          description: "Valor mensal TOTAL do plano em R$ (apenas número, sem símbolos, ex: 1234.56). PROCURE ATIVAMENTE por termos como: 'Valor Total', 'Total Mensal', 'Mensalidade Total', 'Total a Pagar', 'Valor da Mensalidade', 'Mensalidade', 'Preço Total', 'Total do Plano', 'Valor Final', 'Total Geral', 'Soma Total'. Se houver UM valor consolidado/total destacado para o plano (geralmente no rodapé da proposta, em destaque, ou após a tabela de faixas etárias), EXTRAIA esse valor aqui. Apenas se o PDF não apresentar nenhum valor total/consolidado e tiver SOMENTE a tabela de faixas etárias, omita ou retorne 0. NUNCA invente valores.",
                         },
                         faixas_etarias: {
                           type: "string",
