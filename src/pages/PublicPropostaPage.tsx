@@ -382,6 +382,30 @@ export default function PublicPropostaPage() {
     return <span className="whitespace-pre-line">{val}</span>;
   };
 
+  const renderFaixasEtarias = (val: string | null | undefined) => {
+    if (!val || !val.trim()) return <span className="text-muted-foreground">—</span>;
+    const faixas = parseFaixasEtarias(val);
+    if (faixas.length === 0) return <span className="whitespace-pre-line text-xs">{val}</span>;
+    return (
+      <div className="overflow-hidden rounded-md border border-border/60 bg-background/40">
+        <table className="w-full text-xs">
+          <tbody>
+            {faixas.map((f, i) => {
+              const label = f.max >= 99 ? `${f.min}+` : `${f.min}–${f.max}`;
+              return (
+                <tr key={i} className={i % 2 ? "bg-muted/40" : ""}>
+                  <td className="px-2 py-1 font-medium tabular-nums whitespace-nowrap">{label}</td>
+                  <td className="px-2 py-1 text-right tabular-nums whitespace-nowrap">{formatCurrency(f.valor)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+
   const renderEditableCell = (op: Operadora, crit: typeof criterios[number]) => {
     const value = (op[crit.field as keyof Operadora] as string | null) ?? "";
     if (crit.type === "sim_nao") {
@@ -721,7 +745,9 @@ export default function PublicPropostaPage() {
                             {podePintarCelula(crit.field) && <CellColorPicker op={op} field={crit.field} label="Cor" />}
                           </div>
                         ) : (
-                          renderCellValue(op[crit.field as keyof Operadora] as string | null)
+                          crit.field === "faixas_etarias"
+                            ? renderFaixasEtarias(op[crit.field as keyof Operadora] as string | null)
+                            : renderCellValue(op[crit.field as keyof Operadora] as string | null)
                         )}
                       </td>
                     );
@@ -1047,7 +1073,7 @@ export default function PublicPropostaPage() {
                             )}
                           </div>
                           <div className="text-foreground">
-                            {editMode ? renderEditableCell(op, crit) : renderCellValue(v)}
+                            {editMode ? renderEditableCell(op, crit) : (crit.field === "faixas_etarias" ? renderFaixasEtarias(v) : renderCellValue(v))}
                           </div>
                         </div>
                       );
