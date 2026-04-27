@@ -198,7 +198,7 @@ IMPORTANTE: Um PDF pode conter MÚLTIPLOS planos (ex: Amil Black I QP R1, R2, R3
               },
               {
                 role: "user",
-                content: `Liste os 5 principais hospitais da rede credenciada da operadora ${operadoraNome} na região de ${clienteCidade}${clienteEstado ? "/" + clienteEstado : ""}. Um por linha, apenas nomes reais e conhecidos. Máximo 5.`,
+                content: `Liste os 3 hospitais MAIS RELEVANTES e reconhecidos da rede credenciada da operadora ${operadoraNome} na região de ${clienteCidade}${clienteEstado ? "/" + clienteEstado : ""}. Priorize hospitais de grande porte, referência em alta complexidade e mais conhecidos publicamente. Um por linha, apenas o nome do hospital, sem descrições. Máximo 3.`,
               },
             ],
           }),
