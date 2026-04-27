@@ -331,6 +331,13 @@ export default function PublicPropostaPage() {
     { label: "Rede credenciada", field: "rede_credenciada_resumo", type: "textarea" },
   ];
 
+  const linhasOcultas = ((view as any)?.linhas_ocultas ?? []) as string[];
+  // Em edit mode, mostra todas as linhas (admin vê tudo, com botão para ocultar/exibir).
+  // No modo cliente, oculta as que estiverem em linhas_ocultas.
+  const criteriosVisiveis = editMode
+    ? criterios
+    : criterios.filter((c) => !linhasOcultas.includes(c.field as string));
+
   const renderCellValue = (val: string | null | undefined) => {
     if (!val || !val.trim()) return <span className="text-muted-foreground">—</span>;
     if (val.includes("\n") || val.split(/[,;]/).length > 2) {
