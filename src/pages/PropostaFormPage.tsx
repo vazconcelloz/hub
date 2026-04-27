@@ -580,6 +580,19 @@ export default function PropostaFormPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-2 md:col-span-2 rounded-md border border-dashed border-amber-300 bg-amber-50/50 p-3">
+                  <Label className="text-amber-900 font-semibold">Grupo de Soma (apenas admin)</Label>
+                  <Input
+                    value={op.grupo_soma}
+                    onChange={(e) => updateOperadora(index, "grupo_soma", e.target.value)}
+                    placeholder='Ex: "Sócios+Funcionários" — planos com o MESMO rótulo serão somados em um único card para o cliente'
+                    className="bg-white"
+                  />
+                  <p className="text-[11px] text-amber-800 leading-snug">
+                    Use o mesmo rótulo em 2 ou mais planos para que o cliente veja UM card consolidado com a soma das mensalidades.
+                    Deixe vazio para exibir o plano isoladamente. <strong>O cliente nunca vê esse rótulo.</strong>
+                  </p>
+                </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label>Resumo de Cobertura</Label>
                   <Textarea value={op.resumo_cobertura} onChange={(e) => updateOperadora(index, "resumo_cobertura", e.target.value)} rows={2} />
