@@ -592,7 +592,7 @@ export default function PublicPropostaPage() {
                               </SelectContent>
                             </Select>
                             <ColorPicker op={op} />
-                            <CellColorPicker op={op} field="plano_nome" />
+                            <CellColorPicker op={op} field="plano_nome" label="Cor do plano" />
                           </div>
                         </>
                       ) : (
@@ -664,7 +664,7 @@ export default function PublicPropostaPage() {
                         {editMode ? (
                           <div className="flex items-start gap-1.5">
                             <div className="flex-1 min-w-0">{renderEditableCell(op, crit)}</div>
-                            <CellColorPicker op={op} field={crit.field} />
+                            {podePintarCelula(crit.field) && <CellColorPicker op={op} field={crit.field} label="Cor" />}
                           </div>
                         ) : (
                           renderCellValue(op[crit.field as keyof Operadora] as string | null)
@@ -706,7 +706,7 @@ export default function PublicPropostaPage() {
                             className="h-9 text-base text-foreground"
                             placeholder="0,00"
                           />
-                          <CellColorPicker op={op} field="valor_mensal" />
+                          <CellColorPicker op={op} field="valor_mensal" label="Cor" />
                         </div>
                       ) : (
                         <div>
