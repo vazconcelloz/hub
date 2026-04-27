@@ -872,14 +872,19 @@ export default function PublicPropostaPage() {
                         )}
                       >
                         {editMode ? (
-                          <div className="flex items-start gap-1.5">
-                            <div className="flex-1 min-w-0">{renderEditableCell(op, crit)}</div>
-                            {podePintarCelula(crit.field) && <CellColorPicker op={op} field={crit.field} label="Cor" />}
+                          <div className="space-y-1">
+                            <div className="flex items-start gap-1.5">
+                              <div className="flex-1 min-w-0">{renderEditableCell(op, crit)}</div>
+                              {podePintarCelula(crit.field) && <CellColorPicker op={op} field={crit.field} label="Cor" />}
+                            </div>
+                            {crit.field === "coparticipacao" && <CoparticipacaoEditor op={op} />}
                           </div>
                         ) : (
                           crit.field === "faixas_etarias"
                             ? renderFaixasEtarias(op[crit.field as keyof Operadora] as string | null)
-                            : renderCellValue(op[crit.field as keyof Operadora] as string | null)
+                            : crit.field === "coparticipacao"
+                              ? renderCoparticipacao(op)
+                              : renderCellValue(op[crit.field as keyof Operadora] as string | null)
                         )}
                       </td>
                     );
