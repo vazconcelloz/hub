@@ -729,9 +729,19 @@ export default function PublicPropostaPage() {
         </div>
       </header>
 
-      {/* Tabela comparativa (desktop) */}
-      <section className="container py-8 md:py-10 hidden md:block">
-        {renderComparativeTable(viewOps)}
+      {/* Tabela comparativa (desktop) — uma tabela por operadora */}
+      <section className="container py-8 md:py-10 hidden md:block space-y-8">
+        {grupos.map((g) => (
+          <div key={g.nome} className="space-y-3">
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className="text-xl md:text-2xl font-bold text-foreground tracking-tight">{g.nome}</h2>
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                {g.planos.length} {g.planos.length === 1 ? "plano" : "planos"}
+              </span>
+            </div>
+            {renderComparativeTable(g.planos)}
+          </div>
+        ))}
       </section>
 
       {/* Cards mobile — agrupados por operadora */}
