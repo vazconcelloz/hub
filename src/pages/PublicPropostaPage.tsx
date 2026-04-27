@@ -28,7 +28,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Shield, MessageCircle, FileText, MapPin, Calendar, Heart, Pencil, Save, X, ExternalLink, Palette, Scale, Check, Plus } from "lucide-react";
+import { Shield, MessageCircle, FileText, MapPin, Calendar, Heart, Pencil, Save, X, ExternalLink, Palette, Scale, Check, Plus, Eye, EyeOff } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -141,6 +141,15 @@ export default function PublicPropostaPage() {
     );
   };
 
+  const toggleLinhaOculta = (field: string) => {
+    setDraftProposta((p) => {
+      if (!p) return p;
+      const atual = ((p as any).linhas_ocultas ?? []) as string[];
+      const next = atual.includes(field) ? atual.filter((f) => f !== field) : [...atual, field];
+      return { ...p, linhas_ocultas: next } as any;
+    });
+  };
+
   const handleSave = async () => {
     if (!draftProposta || !proposta) return;
     setSaving(true);
@@ -153,7 +162,8 @@ export default function PublicPropostaPage() {
           estado: draftProposta.estado,
           tipo_produto: draftProposta.tipo_produto,
           validade_proposta: draftProposta.validade_proposta,
-        })
+          linhas_ocultas: (draftProposta as any).linhas_ocultas ?? [],
+        } as any)
         .eq("id", proposta.id);
       if (e1) throw e1;
 
@@ -320,6 +330,13 @@ export default function PublicPropostaPage() {
     { label: "Reembolso", field: "reembolso", type: "reembolso" },
     { label: "Rede credenciada", field: "rede_credenciada_resumo", type: "textarea" },
   ];
+
+  const linhasOcultas = ((view as any)?.linhas_ocultas ?? []) as string[];
+  // Em edit mode, mostra todas as linhas (admin vê tudo, com botão para ocultar/exibir).
+  // No modo cliente, oculta as que estiverem em linhas_ocultas.
+  const criteriosVisiveis = editMode
+    ? criterios
+    : criterios.filter((c) => !linhasOcultas.includes(c.field as string));
 
   const renderCellValue = (val: string | null | undefined) => {
     if (!val || !val.trim()) return <span className="text-muted-foreground">—</span>;
@@ -501,12 +518,14 @@ export default function PublicPropostaPage() {
                 <th className="text-left px-4 py-3 font-semibold w-56 align-top border-r border-border bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
                   Planos
                 </th>
-                {ops.map((op) => (
+                {ops.map((op) => {
+                  const planoCellColor = getCellColorClass((op as any).cores_celulas, "plano_nome");
+                  return (
                   <th
                     key={op.id}
                     className={cn(
                       "text-left px-4 py-3 font-semibold align-top border-r border-white/10 last:border-r-0 min-w-[180px]",
-                      headerClassFor(op)
+                      planoCellColor || headerClassFor(op)
                     )}
                   >
                     <div className="space-y-1">
@@ -559,6 +578,7 @@ export default function PublicPropostaPage() {
                               </SelectContent>
                             </Select>
                             <ColorPicker op={op} />
+                            <CellColorPicker op={op} field="plano_nome" />
                           </div>
                         </>
                       ) : (
@@ -593,14 +613,29 @@ export default function PublicPropostaPage() {
                       )}
                     </div>
                   </th>
-                ))}
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
-              {criterios.map((crit, rowIdx) => (
-                <tr key={crit.label} className={rowIdx % 2 === 0 ? "bg-background" : "bg-muted/40"}>
+              {criteriosVisiveis.map((crit, rowIdx) => {
+                const oculta = linhasOcultas.includes(crit.field as string);
+                return (
+                <tr key={crit.label} className={cn(rowIdx % 2 === 0 ? "bg-background" : "bg-muted/40", editMode && oculta && "opacity-60")}>
                   <td className="px-4 py-3 font-medium text-foreground border-r border-border align-top">
-                    {crit.label}
+                    <div className="flex items-center justify-between gap-2">
+                      <span>{crit.label}{editMode && oculta && <span className="ml-1 text-[10px] text-muted-foreground">(oculta)</span>}</span>
+                      {editMode && (
+                        <button
+                          type="button"
+                          onClick={() => toggleLinhaOculta(crit.field as string)}
+                          className="h-6 w-6 rounded border flex items-center justify-center hover:bg-muted shrink-0"
+                          title={oculta ? "Exibir esta linha para o cliente" : "Ocultar esta linha do cliente"}
+                        >
+                          {oculta ? <EyeOff className="w-3.5 h-3.5 text-muted-foreground" /> : <Eye className="w-3.5 h-3.5 text-muted-foreground" />}
+                        </button>
+                      )}
+                    </div>
                   </td>
                   {ops.map((op) => {
                     const cellColor = getCellColorClass((op as any).cores_celulas, crit.field);
@@ -624,7 +659,8 @@ export default function PublicPropostaPage() {
                     );
                   })}
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
             <tfoot>
               <tr className="bg-primary text-primary-foreground">
@@ -634,23 +670,30 @@ export default function PublicPropostaPage() {
                 {ops.map((op, i) => {
                   const grupoInfo = grupoSomaInfoById.get(op.id);
                   const valorExibido = grupoInfo ? grupoInfo.total : totais[i];
+                  const mensCellColor = getCellColorClass((op as any).cores_celulas, "valor_mensal");
                   return (
-                    <td key={op.id} className="px-4 py-4 font-bold text-lg border-r border-primary-foreground/10 last:border-r-0 align-top">
+                    <td key={op.id} className={cn(
+                      "px-4 py-4 font-bold text-lg border-r border-primary-foreground/10 last:border-r-0 align-top",
+                      mensCellColor
+                    )}>
                       {editMode ? (
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={op.valor_mensal ?? ""}
-                          onChange={(e) =>
-                            updateDraftOperadora(
-                              op.id,
-                              "valor_mensal",
-                              e.target.value === "" ? null : parseFloat(e.target.value)
-                            )
-                          }
-                          className="h-9 text-base text-foreground"
-                          placeholder="0,00"
-                        />
+                        <div className="flex items-start gap-1.5">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={op.valor_mensal ?? ""}
+                            onChange={(e) =>
+                              updateDraftOperadora(
+                                op.id,
+                                "valor_mensal",
+                                e.target.value === "" ? null : parseFloat(e.target.value)
+                              )
+                            }
+                            className="h-9 text-base text-foreground"
+                            placeholder="0,00"
+                          />
+                          <CellColorPicker op={op} field="valor_mensal" />
+                        </div>
                       ) : (
                         <div>
                           {valorExibido !== null ? formatCurrency(valorExibido) : "—"}
@@ -837,9 +880,11 @@ export default function PublicPropostaPage() {
               const total = grupoInfo ? grupoInfo.total : (totalById.get(op.id) ?? null);
               const headerCls = headerClassFor(op);
               const borderCls = borderClassFor(op);
+              const planoCellColor = getCellColorClass((op as any).cores_celulas, "plano_nome");
+              const mensCellColor = getCellColorClass((op as any).cores_celulas, "valor_mensal");
               return (
                 <Card key={op.id} className={cn("overflow-hidden border-t-4", borderCls)}>
-                  <div className={cn("p-4", headerCls)}>
+                  <div className={cn("p-4", planoCellColor || headerCls)}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
                         {editMode ? (
@@ -852,7 +897,10 @@ export default function PublicPropostaPage() {
                               className="h-6 text-[10px] text-foreground bg-amber-50 border-amber-300"
                               placeholder='Grupo soma (admin)'
                             />
-                            <ColorPicker op={op} />
+                            <div className="flex items-center gap-1 flex-wrap">
+                              <ColorPicker op={op} />
+                              <CellColorPicker op={op} field="plano_nome" />
+                            </div>
                           </div>
                         ) : (
                           <>
@@ -889,41 +937,60 @@ export default function PublicPropostaPage() {
                         {DESTAQUE_LABELS[op.destaque_comercial]}
                       </Badge>
                     )}
-                    <div className="mt-3 pt-3 border-t border-white/20">
+                    <div className={cn("mt-3 pt-3 border-t border-white/20 -mx-4 -mb-4 px-4 pb-4", mensCellColor)}>
                       <p className="text-xs opacity-80 uppercase tracking-wide">
                         Mensalidade Total{grupoInfo ? " (grupo)" : ""}
                       </p>
                       {editMode ? (
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={op.valor_mensal ?? ""}
-                          onChange={(e) =>
-                            updateDraftOperadora(op.id, "valor_mensal", e.target.value === "" ? null : parseFloat(e.target.value))
-                          }
-                          className="h-9 text-base mt-1 text-foreground"
-                        />
+                        <div className="flex items-start gap-1.5 mt-1">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={op.valor_mensal ?? ""}
+                            onChange={(e) =>
+                              updateDraftOperadora(op.id, "valor_mensal", e.target.value === "" ? null : parseFloat(e.target.value))
+                            }
+                            className="h-9 text-base text-foreground"
+                          />
+                          <CellColorPicker op={op} field="valor_mensal" />
+                        </div>
                       ) : (
                         <p className="text-2xl font-bold">{total !== null ? formatCurrency(total) : "—"}</p>
                       )}
                     </div>
                   </div>
                   <div className="p-4 space-y-3 text-sm">
-                    {criterios.map((crit) => {
+                    {criteriosVisiveis.map((crit) => {
                       const v = op[crit.field as keyof Operadora] as string | null;
                       if (!editMode && !v) return null;
+                      const oculta = linhasOcultas.includes(crit.field as string);
                       const cellColor = getCellColorClass((op as any).cores_celulas, crit.field);
                       return (
                         <div
                           key={crit.label}
                           className={cn(
                             "flex flex-col gap-1 pb-2 border-b last:border-b-0 -mx-2 px-2 rounded",
-                            cellColor
+                            cellColor,
+                            editMode && oculta && "opacity-60"
                           )}
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{crit.label}</span>
-                            {editMode && <CellColorPicker op={op} field={crit.field} />}
+                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                              {crit.label}{editMode && oculta && <span className="ml-1 normal-case">(oculta)</span>}
+                            </span>
+                            {editMode && (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleLinhaOculta(crit.field as string)}
+                                  className="h-6 w-6 rounded border flex items-center justify-center hover:bg-muted shrink-0"
+                                  title={oculta ? "Exibir esta linha" : "Ocultar do cliente"}
+                                >
+                                  {oculta ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                </button>
+                                <CellColorPicker op={op} field={crit.field} />
+                              </div>
+                            )}
                           </div>
                           <div className="text-foreground">
                             {editMode ? renderEditableCell(op, crit) : renderCellValue(v)}
