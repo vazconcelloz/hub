@@ -809,9 +809,19 @@ export default function PublicPropostaPage() {
                     {criterios.map((crit) => {
                       const v = op[crit.field as keyof Operadora] as string | null;
                       if (!editMode && !v) return null;
+                      const cellColor = getCellColorClass((op as any).cores_celulas, crit.field);
                       return (
-                        <div key={crit.label} className="flex flex-col gap-1 pb-2 border-b last:border-b-0">
-                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{crit.label}</span>
+                        <div
+                          key={crit.label}
+                          className={cn(
+                            "flex flex-col gap-1 pb-2 border-b last:border-b-0 -mx-2 px-2 rounded",
+                            cellColor
+                          )}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{crit.label}</span>
+                            {editMode && <CellColorPicker op={op} field={crit.field} />}
+                          </div>
                           <div className="text-foreground">
                             {editMode ? renderEditableCell(op, crit) : renderCellValue(v)}
                           </div>
