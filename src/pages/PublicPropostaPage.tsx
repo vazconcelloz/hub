@@ -75,6 +75,76 @@ function parseCoparticipacaoDetalhes(val: any): CoparticipacaoItem[] {
   return [];
 }
 
+function CoparticipacaoEditor({
+  op,
+  onChange,
+}: {
+  op: Operadora;
+  onChange: (id: string, field: EditableOperadoraField, value: any) => void;
+}) {
+  const valor = ((op as any).coparticipacao ?? "").trim();
+  const eSimOuParcial = /^(sim|parcial)$/i.test(valor);
+  if (!eSimOuParcial) return null;
+
+  const atual = parseCoparticipacaoDetalhes((op as any).coparticipacao_detalhes);
+  const lista = atual.length > 0 ? atual : COPARTICIPACAO_ITENS_PADRAO;
+
+  const update = (next: CoparticipacaoItem[]) => {
+    const limpos = next.filter((d) => d.item.trim() || d.valor.trim());
+    onChange(op.id, "coparticipacao_detalhes", limpos.length > 0 ? limpos : null);
+  };
+
+  return (
+    <div className="mt-2 rounded-md border border-border/60 bg-background/40 p-2 space-y-1.5">
+      <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+        Detalhes da coparticipação
+      </div>
+      {lista.map((d, i) => (
+        <div key={`${d.item}-${i}`} className="flex items-center gap-1.5">
+          <Input
+            value={d.item}
+            onChange={(e) => {
+              const next = [...lista];
+              next[i] = { ...next[i], item: e.target.value };
+              update(next);
+            }}
+            placeholder="Item"
+            className="h-7 text-xs flex-1"
+          />
+          <Input
+            value={d.valor}
+            onChange={(e) => {
+              const next = [...lista];
+              next[i] = { ...next[i], valor: e.target.value };
+              update(next);
+            }}
+            placeholder="ex: 30% ou R$ 25"
+            className="h-7 text-xs w-32"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              const next = lista.filter((_, idx) => idx !== i);
+              update(next);
+            }}
+            className="h-7 w-7 rounded border flex items-center justify-center hover:bg-muted shrink-0"
+            title="Remover"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() => update([...lista, { item: "", valor: "" }])}
+        className="text-xs flex items-center gap-1 text-primary hover:underline"
+      >
+        <Plus className="w-3 h-3" /> Adicionar linha
+      </button>
+    </div>
+  );
+}
+
 export default function PublicPropostaPage() {
   const { slug } = useParams();
   const location = useLocation();
