@@ -208,29 +208,44 @@ export default function PublicPropostaPage() {
   };
 
   const view = editMode && draftProposta ? draftProposta : proposta;
-  const viewOpsRaw = editMode ? draftOperadoras : operadoras;
+  const viewOps = editMode ? draftOperadoras : operadoras;
 
-  // Para o cliente (não-admin), consolida planos com o mesmo `grupo_soma` num único plano virtual
-  // que mostra a soma das mensalidades. No modo admin, mostramos sempre todos individualmente.
-  const viewOps = useMemo<Operadora[]>(() => {
-    if (editMode) return viewOpsRaw;
-    const consolidados = consolidarGruposSoma(viewOpsRaw as any);
-    return consolidados.map((entry) => {
-      if (!entry.isGrupo) return entry.representante as Operadora;
-      const rep = entry.representante as Operadora;
-      const total = somarValoresMensais(entry.membros as any);
-      const nomes = entry.membros
-        .map((m: any) => (m.plano_nome ? String(m.plano_nome).trim() : ""))
-        .filter(Boolean)
-        .join(" + ");
-      return {
-        ...rep,
-        id: `grupo-${entry.grupoLabel}-${rep.id}`,
-        valor_mensal: total,
-        plano_nome: nomes || rep.plano_nome,
-      } as Operadora;
-    });
-  }, [editMode, viewOpsRaw]);
+  // Mapa: id do plano → info do grupo de soma a que pertence (apenas grupos com 2+ membros).
+  // No CLIENTE, a célula "Mensalidade Total" exibe a soma do grupo (mesmo valor para cada coluna do grupo)
+  // e um selo discreto indica que aquele plano está somado com outros.
+  // Colunas continuam separadas — só a mensalidade muda.
+  const grupoSomaInfoById = useMemo(() => {
+    const map = new Map<string, { total: number | null; membros: Operadora[]; label: string; cor: string }>();
+    if (editMode) return map; // admin sempre vê valores individuais
+    const grupos = new Map<string, Operadora[]>();
+    for (const op of viewOps) {
+      const g = ((op as any).grupo_soma || "").trim();
+      if (!g) continue;
+      const key = g.toLowerCase();
+      if (!grupos.has(key)) grupos.set(key, []);
+      grupos.get(key)!.push(op);
+    }
+    // Paleta de cores para diferenciar visualmente os grupos
+    const palette = [
+      "bg-amber-100 text-amber-900 border-amber-300",
+      "bg-sky-100 text-sky-900 border-sky-300",
+      "bg-emerald-100 text-emerald-900 border-emerald-300",
+      "bg-violet-100 text-violet-900 border-violet-300",
+      "bg-rose-100 text-rose-900 border-rose-300",
+    ];
+    let idx = 0;
+    for (const [, membros] of grupos) {
+      if (membros.length < 2) continue;
+      const total = somarValoresMensais(membros as any);
+      const label = ((membros[0] as any).grupo_soma || "").trim();
+      const cor = palette[idx % palette.length];
+      idx++;
+      for (const m of membros) {
+        map.set(m.id, { total, membros, label, cor });
+      }
+    }
+    return map;
+  }, [editMode, viewOps]);
 
   const whatsappLink = (message: string) => {
     if (!proposta?.consultora_telefone) return "#";
