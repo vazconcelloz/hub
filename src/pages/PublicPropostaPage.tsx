@@ -126,6 +126,19 @@ export default function PublicPropostaPage() {
     );
   };
 
+  const updateCellColor = (id: string, field: string, colorKey: string | null) => {
+    setDraftOperadoras((ops) =>
+      ops.map((o) => {
+        if (o.id !== id) return o;
+        const current = ((o as any).cores_celulas ?? {}) as Record<string, string>;
+        const next = { ...current };
+        if (colorKey === null) delete next[field];
+        else next[field] = colorKey;
+        return { ...o, cores_celulas: Object.keys(next).length > 0 ? next : null } as any;
+      })
+    );
+  };
+
   const handleSave = async () => {
     if (!draftProposta || !proposta) return;
     setSaving(true);
