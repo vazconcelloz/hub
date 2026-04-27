@@ -580,12 +580,14 @@ export default function PublicPropostaPage() {
                 </th>
                 {ops.map((op) => {
                   const planoCellColor = getCellColorClass((op as any).cores_celulas, "plano_nome");
+                  const hasColColor = !!(op as any).cor_coluna;
+                  const headerBg = planoCellColor || (hasColColor ? headerClassFor(op) : (rotuloColClass || headerClassFor(op)));
                   return (
                   <th
                     key={op.id}
                     className={cn(
                       "text-left px-4 py-3 font-semibold align-top border-r border-white/10 last:border-r-0 min-w-[180px]",
-                      planoCellColor || headerClassFor(op)
+                      headerBg
                     )}
                   >
                     <div className="space-y-1">
@@ -726,11 +728,8 @@ export default function PublicPropostaPage() {
               })}
             </tbody>
             <tfoot>
-              <tr className="bg-primary text-primary-foreground">
-                <td className={cn(
-                  "px-4 py-4 font-bold uppercase tracking-wide text-sm border-r border-primary-foreground/10",
-                  rotuloColClass
-                )}>
+              <tr className={cn("text-primary-foreground", rotuloColClass || "bg-primary")}>
+                <td className="px-4 py-4 font-bold uppercase tracking-wide text-sm border-r border-primary-foreground/10">
                   Mensalidade Total
                 </td>
                 {ops.map((op, i) => {
