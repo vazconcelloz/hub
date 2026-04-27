@@ -448,6 +448,7 @@ export default function PublicPropostaPage() {
           <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="Sim">Sim</SelectItem>
+            <SelectItem value="Parcial">Parcial</SelectItem>
             <SelectItem value="Não">Não</SelectItem>
           </SelectContent>
         </Select>
