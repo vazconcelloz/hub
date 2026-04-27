@@ -124,7 +124,7 @@ export default function PublicPropostaPage() {
         .split(/[\n,;]+/)
         .map((s) => s.replace(/^[-•*\d.)\s]+/, "").trim())
         .filter((s) => s.length > 1)
-        .slice(0, 5);
+        .slice(0, 3);
       return (
         <ul className="text-xs space-y-1 text-left">
           {items.map((s, i) => (
