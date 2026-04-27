@@ -77,27 +77,28 @@ IMPORTANTE: Um PDF pode conter MÚLTIPLOS planos (ex: Amil Black I QP R1, R2, R3
                   },
                   coparticipacao: {
                     type: "string",
-                    description: "Informações sobre coparticipação (ex: 'Sim, 30% em consultas e exames' ou 'Sem coparticipação')",
+                    enum: ["Sim", "Não", ""],
+                    description: "Responda APENAS 'Sim' se o plano tiver coparticipação, ou 'Não' se não tiver. Se não conseguir identificar com clareza no documento, retorne string vazia.",
                   },
                   acomodacao: {
                     type: "string",
-                    description: "Tipo de acomodação (ex: 'Apartamento', 'Enfermaria')",
+                    description: "Tipo de acomodação (ex: 'Apartamento', 'Enfermaria'). Apenas se explícito no PDF.",
                   },
                   abrangencia: {
                     type: "string",
-                    description: "Área de abrangência (ex: 'Nacional', 'Estadual - SP', 'Regional')",
+                    description: "Área de abrangência (ex: 'Nacional', 'Estadual - SP', 'Regional'). EXTRAIA APENAS se estiver EXPLICITAMENTE escrito no PDF. Se não houver menção clara à abrangência, retorne string vazia. NÃO INVENTE.",
                   },
                   reembolso: {
                     type: "string",
-                    description: "Informações sobre reembolso, se disponível",
+                    description: "Informações sobre reembolso, apenas se explícito no PDF. Caso contrário, string vazia.",
                   },
                   resumo_cobertura: {
                     type: "string",
-                    description: "Resumo das coberturas principais (consultas, exames, internação, etc.)",
+                    description: "Resumo das coberturas principais (consultas, exames, internação, etc.), apenas se constar no PDF.",
                   },
                   rede_credenciada_resumo: {
                     type: "string",
-                    description: "Liste no máximo 5 hospitais e laboratórios da rede credenciada mais próximos da região do cliente, um por linha. Apenas nomes, sem descrições adicionais.",
+                    description: "Liste EXATAMENTE 3 hospitais (no máximo) da rede credenciada — os MAIS RELEVANTES e reconhecidos da região do cliente (priorize hospitais de grande porte, referência em alta complexidade, mais conhecidos publicamente). Um nome por linha, apenas o nome do hospital, sem descrições.",
                   },
                   previsao_reajuste_faixa: {
                     type: "string",
