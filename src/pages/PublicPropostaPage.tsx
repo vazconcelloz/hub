@@ -14,7 +14,6 @@ import {
   getCellColorClass,
   getCellColorKey,
   agruparPorOperadora,
-  consolidarGruposSoma,
   somarValoresMensais,
   parseFaixasEtarias,
   parseIdades,
@@ -29,7 +28,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Shield, MessageCircle, FileText, MapPin, Calendar, Heart, Pencil, Save, X, ExternalLink, Palette, Scale, Check } from "lucide-react";
+import { Shield, MessageCircle, FileText, MapPin, Calendar, Heart, Pencil, Save, X, ExternalLink, Palette, Scale, Check, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -208,29 +207,44 @@ export default function PublicPropostaPage() {
   };
 
   const view = editMode && draftProposta ? draftProposta : proposta;
-  const viewOpsRaw = editMode ? draftOperadoras : operadoras;
+  const viewOps = editMode ? draftOperadoras : operadoras;
 
-  // Para o cliente (não-admin), consolida planos com o mesmo `grupo_soma` num único plano virtual
-  // que mostra a soma das mensalidades. No modo admin, mostramos sempre todos individualmente.
-  const viewOps = useMemo<Operadora[]>(() => {
-    if (editMode) return viewOpsRaw;
-    const consolidados = consolidarGruposSoma(viewOpsRaw as any);
-    return consolidados.map((entry) => {
-      if (!entry.isGrupo) return entry.representante as Operadora;
-      const rep = entry.representante as Operadora;
-      const total = somarValoresMensais(entry.membros as any);
-      const nomes = entry.membros
-        .map((m: any) => (m.plano_nome ? String(m.plano_nome).trim() : ""))
-        .filter(Boolean)
-        .join(" + ");
-      return {
-        ...rep,
-        id: `grupo-${entry.grupoLabel}-${rep.id}`,
-        valor_mensal: total,
-        plano_nome: nomes || rep.plano_nome,
-      } as Operadora;
-    });
-  }, [editMode, viewOpsRaw]);
+  // Mapa: id do plano → info do grupo de soma a que pertence (apenas grupos com 2+ membros).
+  // No CLIENTE, a célula "Mensalidade Total" exibe a soma do grupo (mesmo valor para cada coluna do grupo)
+  // e um selo discreto indica que aquele plano está somado com outros.
+  // Colunas continuam separadas — só a mensalidade muda.
+  const grupoSomaInfoById = useMemo(() => {
+    const map = new Map<string, { total: number | null; membros: Operadora[]; label: string; cor: string }>();
+    if (editMode) return map; // admin sempre vê valores individuais
+    const grupos = new Map<string, Operadora[]>();
+    for (const op of viewOps) {
+      const g = ((op as any).grupo_soma || "").trim();
+      if (!g) continue;
+      const key = g.toLowerCase();
+      if (!grupos.has(key)) grupos.set(key, []);
+      grupos.get(key)!.push(op);
+    }
+    // Paleta de cores para diferenciar visualmente os grupos
+    const palette = [
+      "bg-amber-100 text-amber-900 border-amber-300",
+      "bg-sky-100 text-sky-900 border-sky-300",
+      "bg-emerald-100 text-emerald-900 border-emerald-300",
+      "bg-violet-100 text-violet-900 border-violet-300",
+      "bg-rose-100 text-rose-900 border-rose-300",
+    ];
+    let idx = 0;
+    for (const [, membros] of grupos) {
+      if (membros.length < 2) continue;
+      const total = somarValoresMensais(membros as any);
+      const label = ((membros[0] as any).grupo_soma || "").trim();
+      const cor = palette[idx % palette.length];
+      idx++;
+      for (const m of membros) {
+        map.set(m.id, { total, membros, label, cor });
+      }
+    }
+    return map;
+  }, [editMode, viewOps]);
 
   const whatsappLink = (message: string) => {
     if (!proposta?.consultora_telefone) return "#";
@@ -469,7 +483,12 @@ export default function PublicPropostaPage() {
   // Quando `showOperadoraInHeader` é true, exibe o nome da operadora junto ao plano (usado no modal de comparação misturando operadoras).
   const renderComparativeTable = (ops: Operadora[], opts: { showOperadoraInHeader?: boolean } = {}) => {
     const { showOperadoraInHeader = false } = opts;
-    const totais = ops.map((op) => totalById.get(op.id) ?? null);
+    // Para cada plano, usa o total do grupo de soma (se aplicável) — isso garante que
+    // o cálculo de "economia vs. mais caro" e o destaque maior valor considerem o total do grupo.
+    const totais = ops.map((op) => {
+      const grupo = grupoSomaInfoById.get(op.id);
+      return grupo ? grupo.total : (totalById.get(op.id) ?? null);
+    });
     const maior = Math.max(...totais.filter((t): t is number => t !== null), 0);
     const algum = totais.some((t) => t !== null);
 
@@ -550,6 +569,21 @@ export default function PublicPropostaPage() {
                           {op.plano_nome && (
                             <div className="text-base leading-tight font-bold">{op.plano_nome}</div>
                           )}
+                          {(() => {
+                            const info = grupoSomaInfoById.get(op.id);
+                            if (!info) return null;
+                            const outros = info.membros
+                              .filter((m) => m.id !== op.id)
+                              .map((m) => m.plano_nome || m.operadora_nome)
+                              .filter(Boolean)
+                              .join(" + ");
+                            return (
+                              <div className={cn("mt-2 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded border", info.cor)}>
+                                <Plus className="w-2.5 h-2.5" />
+                                Somado com: {outros || "outro plano"}
+                              </div>
+                            );
+                          })()}
                           {op.destaque_comercial && DESTAQUE_LABELS[op.destaque_comercial] && (
                             <Badge className={`mt-2 text-[10px] px-2 py-0.5 ${DESTAQUE_COLORS[op.destaque_comercial]}`}>
                               {DESTAQUE_LABELS[op.destaque_comercial]}
@@ -597,32 +631,46 @@ export default function PublicPropostaPage() {
                 <td className="px-4 py-4 font-bold uppercase tracking-wide text-sm border-r border-primary-foreground/10">
                   Mensalidade Total
                 </td>
-                {ops.map((op, i) => (
-                  <td key={op.id} className="px-4 py-4 font-bold text-lg border-r border-primary-foreground/10 last:border-r-0">
-                    {editMode ? (
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={op.valor_mensal ?? ""}
-                        onChange={(e) =>
-                          updateDraftOperadora(
-                            op.id,
-                            "valor_mensal",
-                            e.target.value === "" ? null : parseFloat(e.target.value)
-                          )
-                        }
-                        className="h-9 text-base text-foreground"
-                        placeholder="0,00"
-                      />
-                    ) : totais[i] !== null ? formatCurrency(totais[i]) : "—"}
-                  </td>
-                ))}
+                {ops.map((op, i) => {
+                  const grupoInfo = grupoSomaInfoById.get(op.id);
+                  const valorExibido = grupoInfo ? grupoInfo.total : totais[i];
+                  return (
+                    <td key={op.id} className="px-4 py-4 font-bold text-lg border-r border-primary-foreground/10 last:border-r-0 align-top">
+                      {editMode ? (
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={op.valor_mensal ?? ""}
+                          onChange={(e) =>
+                            updateDraftOperadora(
+                              op.id,
+                              "valor_mensal",
+                              e.target.value === "" ? null : parseFloat(e.target.value)
+                            )
+                          }
+                          className="h-9 text-base text-foreground"
+                          placeholder="0,00"
+                        />
+                      ) : (
+                        <div>
+                          {valorExibido !== null ? formatCurrency(valorExibido) : "—"}
+                          {grupoInfo && (
+                            <div className="text-[10px] font-normal opacity-80 mt-0.5 normal-case tracking-normal">
+                              total do grupo
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  );
+                })}
               </tr>
               {!editMode && algum && ops.length > 1 && (
                 <tr className="bg-accent/20">
                   <td className="px-4 py-3 font-medium text-foreground border-r border-border">Economia vs. mais caro</td>
                   {ops.map((op, i) => {
-                    const t = totais[i];
+                    const grupoInfo = grupoSomaInfoById.get(op.id);
+                    const t = grupoInfo ? grupoInfo.total : totais[i];
                     const economia = t !== null ? maior - t : 0;
                     return (
                       <td key={op.id} className="px-4 py-3 font-semibold text-foreground border-r border-border last:border-r-0">
@@ -785,7 +833,8 @@ export default function PublicPropostaPage() {
               {g.nome}
             </h2>
             {g.planos.map((op) => {
-              const total = totalById.get(op.id) ?? null;
+              const grupoInfo = grupoSomaInfoById.get(op.id);
+              const total = grupoInfo ? grupoInfo.total : (totalById.get(op.id) ?? null);
               const headerCls = headerClassFor(op);
               const borderCls = borderClassFor(op);
               return (
@@ -808,6 +857,19 @@ export default function PublicPropostaPage() {
                         ) : (
                           <>
                             {op.plano_nome && <h3 className="font-bold text-lg leading-tight">{op.plano_nome}</h3>}
+                            {grupoInfo && (() => {
+                              const outros = grupoInfo.membros
+                                .filter((m) => m.id !== op.id)
+                                .map((m) => m.plano_nome || m.operadora_nome)
+                                .filter(Boolean)
+                                .join(" + ");
+                              return (
+                                <div className={cn("mt-2 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded border", grupoInfo.cor)}>
+                                  <Plus className="w-2.5 h-2.5" />
+                                  Somado com: {outros || "outro plano"}
+                                </div>
+                              );
+                            })()}
                           </>
                         )}
                       </div>
@@ -828,7 +890,9 @@ export default function PublicPropostaPage() {
                       </Badge>
                     )}
                     <div className="mt-3 pt-3 border-t border-white/20">
-                      <p className="text-xs opacity-80 uppercase tracking-wide">Mensalidade Total</p>
+                      <p className="text-xs opacity-80 uppercase tracking-wide">
+                        Mensalidade Total{grupoInfo ? " (grupo)" : ""}
+                      </p>
                       {editMode ? (
                         <Input
                           type="number"
