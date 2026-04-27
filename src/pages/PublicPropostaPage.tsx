@@ -44,6 +44,7 @@ type EditableOperadoraField =
   | "reembolso"
   | "resumo_cobertura"
   | "rede_credenciada_resumo"
+  | "faixas_etarias"
   | "destaque_comercial"
   | "cor_coluna"
   | "cores_celulas"
