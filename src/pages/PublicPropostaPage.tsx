@@ -224,6 +224,18 @@ export default function PublicPropostaPage() {
     );
   };
 
+  // Aplica a mesma cor de coluna a todos os planos de uma operadora.
+  // Permite que cada operadora tenha sua cor independente das demais.
+  const updateOperadoraColor = (operadoraNome: string, colorKey: string | null) => {
+    setDraftOperadoras((ops) =>
+      ops.map((o) =>
+        (o.operadora_nome ?? "").trim().toLowerCase() === operadoraNome.trim().toLowerCase()
+          ? ({ ...o, cor_coluna: colorKey } as any)
+          : o
+      )
+    );
+  };
+
   const updateCellColor = (id: string, field: string, colorKey: string | null) => {
     setDraftOperadoras((ops) =>
       ops.map((o) => {
@@ -644,6 +656,36 @@ export default function PublicPropostaPage() {
         <PopoverContent className="w-64 p-3">
           <p className="text-xs font-medium mb-2">Cor da coluna inteira</p>
           {renderPalette(current, (k) => updateDraftOperadora(op.id, "cor_coluna", k as any))}
+        </PopoverContent>
+      </Popover>
+    );
+  };
+
+  // Seletor de cor para a OPERADORA inteira (aplica a todos os planos do grupo)
+  const OperadoraColorPicker = ({ operadoraNome, planos }: { operadoraNome: string; planos: Operadora[] }) => {
+    // pega a cor mais comum entre os planos como "atual"
+    const current = (planos.find((p) => (p as any).cor_coluna)?.cor_coluna ?? null) as string | null;
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className={cn(
+              "h-7 px-2 text-[11px] gap-1 shrink-0",
+              current && COLUNA_COLORS[current]?.header
+            )}
+            title="Cor desta operadora"
+          >
+            <Palette className={cn("w-3 h-3", current ? "text-white" : "text-muted-foreground")} />
+            Cor da operadora
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64 p-3">
+          <p className="text-xs font-medium mb-2">Cor da operadora "{operadoraNome}"</p>
+          <p className="text-[10px] text-muted-foreground mb-2">Aplica a todos os planos desta tabela.</p>
+          {renderPalette(current, (k) => updateOperadoraColor(operadoraNome, k))}
         </PopoverContent>
       </Popover>
     );
@@ -1080,8 +1122,11 @@ export default function PublicPropostaPage() {
       <section className="container py-8 md:py-10 hidden md:block space-y-8">
         {grupos.map((g) => (
           <div key={g.nome} className="space-y-3">
-            <div className="flex items-baseline justify-between gap-3">
-              <h2 className="text-xl md:text-2xl font-bold text-foreground tracking-tight">{g.nome}</h2>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h2 className="text-xl md:text-2xl font-bold text-foreground tracking-tight">{g.nome}</h2>
+                {editMode && <OperadoraColorPicker operadoraNome={g.nome} planos={g.planos} />}
+              </div>
               <span className="text-xs uppercase tracking-wider text-muted-foreground">
                 {g.planos.length} {g.planos.length === 1 ? "plano" : "planos"}
               </span>
@@ -1095,9 +1140,12 @@ export default function PublicPropostaPage() {
       <section className="container py-6 md:hidden space-y-6">
         {grupos.map((g) => (
           <div key={g.nome} className="space-y-3">
-            <h2 className="text-sm uppercase tracking-wider font-semibold text-muted-foreground border-b pb-1">
-              {g.nome}
-            </h2>
+            <div className="flex items-center justify-between gap-2 border-b pb-1 flex-wrap">
+              <h2 className="text-sm uppercase tracking-wider font-semibold text-muted-foreground">
+                {g.nome}
+              </h2>
+              {editMode && <OperadoraColorPicker operadoraNome={g.nome} planos={g.planos} />}
+            </div>
             {g.planos.map((op) => {
               const grupoInfo = grupoSomaInfoById.get(op.id);
               const total = grupoInfo ? grupoInfo.total : (totalById.get(op.id) ?? null);
