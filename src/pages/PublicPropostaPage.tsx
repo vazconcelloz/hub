@@ -834,7 +834,8 @@ export default function PublicPropostaPage() {
               {g.nome}
             </h2>
             {g.planos.map((op) => {
-              const total = totalById.get(op.id) ?? null;
+              const grupoInfo = grupoSomaInfoById.get(op.id);
+              const total = grupoInfo ? grupoInfo.total : (totalById.get(op.id) ?? null);
               const headerCls = headerClassFor(op);
               const borderCls = borderClassFor(op);
               return (
@@ -857,6 +858,19 @@ export default function PublicPropostaPage() {
                         ) : (
                           <>
                             {op.plano_nome && <h3 className="font-bold text-lg leading-tight">{op.plano_nome}</h3>}
+                            {grupoInfo && (() => {
+                              const outros = grupoInfo.membros
+                                .filter((m) => m.id !== op.id)
+                                .map((m) => m.plano_nome || m.operadora_nome)
+                                .filter(Boolean)
+                                .join(" + ");
+                              return (
+                                <div className={cn("mt-2 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded border", grupoInfo.cor)}>
+                                  <Plus className="w-2.5 h-2.5" />
+                                  Somado com: {outros || "outro plano"}
+                                </div>
+                              );
+                            })()}
                           </>
                         )}
                       </div>
@@ -877,7 +891,9 @@ export default function PublicPropostaPage() {
                       </Badge>
                     )}
                     <div className="mt-3 pt-3 border-t border-white/20">
-                      <p className="text-xs opacity-80 uppercase tracking-wide">Mensalidade Total</p>
+                      <p className="text-xs opacity-80 uppercase tracking-wide">
+                        Mensalidade Total{grupoInfo ? " (grupo)" : ""}
+                      </p>
                       {editMode ? (
                         <Input
                           type="number"
