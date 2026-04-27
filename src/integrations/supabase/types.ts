@@ -24,6 +24,7 @@ export type Database = {
           created_at: string
           destaque_comercial: string | null
           faixas_etarias: string | null
+          grupo_soma: string | null
           id: string
           operadora_nome: string
           ordem_exibicao: number
@@ -46,6 +47,7 @@ export type Database = {
           created_at?: string
           destaque_comercial?: string | null
           faixas_etarias?: string | null
+          grupo_soma?: string | null
           id?: string
           operadora_nome: string
           ordem_exibicao?: number
@@ -68,6 +70,7 @@ export type Database = {
           created_at?: string
           destaque_comercial?: string | null
           faixas_etarias?: string | null
+          grupo_soma?: string | null
           id?: string
           operadora_nome?: string
           ordem_exibicao?: number
