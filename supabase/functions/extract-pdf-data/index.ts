@@ -168,17 +168,40 @@ IMPORTANTE: Um PDF pode conter MÚLTIPLOS planos (ex: Amil Black I QP R1, R2, R3
                   },
                   planos: {
                     type: "array",
-                    description: "Array com TODOS os planos encontrados no documento. Cada plano tem seu nome, valor mensal (se único) e suas faixas etárias com valores.",
+                    description: "Array com TODOS os planos encontrados no documento, TODOS da MESMA operadora informada em operadora_nome. Cada plano tem seu nome, valor mensal (se único) e suas faixas etárias com valores. Quando os planos diferem em coparticipação/acomodação/abrangência/reembolso, preencha esses campos POR plano aqui.",
                     items: {
                       type: "object",
                       properties: {
                         plano_nome: {
                           type: "string",
-                          description: "Nome do plano específico (ex: Amil Black I QP R1, Amil Black S2500 QP R2)",
+                          description: "Nome do plano específico SEM repetir o nome da operadora (ex: 'Black I QP R1', 'S2500 QP R2', 'Premium 200', 'Smart 400'). Se na fonte original aparece 'Amil Black I QP R1' e a operadora já é 'Amil', registre apenas 'Black I QP R1'.",
                         },
                         valor_mensal: {
                           type: "number",
                           description: "Valor mensal TOTAL do plano em R$ (apenas número, sem símbolos, ex: 1234.56). PROCURE ATIVAMENTE por termos como: 'Valor Total', 'Total Mensal', 'Mensalidade Total', 'Total a Pagar', 'Valor da Mensalidade', 'Mensalidade', 'Preço Total', 'Total do Plano', 'Valor Final', 'Total Geral', 'Soma Total'. Se houver UM valor consolidado/total destacado para o plano (geralmente no rodapé da proposta, em destaque, ou após a tabela de faixas etárias), EXTRAIA esse valor aqui. Apenas se o PDF não apresentar nenhum valor total/consolidado e tiver SOMENTE a tabela de faixas etárias, omita ou retorne 0. NUNCA invente valores.",
+                        },
+                        coparticipacao: {
+                          type: "string",
+                          enum: ["Sim", "Não", ""],
+                          description: "Coparticipação ESPECÍFICA deste plano (Sim/Não). Preencha quando o PDF distinguir entre planos. Caso contrário deixe vazio para herdar do nível superior.",
+                        },
+                        acomodacao: {
+                          type: "string",
+                          enum: ["Enfermaria", "Apartamento", ""],
+                          description: "Acomodação ESPECÍFICA deste plano (Enfermaria/Apartamento). Preencha quando diferir entre planos.",
+                        },
+                        abrangencia: {
+                          type: "string",
+                          description: "Abrangência ESPECÍFICA deste plano. Preencha quando diferir entre planos.",
+                        },
+                        reembolso: {
+                          type: "string",
+                          enum: ["Sim", "Não", "Parcial", ""],
+                          description: "Reembolso ESPECÍFICO deste plano (Sim/Não/Parcial). Preencha quando diferir entre planos.",
+                        },
+                        resumo_cobertura: {
+                          type: "string",
+                          description: "Resumo de cobertura ESPECÍFICO deste plano. Preencha quando diferir entre planos.",
                         },
                         faixas_etarias: {
                           type: "string",
