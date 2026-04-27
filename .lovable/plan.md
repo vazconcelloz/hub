@@ -1,66 +1,56 @@
-## Plano: Reformatar a proposta pública como tabela comparativa horizontal (estilo FBN)
+## Edição inline na tela de visualização (somente admin logado)
 
-Hoje a página `/cotacao/[slug]` mostra cada operadora em um card vertical separado. A imagem de referência mostra um formato muito mais útil: **uma única tabela comparativa horizontal**, com critérios nas linhas e operadoras/planos nas colunas — fica fácil bater olho e comparar.
+Hoje a página `/cotacao/:slug` (`PublicPropostaPage.tsx`) é pública — qualquer pessoa com o link vê a proposta, e ninguém edita por ali. A edição só acontece em `/admin/proposta/:id`.
 
-### Como vai ficar
+A ideia é: quando **o próprio corretor (logado no portal)** abrir o link da cotação, ele possa editar os campos diretamente na tela de visualização, sem precisar ir até o formulário separado. Para o cliente (não logado), nada muda.
 
-```text
-┌───────────────────────┬─────────────┬─────────────┬─────────────┬─────────────┐
-│ COMPARATIVO DE PLANOS — TODAS AS OPÇÕES                             [logo]  │
-├───────────────────────┼─────────────┼─────────────┼─────────────┼─────────────┤
-│ Critério              │ Operadora A │ Operadora B │ Operadora C │ Operadora D │
-│                       │ Plano X     │ Plano Y     │ Plano Z     │ Plano W     │
-├───────────────────────┼─────────────┼─────────────┼─────────────┼─────────────┤
-│ Coparticipação        │ Não         │ Sim         │ Não         │ Sim         │
-│ Acomodação            │ Apto        │ Enfermaria  │ Apto        │ Apto        │
-│ Abrangência           │ Nacional    │ Estadual    │ Nacional    │ Nacional    │
-│ Reembolso             │ R$ 1.031    │ R$ 880      │ —           │ R$ 439      │
-│ Cobertura             │ ...         │ ...         │ ...         │ ...         │
-│ Rede credenciada      │ Hosp 1...   │ Hosp 1...   │ Hosp 1...   │ Hosp 1...   │
-├───────────────────────┼─────────────┼─────────────┼─────────────┼─────────────┤
-│ MENSALIDADE TOTAL     │ R$ 56.600   │ R$ 39.306   │ R$ 40.029   │ R$ 40.820   │ ← linha destaque
-│ Economia vs. mais caro│ —           │ R$ 17.294   │ R$ 16.571   │ R$ 15.780   │
-└───────────────────────┴─────────────┴─────────────┴─────────────┴─────────────┘
+### Como vai funcionar
 
-[Notas/observações abaixo]
-[Bloco da consultora + botão WhatsApp]
-```
+1. **Detecção de admin na própria página pública**
+   - `PublicPropostaPage` passa a usar o `useAuth()` para saber se há um usuário logado.
+   - Além de logado, esse usuário precisa ser o **dono da proposta** (`proposta.user_id === user.id`). Só nesse caso o "modo edição" fica disponível.
+   - O cliente acessando pelo link continua vendo exatamente a mesma página de hoje (read-only).
 
-### Mudanças no código
+2. **Botão "Editar" no topo (só para o dono)**
+   - Aparece uma barra/flutuante no topo com:
+     - Botão **Editar** → entra em modo de edição inline.
+     - Em modo edição: botões **Salvar** e **Cancelar**.
+     - Link **Abrir editor completo** → leva para `/admin/proposta/:id` (caso prefira o formulário cheio).
 
-**Arquivo único alterado:** `src/pages/PublicPropostaPage.tsx`
+3. **Campos editáveis inline**
+   - **Dados do cliente / proposta** (cabeçalho): `nome_cliente`, `cidade`, `estado`, `tipo_produto`, `validade_proposta`.
+   - **Por operadora** (na tabela comparativa e nos cards mobile): `operadora_nome`, `plano_nome`, `valor_mensal`, `coparticipacao` (Sim/Não), `acomodacao`, `abrangencia`, `reembolso`, `resumo_cobertura`, `rede_credenciada_resumo`, `destaque_comercial`.
+   - Cada célula vira um input/select/textarea quando o modo edição está ativo. Visual de leitura mantém-se idêntico fora do modo edição.
 
-1. **Hero**: manter, mas mais enxuto (título + nome do cliente + cidade/validade). Trocar o título para "Comparativo de Planos".
+4. **Salvamento**
+   - "Salvar" dispara um update único:
+     - `update` em `propostas` (campos do cabeçalho).
+     - `update` em cada linha alterada de `proposta_operadoras`.
+   - As policies RLS atuais já permitem isso: `Users can update their own propostas` e `Users can update operadoras` validam `auth.uid() = user_id`. Ou seja, mesmo que um curioso tente forçar um update sem ser o dono, o banco bloqueia. Não precisa de migração.
+   - Após salvar: toast de sucesso e recarrega os dados.
 
-2. **Substituir o grid de cards por uma tabela comparativa**:
-   - Primeira coluna fixa = **rótulos dos critérios** (Plano, Coparticipação, Acomodação, Abrangência, Reembolso, Cobertura, Rede Credenciada, Mensalidade Total).
-   - Demais colunas = **uma por operadora** (`operadoras.map`), cabeçalho mostrando `operadora_nome` + `plano_nome` + badge de destaque (`Mais Econômico`, etc.) quando houver.
-   - Linha **"Mensalidade Total"** com destaque visual (fundo escuro, texto grande/branco) — usa `valor_mensal` ou, se houver `faixas_etarias` + `idades_beneficiarios`, o total calculado por `calcularTotalPorFaixas`.
-   - Linha extra **"Economia vs. mais caro"** calculada no client (maior total − total da coluna), exibida só se houver mais de uma operadora com valor.
-   - Cores alternadas por coluna (sutis) lembrando a referência, mas usando os tokens do `index.css` (sem cores hardcoded).
+5. **Cancelar**
+   - Restaura o estado original (snapshot feito ao entrar em modo edição) e sai do modo edição.
 
-3. **Responsividade**:
-   - Desktop/tablet: tabela horizontal completa dentro de um wrapper com `overflow-x-auto` (rola lateralmente se houver muitas operadoras).
-   - Mobile (<768px): a tabela horizontal fica difícil de ler, então **manter um fallback em cards empilhados** (basicamente o layout atual, simplificado). Controlado por classes Tailwind `hidden md:table` / `md:hidden`.
+### Segurança
 
-4. **Detalhamento por beneficiário e tabela de faixas etárias**: mover para uma seção **abaixo** da tabela comparativa, em accordion/cards colapsáveis por operadora (mantém a info, mas tira do caminho da comparação principal). Reaproveita a lógica já existente.
+- Verificação visual no front (mostrar/ocultar botão) **+** verificação real no banco via RLS.
+- Cliente sem sessão nunca vê os controles e, mesmo que tente chamar o update manualmente, o RLS bloqueia.
+- Nada muda nas policies — as existentes já cobrem o caso.
 
-5. **PDF da operadora**: vira um link pequeno ("Ver PDF") no rodapé de cada coluna, em vez de botão grande.
+### Arquivos afetados
 
-6. **Botão de WhatsApp da consultora**: manter o card final + botão fixo no canto. Sem mudanças.
+- `src/pages/PublicPropostaPage.tsx` — única alteração de código. Adiciona:
+  - `useAuth()` + flag `canEdit`.
+  - Estado `editMode`, `draftProposta`, `draftOperadoras`.
+  - Componentes inline (input/select/textarea) condicionais nos lugares onde hoje é só texto.
+  - Handlers `handleSave`, `handleCancel`, `handleEdit`.
+  - Barra superior com botões.
 
-7. **Observações gerais**: manter o card abaixo da tabela.
+### Fora do escopo (para manter o passo enxuto)
 
-### Detalhes técnicos
+- Adicionar/remover operadoras inline (continua só pelo `/admin/proposta/:id`).
+- Editar PDF, faixas etárias e foto da consultora inline (continua no formulário completo).
+- Edição inline das idades dos beneficiários (continua no formulário).
 
-- Usar `<table>` semântica com `<thead>`, `<tbody>`, `<tfoot>` para acessibilidade e impressão.
-- Classes Tailwind: `border-collapse`, `border`, `border-border`, `bg-muted/30` para linhas alternadas, `bg-primary text-primary-foreground` na linha de mensalidade total.
-- Helper interno `getTotalMensal(op)` que retorna `op.valor_mensal` ou recalcula via `calcularTotalPorFaixas` quando aplicável — assim a linha Total e a Economia ficam consistentes.
-- Sem novas dependências, sem mudanças de schema, sem edge functions.
-- O destaque comercial (`destaque_comercial`) vira um `Badge` no cabeçalho da coluna correspondente.
-
-### Fora de escopo (não mexer)
-
-- Schema do banco / edge functions.
-- Auth / login.
-- Página de admin / formulário de proposta.
+Esses casos seguem disponíveis pelo botão "Abrir editor completo".
