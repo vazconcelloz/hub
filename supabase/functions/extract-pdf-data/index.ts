@@ -26,7 +26,7 @@ serve(async (req) => {
     }
 
     const locationContext = cidade || estado
-      ? `\nO cliente está localizado em ${cidade || ""}${cidade && estado ? "/" : ""}${estado || ""}. Ao descrever a rede credenciada (campo rede_credenciada_resumo), PRIORIZE os melhores hospitais, laboratórios e clínicas mais próximos dessa região. Liste os nomes dos principais hospitais e laboratórios da rede nessa localidade.`
+      ? `\nO cliente está localizado em ${cidade || ""}${cidade && estado ? "/" : ""}${estado || ""}. Ao descrever a rede credenciada (campo rede_credenciada_resumo), liste APENAS os 3 hospitais MAIS RELEVANTES e reconhecidos da rede da operadora nessa região (priorize hospitais de grande porte, referência ou alta complexidade). Apenas nomes reais que constem no PDF ou que sejam comprovadamente da rede da operadora.`
       : "";
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`, {
