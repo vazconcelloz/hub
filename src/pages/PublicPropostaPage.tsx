@@ -48,7 +48,32 @@ type EditableOperadoraField =
   | "destaque_comercial"
   | "cor_coluna"
   | "cores_celulas"
+  | "coparticipacao_detalhes"
   | "grupo_soma";
+
+interface CoparticipacaoItem {
+  item: string;
+  valor: string;
+}
+
+const COPARTICIPACAO_ITENS_PADRAO: CoparticipacaoItem[] = [
+  { item: "Consulta", valor: "" },
+  { item: "Exames simples", valor: "" },
+  { item: "Exames complexos", valor: "" },
+  { item: "Terapias", valor: "" },
+  { item: "Pronto-socorro", valor: "" },
+  { item: "Internação", valor: "" },
+];
+
+function parseCoparticipacaoDetalhes(val: any): CoparticipacaoItem[] {
+  if (!val) return [];
+  if (Array.isArray(val)) {
+    return val
+      .filter((x) => x && typeof x === "object" && typeof x.item === "string")
+      .map((x) => ({ item: String(x.item), valor: String(x.valor ?? "") }));
+  }
+  return [];
+}
 
 export default function PublicPropostaPage() {
   const { slug } = useParams();
