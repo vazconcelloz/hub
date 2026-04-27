@@ -11,6 +11,8 @@ import {
   DESTAQUE_COLORS,
   COLUNA_COLORS,
   getColunaColor,
+  getCellColorClass,
+  getCellColorKey,
   agruparPorOperadora,
   parseFaixasEtarias,
   parseIdades,
