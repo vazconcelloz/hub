@@ -56,10 +56,9 @@ export default function PublicPropostaPage() {
   const [draftProposta, setDraftProposta] = useState<Proposta | null>(null);
   const [draftOperadoras, setDraftOperadoras] = useState<Operadora[]>([]);
 
-  const canEdit = useMemo(
-    () => !!user && !!proposta && proposta.user_id === user.id,
-    [user, proposta]
-  );
+  // Qualquer usuário autenticado no portal pode tentar editar.
+  // O RLS do banco garante que só o dono real consegue salvar de fato.
+  const canEdit = useMemo(() => !!user && !!proposta, [user, proposta]);
 
   useEffect(() => {
     loadProposta();
