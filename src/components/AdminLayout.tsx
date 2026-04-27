@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, FileText, Shield } from "lucide-react";
+import { LogOut, FileText, Shield, BookOpen } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -22,6 +22,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Button variant={location.pathname === "/admin" ? "default" : "ghost"} size="sm">
                 <FileText className="w-4 h-4 mr-1" />
                 <span className="hidden sm:inline">Propostas</span>
+              </Button>
+            </Link>
+            <Link to="/admin/catalogo">
+              <Button variant={location.pathname === "/admin/catalogo" ? "default" : "ghost"} size="sm">
+                <BookOpen className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">Catálogo</span>
               </Button>
             </Link>
             <Button variant="ghost" size="sm" onClick={signOut}>
