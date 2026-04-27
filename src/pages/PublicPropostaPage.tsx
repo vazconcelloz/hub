@@ -47,7 +47,8 @@ type EditableOperadoraField =
   | "rede_credenciada_resumo"
   | "destaque_comercial"
   | "cor_coluna"
-  | "cores_celulas";
+  | "cores_celulas"
+  | "grupo_soma";
 
 export default function PublicPropostaPage() {
   const { slug } = useParams();
@@ -163,7 +164,7 @@ export default function PublicPropostaPage() {
         const fieldsToCheck: EditableOperadoraField[] = [
           "operadora_nome","plano_nome","valor_mensal","coparticipacao","acomodacao",
           "abrangencia","reembolso","resumo_cobertura","rede_credenciada_resumo",
-          "destaque_comercial","cor_coluna","cores_celulas",
+          "destaque_comercial","cor_coluna","cores_celulas","grupo_soma",
         ];
         const changed = fieldsToCheck.some((f) => {
           const a = (original as any)[f];
@@ -188,6 +189,7 @@ export default function PublicPropostaPage() {
             destaque_comercial: draft.destaque_comercial,
             cor_coluna: (draft as any).cor_coluna,
             cores_celulas: (draft as any).cores_celulas ?? null,
+            grupo_soma: ((draft as any).grupo_soma || "").trim() || null,
           } as any)
           .eq("id", draft.id);
         if (e2) throw e2;
