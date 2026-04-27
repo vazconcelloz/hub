@@ -1073,7 +1073,7 @@ export default function PublicPropostaPage() {
                             )}
                           </div>
                           <div className="text-foreground">
-                            {editMode ? renderEditableCell(op, crit) : renderCellValue(v)}
+                            {editMode ? renderEditableCell(op, crit) : (crit.field === "faixas_etarias" ? renderFaixasEtarias(v) : renderCellValue(v))}
                           </div>
                         </div>
                       );
