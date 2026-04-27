@@ -729,12 +729,9 @@ export default function PublicPropostaPage() {
               <tr className="bg-primary text-primary-foreground">
                 <td className={cn(
                   "px-4 py-4 font-bold uppercase tracking-wide text-sm border-r border-primary-foreground/10",
-                  getRotuloColorClass("valor_mensal")
+                  rotuloColClass
                 )}>
-                  <div className="flex items-center justify-between gap-2">
-                    <span>Mensalidade Total</span>
-                    {editMode && <RowLabelColorPicker field="valor_mensal" />}
-                  </div>
+                  Mensalidade Total
                 </td>
                 {ops.map((op, i) => {
                   const grupoInfo = grupoSomaInfoById.get(op.id);
