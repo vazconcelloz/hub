@@ -87,6 +87,7 @@ REGRA DE PREENCHIMENTO: Faça o MÁXIMO ESFORÇO para preencher TODOS os campos.
 - "acomodação" pode aparecer como "padrão de acomodação", "internação em apartamento/enfermaria", "quarto privativo", "quarto coletivo".
 - "reembolso" pode aparecer como "livre escolha", "reembolso integral", "reembolso parcial", "sem reembolso", "tabela de reembolso".
 - "abrangência" pode aparecer como "área de atuação", "área geográfica", "cobertura territorial".
+- "valor_mensal" (mensalidade total do plano): SEMPRE PROCURE PRIORITARIAMENTE por "Valor Total", "Total Mensal", "Mensalidade Total", "Total a Pagar", "Valor da Mensalidade", "Mensalidade", "Preço Total", "Total do Plano", "Valor Final", "Total Geral". Costuma estar em destaque (negrito, fonte maior) no rodapé da proposta ou abaixo da tabela de faixas etárias. Se encontrar, EXTRAIA esse valor para o campo valor_mensal do plano correspondente.
 Só retorne string vazia se REALMENTE não houver nenhuma informação no documento sobre o campo. NUNCA invente dados que não estejam comprovadamente no PDF.
 IMPORTANTE: Um PDF pode conter MÚLTIPLOS planos (ex: Amil Black I QP R1, R2, R3 e Amil Black S2500 QP R1, R2). Extraia TODOS os planos encontrados no documento, cada um com suas próprias faixas etárias e valores.${locationContext}`,
           },
