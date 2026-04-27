@@ -233,7 +233,7 @@ export default function DashboardPage() {
                     <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/proposta/${p.id}`)} title="Editar">
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => window.open(`/cotacao/${p.slug}`, "_blank")} title="Visualizar">
+                    <Button variant="ghost" size="icon" onClick={() => window.open(`/cotacao/${p.slug}?portal=1`, "_blank", "noopener,noreferrer")} title="Visualizar">
                       <Eye className="w-4 h-4" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => copyLink(p.slug)} title="Copiar link">
