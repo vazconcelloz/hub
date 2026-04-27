@@ -42,7 +42,7 @@ serve(async (req) => {
             role: "system",
             content: `Você é um especialista em extrair dados de documentos PDF de operadoras de planos de saúde e seguros no Brasil.
 Analise o conteúdo do PDF e extraia as informações solicitadas. Se não conseguir identificar algum campo, retorne string vazia para texto ou null para valor numérico.
-Extraia APENAS dados que estejam claramente presentes no documento. Não invente dados.
+REGRA CRÍTICA: Extraia APENAS dados que estejam EXPLICITAMENTE presentes no documento. NUNCA invente, deduza ou complete informações que não estejam claramente escritas no PDF. Se um campo não estiver no documento, retorne string vazia.
 IMPORTANTE: Um PDF pode conter MÚLTIPLOS planos (ex: Amil Black I QP R1, R2, R3 e Amil Black S2500 QP R1, R2). Extraia TODOS os planos encontrados no documento, cada um com suas próprias faixas etárias e valores.${locationContext}`,
           },
           {
