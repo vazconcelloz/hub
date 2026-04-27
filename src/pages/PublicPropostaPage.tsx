@@ -230,12 +230,15 @@ export default function PublicPropostaPage() {
   const algumComTotal = totais.some((t) => t !== null);
 
   // Define as linhas da tabela comparativa
-  const criterios: { label: string; field: EditableOperadoraField; type: "text" | "textarea" | "sim_nao" }[] = [
+  const criterios: {
+    label: string;
+    field: EditableOperadoraField;
+    type: "text" | "textarea" | "sim_nao" | "acomodacao" | "reembolso";
+  }[] = [
     { label: "Coparticipação", field: "coparticipacao", type: "sim_nao" },
-    { label: "Acomodação", field: "acomodacao", type: "text" },
+    { label: "Acomodação", field: "acomodacao", type: "acomodacao" },
     { label: "Abrangência", field: "abrangencia", type: "text" },
-    { label: "Reembolso", field: "reembolso", type: "text" },
-    { label: "Cobertura", field: "resumo_cobertura", type: "textarea" },
+    { label: "Reembolso", field: "reembolso", type: "reembolso" },
     { label: "Rede credenciada", field: "rede_credenciada_resumo", type: "textarea" },
   ];
 
@@ -263,16 +266,40 @@ export default function PublicPropostaPage() {
     const value = (op[crit.field] as string | null) ?? "";
     if (crit.type === "sim_nao") {
       return (
-        <Select
-          value={value || ""}
-          onValueChange={(v) => updateDraftOperadora(op.id, crit.field, v)}
-        >
+        <Select value={value || ""} onValueChange={(v) => updateDraftOperadora(op.id, crit.field, v)}>
           <SelectTrigger className="h-8 text-xs">
             <SelectValue placeholder="—" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="Sim">Sim</SelectItem>
             <SelectItem value="Não">Não</SelectItem>
+          </SelectContent>
+        </Select>
+      );
+    }
+    if (crit.type === "acomodacao") {
+      return (
+        <Select value={value || ""} onValueChange={(v) => updateDraftOperadora(op.id, crit.field, v)}>
+          <SelectTrigger className="h-8 text-xs">
+            <SelectValue placeholder="—" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Enfermaria">Enfermaria</SelectItem>
+            <SelectItem value="Apartamento">Apartamento</SelectItem>
+          </SelectContent>
+        </Select>
+      );
+    }
+    if (crit.type === "reembolso") {
+      return (
+        <Select value={value || ""} onValueChange={(v) => updateDraftOperadora(op.id, crit.field, v)}>
+          <SelectTrigger className="h-8 text-xs">
+            <SelectValue placeholder="—" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Sim">Sim</SelectItem>
+            <SelectItem value="Não">Não</SelectItem>
+            <SelectItem value="Parcial">Parcial</SelectItem>
           </SelectContent>
         </Select>
       );
