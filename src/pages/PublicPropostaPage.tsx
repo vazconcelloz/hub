@@ -897,7 +897,10 @@ export default function PublicPropostaPage() {
                               className="h-6 text-[10px] text-foreground bg-amber-50 border-amber-300"
                               placeholder='Grupo soma (admin)'
                             />
-                            <ColorPicker op={op} />
+                            <div className="flex items-center gap-1 flex-wrap">
+                              <ColorPicker op={op} />
+                              <CellColorPicker op={op} field="plano_nome" />
+                            </div>
                           </div>
                         ) : (
                           <>
