@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, Link, useSearchParams } from "react-router-dom";
+import { useLocation, useParams, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -38,6 +38,7 @@ type EditableOperadoraField =
 
 export default function PublicPropostaPage() {
   const { slug } = useParams();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const [proposta, setProposta] = useState<Proposta | null>(null);
@@ -51,7 +52,7 @@ export default function PublicPropostaPage() {
   const [draftProposta, setDraftProposta] = useState<Proposta | null>(null);
   const [draftOperadoras, setDraftOperadoras] = useState<Operadora[]>([]);
 
-  const isPortalPreview = searchParams.get("portal") === "1";
+  const isPortalPreview = location.pathname.startsWith("/admin/cotacao/") || searchParams.get("portal") === "1";
 
   // Só mostra edição quando a visualização foi aberta de dentro do portal.
   // O RLS do banco continua garantindo que apenas o dono real consiga salvar.
