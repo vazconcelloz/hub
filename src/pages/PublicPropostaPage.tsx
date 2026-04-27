@@ -161,9 +161,14 @@ export default function PublicPropostaPage() {
         const fieldsToCheck: EditableOperadoraField[] = [
           "operadora_nome","plano_nome","valor_mensal","coparticipacao","acomodacao",
           "abrangencia","reembolso","resumo_cobertura","rede_credenciada_resumo",
-          "destaque_comercial","cor_coluna",
+          "destaque_comercial","cor_coluna","cores_celulas",
         ];
-        const changed = fieldsToCheck.some((f) => (original as any)[f] !== (draft as any)[f]);
+        const changed = fieldsToCheck.some((f) => {
+          const a = (original as any)[f];
+          const b = (draft as any)[f];
+          if (f === "cores_celulas") return JSON.stringify(a ?? null) !== JSON.stringify(b ?? null);
+          return a !== b;
+        });
         if (!changed) continue;
 
         const { error: e2 } = await supabase
@@ -180,6 +185,7 @@ export default function PublicPropostaPage() {
             rede_credenciada_resumo: draft.rede_credenciada_resumo,
             destaque_comercial: draft.destaque_comercial,
             cor_coluna: (draft as any).cor_coluna,
+            cores_celulas: (draft as any).cores_celulas ?? null,
           } as any)
           .eq("id", draft.id);
         if (e2) throw e2;
