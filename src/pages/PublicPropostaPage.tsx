@@ -1140,9 +1140,12 @@ export default function PublicPropostaPage() {
       <section className="container py-6 md:hidden space-y-6">
         {grupos.map((g) => (
           <div key={g.nome} className="space-y-3">
-            <h2 className="text-sm uppercase tracking-wider font-semibold text-muted-foreground border-b pb-1">
-              {g.nome}
-            </h2>
+            <div className="flex items-center justify-between gap-2 border-b pb-1 flex-wrap">
+              <h2 className="text-sm uppercase tracking-wider font-semibold text-muted-foreground">
+                {g.nome}
+              </h2>
+              {editMode && <OperadoraColorPicker operadoraNome={g.nome} planos={g.planos} />}
+            </div>
             {g.planos.map((op) => {
               const grupoInfo = grupoSomaInfoById.get(op.id);
               const total = grupoInfo ? grupoInfo.total : (totalById.get(op.id) ?? null);
