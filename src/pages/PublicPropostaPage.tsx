@@ -618,10 +618,24 @@ export default function PublicPropostaPage() {
               </tr>
             </thead>
             <tbody>
-              {criterios.map((crit, rowIdx) => (
-                <tr key={crit.label} className={rowIdx % 2 === 0 ? "bg-background" : "bg-muted/40"}>
+              {criteriosVisiveis.map((crit, rowIdx) => {
+                const oculta = linhasOcultas.includes(crit.field as string);
+                return (
+                <tr key={crit.label} className={cn(rowIdx % 2 === 0 ? "bg-background" : "bg-muted/40", editMode && oculta && "opacity-60")}>
                   <td className="px-4 py-3 font-medium text-foreground border-r border-border align-top">
-                    {crit.label}
+                    <div className="flex items-center justify-between gap-2">
+                      <span>{crit.label}{editMode && oculta && <span className="ml-1 text-[10px] text-muted-foreground">(oculta)</span>}</span>
+                      {editMode && (
+                        <button
+                          type="button"
+                          onClick={() => toggleLinhaOculta(crit.field as string)}
+                          className="h-6 w-6 rounded border flex items-center justify-center hover:bg-muted shrink-0"
+                          title={oculta ? "Exibir esta linha para o cliente" : "Ocultar esta linha do cliente"}
+                        >
+                          {oculta ? <EyeOff className="w-3.5 h-3.5 text-muted-foreground" /> : <Eye className="w-3.5 h-3.5 text-muted-foreground" />}
+                        </button>
+                      )}
+                    </div>
                   </td>
                   {ops.map((op) => {
                     const cellColor = getCellColorClass((op as any).cores_celulas, crit.field);
