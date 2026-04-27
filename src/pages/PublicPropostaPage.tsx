@@ -266,16 +266,40 @@ export default function PublicPropostaPage() {
     const value = (op[crit.field] as string | null) ?? "";
     if (crit.type === "sim_nao") {
       return (
-        <Select
-          value={value || ""}
-          onValueChange={(v) => updateDraftOperadora(op.id, crit.field, v)}
-        >
+        <Select value={value || ""} onValueChange={(v) => updateDraftOperadora(op.id, crit.field, v)}>
           <SelectTrigger className="h-8 text-xs">
             <SelectValue placeholder="—" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="Sim">Sim</SelectItem>
             <SelectItem value="Não">Não</SelectItem>
+          </SelectContent>
+        </Select>
+      );
+    }
+    if (crit.type === "acomodacao") {
+      return (
+        <Select value={value || ""} onValueChange={(v) => updateDraftOperadora(op.id, crit.field, v)}>
+          <SelectTrigger className="h-8 text-xs">
+            <SelectValue placeholder="—" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Enfermaria">Enfermaria</SelectItem>
+            <SelectItem value="Apartamento">Apartamento</SelectItem>
+          </SelectContent>
+        </Select>
+      );
+    }
+    if (crit.type === "reembolso") {
+      return (
+        <Select value={value || ""} onValueChange={(v) => updateDraftOperadora(op.id, crit.field, v)}>
+          <SelectTrigger className="h-8 text-xs">
+            <SelectValue placeholder="—" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Sim">Sim</SelectItem>
+            <SelectItem value="Não">Não</SelectItem>
+            <SelectItem value="Parcial">Parcial</SelectItem>
           </SelectContent>
         </Select>
       );
