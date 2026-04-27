@@ -236,6 +236,7 @@ export default function PublicPropostaPage() {
             destaque_comercial: draft.destaque_comercial,
             cor_coluna: (draft as any).cor_coluna,
             cores_celulas: (draft as any).cores_celulas ?? null,
+            coparticipacao_detalhes: (draft as any).coparticipacao_detalhes ?? null,
             grupo_soma: ((draft as any).grupo_soma || "").trim() || null,
           } as any)
           .eq("id", draft.id);
