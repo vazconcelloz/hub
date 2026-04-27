@@ -515,6 +515,13 @@ export default function PublicPropostaPage() {
                             className="h-7 text-xs text-foreground"
                             placeholder="Plano"
                           />
+                          <Input
+                            value={(op as any).grupo_soma ?? ""}
+                            onChange={(e) => updateDraftOperadora(op.id, "grupo_soma" as any, e.target.value)}
+                            className="h-6 text-[10px] text-foreground bg-amber-50 border-amber-300"
+                            placeholder='Grupo soma (ex: "Sócios+Func")'
+                            title="Planos com o mesmo rótulo serão somados em um único card para o cliente. O cliente NÃO vê esse rótulo."
+                          />
                           <div className="flex items-center gap-1 flex-wrap">
                             <Select
                               value={op.destaque_comercial ?? "none"}
