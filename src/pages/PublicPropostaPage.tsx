@@ -150,6 +150,17 @@ export default function PublicPropostaPage() {
     });
   };
 
+  const updateRotuloColor = (field: string, colorKey: string | null) => {
+    setDraftProposta((p) => {
+      if (!p) return p;
+      const current = ((p as any).cores_rotulos ?? {}) as Record<string, string>;
+      const next = { ...current };
+      if (colorKey === null) delete next[field];
+      else next[field] = colorKey;
+      return { ...p, cores_rotulos: Object.keys(next).length > 0 ? next : null } as any;
+    });
+  };
+
   const handleSave = async () => {
     if (!draftProposta || !proposta) return;
     setSaving(true);
@@ -163,6 +174,7 @@ export default function PublicPropostaPage() {
           tipo_produto: draftProposta.tipo_produto,
           validade_proposta: draftProposta.validade_proposta,
           linhas_ocultas: (draftProposta as any).linhas_ocultas ?? [],
+          cores_rotulos: (draftProposta as any).cores_rotulos ?? null,
         } as any)
         .eq("id", proposta.id);
       if (e1) throw e1;
@@ -500,7 +512,38 @@ export default function PublicPropostaPage() {
     );
   };
 
-  // Resolve as classes de cor para um plano (cai pro primary se não tiver cor)
+  // Cor do rótulo (coluna esquerda) — vem da proposta, não do plano
+  const coresRotulos = ((view as any)?.cores_rotulos ?? {}) as Record<string, string>;
+  const getRotuloColorClass = (field: string): string => {
+    const key = coresRotulos[field];
+    if (!key) return "";
+    return COLUNA_COLORS[key]?.cell ?? "";
+  };
+  const RowLabelColorPicker = ({ field }: { field: string }) => {
+    const current = coresRotulos[field] ?? null;
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className={cn(
+              "h-6 w-6 p-0 border shadow-sm shrink-0 bg-background hover:bg-muted",
+              current && COLUNA_COLORS[current]?.header
+            )}
+            title="Cor desta linha (rótulo)"
+          >
+            <Palette className={cn("w-3 h-3", current ? "text-white" : "text-muted-foreground")} />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64 p-3">
+          <p className="text-xs font-medium mb-2">Cor do rótulo desta linha</p>
+          {renderPalette(current, (k) => updateRotuloColor(field, k))}
+        </PopoverContent>
+      </Popover>
+    );
+  };
   const headerClassFor = (op: Operadora) => {
     const c = getColunaColor((op as any).cor_coluna);
     return c ? c.header : "bg-primary text-primary-foreground";
@@ -530,8 +573,14 @@ export default function PublicPropostaPage() {
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr>
-                <th className="text-left px-4 py-3 font-semibold w-56 align-top border-r border-border bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
-                  Planos
+                <th className={cn(
+                  "text-left px-4 py-3 font-semibold w-56 align-top border-r border-border text-xs uppercase tracking-wide",
+                  getRotuloColorClass("plano_nome") || "bg-muted/60 text-muted-foreground"
+                )}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span>Planos</span>
+                    {editMode && <RowLabelColorPicker field="plano_nome" />}
+                  </div>
                 </th>
                 {ops.map((op) => {
                   const planoCellColor = getCellColorClass((op as any).cores_celulas, "plano_nome");
@@ -637,18 +686,24 @@ export default function PublicPropostaPage() {
                 const oculta = linhasOcultas.includes(crit.field as string);
                 return (
                 <tr key={crit.label} className={cn(rowIdx % 2 === 0 ? "bg-background" : "bg-muted/40", editMode && oculta && "opacity-60")}>
-                  <td className="px-4 py-3 font-medium text-foreground border-r border-border align-top">
+                  <td className={cn(
+                    "px-4 py-3 font-medium text-foreground border-r border-border align-top",
+                    getRotuloColorClass(crit.field as string)
+                  )}>
                     <div className="flex items-center justify-between gap-2">
                       <span>{crit.label}{editMode && oculta && <span className="ml-1 text-[10px] text-muted-foreground">(oculta)</span>}</span>
                       {editMode && (
-                        <button
-                          type="button"
-                          onClick={() => toggleLinhaOculta(crit.field as string)}
-                          className="h-6 w-6 rounded border flex items-center justify-center hover:bg-muted shrink-0"
-                          title={oculta ? "Exibir esta linha para o cliente" : "Ocultar esta linha do cliente"}
-                        >
-                          {oculta ? <EyeOff className="w-3.5 h-3.5 text-muted-foreground" /> : <Eye className="w-3.5 h-3.5 text-muted-foreground" />}
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <RowLabelColorPicker field={crit.field as string} />
+                          <button
+                            type="button"
+                            onClick={() => toggleLinhaOculta(crit.field as string)}
+                            className="h-6 w-6 rounded border flex items-center justify-center hover:bg-muted shrink-0"
+                            title={oculta ? "Exibir esta linha para o cliente" : "Ocultar esta linha do cliente"}
+                          >
+                            {oculta ? <EyeOff className="w-3.5 h-3.5 text-muted-foreground" /> : <Eye className="w-3.5 h-3.5 text-muted-foreground" />}
+                          </button>
+                        </div>
                       )}
                     </div>
                   </td>
@@ -679,8 +734,14 @@ export default function PublicPropostaPage() {
             </tbody>
             <tfoot>
               <tr className="bg-primary text-primary-foreground">
-                <td className="px-4 py-4 font-bold uppercase tracking-wide text-sm border-r border-primary-foreground/10">
-                  Mensalidade Total
+                <td className={cn(
+                  "px-4 py-4 font-bold uppercase tracking-wide text-sm border-r border-primary-foreground/10",
+                  getRotuloColorClass("valor_mensal")
+                )}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span>Mensalidade Total</span>
+                    {editMode && <RowLabelColorPicker field="valor_mensal" />}
+                  </div>
                 </td>
                 {ops.map((op, i) => {
                   const grupoInfo = grupoSomaInfoById.get(op.id);
