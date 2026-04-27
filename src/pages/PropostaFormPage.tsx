@@ -491,14 +491,25 @@ export default function PropostaFormPage() {
           </CardContent>
         </Card>
 
-        {/* Operadoras */}
+        {/* Operadoras e planos */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">Operadoras</h2>
+            <h2 className="text-xl font-bold">Operadoras e Planos</h2>
             <Button type="button" variant="outline" onClick={addOperadora}>
-              <Plus className="w-4 h-4 mr-2" /> Adicionar Operadora
+              <Plus className="w-4 h-4 mr-2" /> Adicionar Plano/Operadora
             </Button>
           </div>
+
+          {operadorasAgrupadas.length > 0 && (
+            <div className="rounded-lg border bg-muted/30 p-3 text-sm text-muted-foreground">
+              {operadorasAgrupadas.map((grupo) => (
+                <div key={grupo.nome} className="flex items-center justify-between gap-3 py-1">
+                  <span className="font-medium text-foreground">{grupo.nome}</span>
+                  <span>{grupo.planos.length} plano{grupo.planos.length > 1 ? "s" : ""}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {operadoras.map((op, index) => (
             <Card key={index} className={`relative ${extractingIndex === index ? "ring-2 ring-primary/50" : ""}`}>
@@ -515,7 +526,7 @@ export default function PropostaFormPage() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base flex items-center gap-2">
                     <GripVertical className="w-4 h-4 text-muted-foreground" />
-                    Operadora {index + 1}
+                    Plano {index + 1}{op.operadora_nome ? ` · ${op.operadora_nome}` : ""}
                   </CardTitle>
                   {operadoras.length > 1 && (
                     <Button type="button" variant="ghost" size="icon" onClick={() => removeOperadora(index)}>
