@@ -1209,8 +1209,19 @@ export default function PublicPropostaPage() {
                               </div>
                             )}
                           </div>
-                          <div className="text-foreground">
-                            {editMode ? renderEditableCell(op, crit) : (crit.field === "faixas_etarias" ? renderFaixasEtarias(v) : renderCellValue(v))}
+                          <div className="text-foreground space-y-1">
+                            {editMode ? (
+                              <>
+                                {renderEditableCell(op, crit)}
+                                {crit.field === "coparticipacao" && <CoparticipacaoEditor op={op} />}
+                              </>
+                            ) : (
+                              crit.field === "faixas_etarias"
+                                ? renderFaixasEtarias(v)
+                                : crit.field === "coparticipacao"
+                                  ? renderCoparticipacao(op)
+                                  : renderCellValue(v)
+                            )}
                           </div>
                         </div>
                       );
