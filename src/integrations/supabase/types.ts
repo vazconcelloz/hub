@@ -20,9 +20,11 @@ export type Database = {
           acomodacao: string | null
           coparticipacao: string | null
           cor_coluna: string | null
+          cores_celulas: Json | null
           created_at: string
           destaque_comercial: string | null
           faixas_etarias: string | null
+          grupo_soma: string | null
           id: string
           operadora_nome: string
           ordem_exibicao: number
@@ -41,9 +43,11 @@ export type Database = {
           acomodacao?: string | null
           coparticipacao?: string | null
           cor_coluna?: string | null
+          cores_celulas?: Json | null
           created_at?: string
           destaque_comercial?: string | null
           faixas_etarias?: string | null
+          grupo_soma?: string | null
           id?: string
           operadora_nome: string
           ordem_exibicao?: number
@@ -62,9 +66,11 @@ export type Database = {
           acomodacao?: string | null
           coparticipacao?: string | null
           cor_coluna?: string | null
+          cores_celulas?: Json | null
           created_at?: string
           destaque_comercial?: string | null
           faixas_etarias?: string | null
+          grupo_soma?: string | null
           id?: string
           operadora_nome?: string
           ordem_exibicao?: number
@@ -99,6 +105,7 @@ export type Database = {
           faixa_etaria_ou_perfil: string | null
           id: string
           idades_beneficiarios: string | null
+          linhas_ocultas: string[] | null
           nome_cliente: string
           observacoes_gerais: string | null
           slug: string
@@ -119,6 +126,7 @@ export type Database = {
           faixa_etaria_ou_perfil?: string | null
           id?: string
           idades_beneficiarios?: string | null
+          linhas_ocultas?: string[] | null
           nome_cliente: string
           observacoes_gerais?: string | null
           slug: string
@@ -139,6 +147,7 @@ export type Database = {
           faixa_etaria_ou_perfil?: string | null
           id?: string
           idades_beneficiarios?: string | null
+          linhas_ocultas?: string[] | null
           nome_cliente?: string
           observacoes_gerais?: string | null
           slug?: string
