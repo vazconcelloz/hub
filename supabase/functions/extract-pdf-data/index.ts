@@ -87,6 +87,7 @@ REGRA DE PREENCHIMENTO: Faça o MÁXIMO ESFORÇO para preencher TODOS os campos.
 - "acomodação" pode aparecer como "padrão de acomodação", "internação em apartamento/enfermaria", "quarto privativo", "quarto coletivo".
 - "reembolso" pode aparecer como "livre escolha", "reembolso integral", "reembolso parcial", "sem reembolso", "tabela de reembolso".
 - "abrangência" pode aparecer como "área de atuação", "área geográfica", "cobertura territorial".
+- "valor_mensal" (mensalidade total do plano): SEMPRE PROCURE PRIORITARIAMENTE por "Valor Total", "Total Mensal", "Mensalidade Total", "Total a Pagar", "Valor da Mensalidade", "Mensalidade", "Preço Total", "Total do Plano", "Valor Final", "Total Geral". Costuma estar em destaque (negrito, fonte maior) no rodapé da proposta ou abaixo da tabela de faixas etárias. Se encontrar, EXTRAIA esse valor para o campo valor_mensal do plano correspondente.
 Só retorne string vazia se REALMENTE não houver nenhuma informação no documento sobre o campo. NUNCA invente dados que não estejam comprovadamente no PDF.
 IMPORTANTE: Um PDF pode conter MÚLTIPLOS planos (ex: Amil Black I QP R1, R2, R3 e Amil Black S2500 QP R1, R2). Extraia TODOS os planos encontrados no documento, cada um com suas próprias faixas etárias e valores.${locationContext}`,
           },
@@ -175,7 +176,7 @@ IMPORTANTE: Um PDF pode conter MÚLTIPLOS planos (ex: Amil Black I QP R1, R2, R3
                         },
                         valor_mensal: {
                           type: "number",
-                          description: "Valor mensal TOTAL do plano em R$ (apenas número, sem símbolos), SE o PDF apresentar um valor único de mensalidade para este plano (ex: 'Mensalidade: R$ 1.234,56'). Se o PDF só apresentar tabela de faixas etárias, deixe como 0 ou omita — o valor será calculado pelas faixas. NÃO INVENTE valores.",
+                          description: "Valor mensal TOTAL do plano em R$ (apenas número, sem símbolos, ex: 1234.56). PROCURE ATIVAMENTE por termos como: 'Valor Total', 'Total Mensal', 'Mensalidade Total', 'Total a Pagar', 'Valor da Mensalidade', 'Mensalidade', 'Preço Total', 'Total do Plano', 'Valor Final', 'Total Geral', 'Soma Total'. Se houver UM valor consolidado/total destacado para o plano (geralmente no rodapé da proposta, em destaque, ou após a tabela de faixas etárias), EXTRAIA esse valor aqui. Apenas se o PDF não apresentar nenhum valor total/consolidado e tiver SOMENTE a tabela de faixas etárias, omita ou retorne 0. NUNCA invente valores.",
                         },
                         faixas_etarias: {
                           type: "string",
