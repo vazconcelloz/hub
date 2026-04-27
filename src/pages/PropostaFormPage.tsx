@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { generateSlug, parseFaixasEtarias, parseIdades, calcularTotalPorFaixas } from "@/lib/proposal-utils";
+import { generateSlug, parseFaixasEtarias, parseIdades, calcularTotalPorFaixas, agruparPorOperadora } from "@/lib/proposal-utils";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,14 @@ const emptyOperadora: OperadoraForm = {
   acomodacao: "", abrangencia: "", reembolso: "", resumo_cobertura: "",
   rede_credenciada_resumo: "", destaque_comercial: "", ordem_exibicao: 0, pdf_url: "",
   faixas_etarias: "", previsao_reajuste_faixa: "", cor_coluna: "",
+};
+
+const limparNomePlano = (planoNome: string, operadoraNome: string) => {
+  const plano = (planoNome || "").trim().replace(/\s+/g, " ");
+  const operadora = (operadoraNome || "").trim();
+  if (!plano || !operadora) return plano;
+  const escaped = operadora.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return plano.replace(new RegExp(`^${escaped}\\s*[-–—:]?\\s*`, "i"), "").trim() || plano;
 };
 
 export default function PropostaFormPage() {
@@ -159,6 +167,10 @@ export default function PropostaFormPage() {
     if (operadoras.length <= 1) return;
     setOperadoras(operadoras.filter((_, i) => i !== index));
   };
+
+  const operadorasAgrupadas = agruparPorOperadora(
+    operadoras.map((op, index) => ({ ...op, _index: index }))
+  );
 
   const handlePdfUpload = async (index: number, file: File) => {
     const updated = [...operadoras];
