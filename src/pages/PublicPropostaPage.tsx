@@ -578,6 +578,7 @@ export default function PublicPropostaPage() {
                               </SelectContent>
                             </Select>
                             <ColorPicker op={op} />
+                            <CellColorPicker op={op} field="plano_nome" />
                           </div>
                         </>
                       ) : (
