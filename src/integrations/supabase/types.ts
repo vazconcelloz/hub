@@ -14,6 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
+      coparticipacao_catalogo: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          itens: Json
+          modalidade: string
+          observacoes: string | null
+          operadora_id: string
+          plano_nome: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          itens?: Json
+          modalidade?: string
+          observacoes?: string | null
+          operadora_id: string
+          plano_nome?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          itens?: Json
+          modalidade?: string
+          observacoes?: string | null
+          operadora_id?: string
+          plano_nome?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coparticipacao_catalogo_operadora_id_fkey"
+            columns: ["operadora_id"]
+            isOneToOne: false
+            referencedRelation: "operadoras_catalogo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operadoras_catalogo: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          logo_url: string | null
+          nome: string
+          observacoes: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          nome: string
+          observacoes?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          nome?: string
+          observacoes?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       proposta_operadoras: {
         Row: {
           abrangencia: string | null
@@ -166,15 +243,113 @@ export type Database = {
         }
         Relationships: []
       }
+      rede_credenciada_catalogo: {
+        Row: {
+          ativo: boolean
+          bairro: string | null
+          cep: string | null
+          cidade: string
+          created_at: string
+          destaque: boolean
+          endereco: string | null
+          especialidades: string[] | null
+          estado: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          nome: string
+          operadora_id: string
+          planos_aplicaveis: string[] | null
+          telefone: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          bairro?: string | null
+          cep?: string | null
+          cidade: string
+          created_at?: string
+          destaque?: boolean
+          endereco?: string | null
+          especialidades?: string[] | null
+          estado: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          nome: string
+          operadora_id: string
+          planos_aplicaveis?: string[] | null
+          telefone?: string | null
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string
+          created_at?: string
+          destaque?: boolean
+          endereco?: string | null
+          especialidades?: string[] | null
+          estado?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          nome?: string
+          operadora_id?: string
+          planos_aplicaveis?: string[] | null
+          telefone?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rede_credenciada_catalogo_operadora_id_fkey"
+            columns: ["operadora_id"]
+            isOneToOne: false
+            referencedRelation: "operadoras_catalogo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -301,6 +476,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
