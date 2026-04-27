@@ -6,6 +6,53 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"];
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function callGeminiWithFallback(apiKey: string, body: Record<string, unknown>) {
+  let lastStatus = 500;
+  let lastError = "Erro desconhecido na IA";
+
+  for (const model of GEMINI_MODELS) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ...body, model }),
+      });
+
+      if (response.ok) return await response.json();
+
+      lastStatus = response.status;
+      lastError = await response.text();
+      console.error(`Gemini error (${model}, attempt ${attempt + 1}):`, response.status, lastError);
+
+      if (![429, 500, 502, 503, 504].includes(response.status)) {
+        throw new Error(`AI gateway error: ${response.status}`);
+      }
+
+      await wait(700 * (attempt + 1));
+    }
+  }
+
+  const transient = [429, 500, 502, 503, 504].includes(lastStatus);
+  throw new Error(transient ? "Serviço de IA temporariamente indisponível. Tente novamente em alguns segundos." : `AI gateway error: ${lastStatus}`);
+}
+
+function parseToolArguments(raw: string) {
+  const cleaned = raw
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```$/i, "")
+    .trim();
+
+  return JSON.parse(cleaned);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -29,14 +76,7 @@ serve(async (req) => {
       ? `\nO cliente está localizado em ${cidade || ""}${cidade && estado ? "/" : ""}${estado || ""}. Ao descrever a rede credenciada (campo rede_credenciada_resumo), liste APENAS os 3 hospitais MAIS RELEVANTES e reconhecidos da rede da operadora nessa região (priorize hospitais de grande porte, referência ou alta complexidade). Apenas nomes reais que constem no PDF ou que sejam comprovadamente da rede da operadora.`
       : "";
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${GEMINI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gemini-2.5-flash",
+    const result = await callGeminiWithFallback(GEMINI_API_KEY, {
         messages: [
           {
             role: "system",
@@ -145,35 +185,14 @@ IMPORTANTE: Um PDF pode conter MÚLTIPLOS planos (ex: Amil Black I QP R1, R2, R3
           type: "function",
           function: { name: "extract_multiple_plans" },
         },
-      }),
     });
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns segundos." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Créditos de IA esgotados. Adicione créditos nas configurações." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error(`AI gateway error: ${response.status}`);
-    }
-
-    const result = await response.json();
     const toolCall = result.choices?.[0]?.message?.tool_calls?.[0];
 
     if (!toolCall?.function?.arguments) {
       throw new Error("AI did not return structured data");
     }
 
-    const extractedData = JSON.parse(toolCall.function.arguments);
+    const extractedData = parseToolArguments(toolCall.function.arguments);
 
     // Enrich rede_credenciada_resumo if empty/short
     const redeResumo = extractedData.rede_credenciada_resumo || "";
