@@ -82,6 +82,8 @@ serve(async (req) => {
             role: "system",
             content: `Você é um especialista em extrair dados de documentos PDF de operadoras de planos de saúde e seguros no Brasil.
 Analise CUIDADOSAMENTE todo o conteúdo do PDF (incluindo cabeçalhos, rodapés, tabelas, notas de rodapé e textos pequenos) e extraia TODAS as informações solicitadas.
+REGRA CRÍTICA — UMA OPERADORA, MÚLTIPLOS PLANOS: Um único PDF é SEMPRE de UMA ÚNICA operadora (ex: Amil, SulAmérica, Bradesco). Nunca crie múltiplas "operadoras". Se o PDF tem vários planos da mesma marca (ex: Amil Black I QP R1, Amil Black S2500 QP R2), todos vão dentro do array 'planos[]' compartilhando o mesmo 'operadora_nome'. NÃO repita o nome da operadora dentro de cada 'plano_nome' (ex: use 'Black I QP R1' e não 'Amil Black I QP R1' se a operadora já é 'Amil').
+REGRA DE PREENCHIMENTO POR PLANO: Cada plano pode ter características próprias (coparticipação, acomodação, abrangência, reembolso). Quando o PDF mostrar uma tabela comparativa lado a lado com valores DIFERENTES por plano, preencha esses campos DENTRO de cada item de planos[]. Quando o campo for único e válido para todos, deixe nos campos de nível superior (que servirão de fallback).
 REGRA DE PREENCHIMENTO: Faça o MÁXIMO ESFORÇO para preencher TODOS os campos. Procure por sinônimos e variações:
 - "coparticipação" pode aparecer como "copart", "com participação", "sem coparticipação", "fator moderador".
 - "acomodação" pode aparecer como "padrão de acomodação", "internação em apartamento/enfermaria", "quarto privativo", "quarto coletivo".
