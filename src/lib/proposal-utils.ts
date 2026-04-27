@@ -82,7 +82,7 @@ export function getCellColorClass(coresCelulas: any, field: string): string {
   const key = coresCelulas[field];
   if (!key) return "";
   const c = COLUNA_COLORS[key];
-  return c ? c.cell : "";
+  return c ? c.header : "";
 }
 
 export function getCellColorKey(coresCelulas: any, field: string): string | null {
