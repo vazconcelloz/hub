@@ -686,18 +686,24 @@ export default function PublicPropostaPage() {
                 const oculta = linhasOcultas.includes(crit.field as string);
                 return (
                 <tr key={crit.label} className={cn(rowIdx % 2 === 0 ? "bg-background" : "bg-muted/40", editMode && oculta && "opacity-60")}>
-                  <td className="px-4 py-3 font-medium text-foreground border-r border-border align-top">
+                  <td className={cn(
+                    "px-4 py-3 font-medium text-foreground border-r border-border align-top",
+                    getRotuloColorClass(crit.field as string)
+                  )}>
                     <div className="flex items-center justify-between gap-2">
                       <span>{crit.label}{editMode && oculta && <span className="ml-1 text-[10px] text-muted-foreground">(oculta)</span>}</span>
                       {editMode && (
-                        <button
-                          type="button"
-                          onClick={() => toggleLinhaOculta(crit.field as string)}
-                          className="h-6 w-6 rounded border flex items-center justify-center hover:bg-muted shrink-0"
-                          title={oculta ? "Exibir esta linha para o cliente" : "Ocultar esta linha do cliente"}
-                        >
-                          {oculta ? <EyeOff className="w-3.5 h-3.5 text-muted-foreground" /> : <Eye className="w-3.5 h-3.5 text-muted-foreground" />}
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <RowLabelColorPicker field={crit.field as string} />
+                          <button
+                            type="button"
+                            onClick={() => toggleLinhaOculta(crit.field as string)}
+                            className="h-6 w-6 rounded border flex items-center justify-center hover:bg-muted shrink-0"
+                            title={oculta ? "Exibir esta linha para o cliente" : "Ocultar esta linha do cliente"}
+                          >
+                            {oculta ? <EyeOff className="w-3.5 h-3.5 text-muted-foreground" /> : <Eye className="w-3.5 h-3.5 text-muted-foreground" />}
+                          </button>
+                        </div>
                       )}
                     </div>
                   </td>
