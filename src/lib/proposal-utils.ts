@@ -38,28 +38,56 @@ export const DESTAQUE_COLORS: Record<string, string> = {
 };
 
 // Paleta de cores para colunas/cards de plano (modo administrador).
-// Cada entrada define classes para: cabeçalho da coluna, borda do card, e badge.
+// Cada entrada define classes para: header forte (coluna), borda, badge e cell (versão suave para pintar células).
 export interface ColorPaletteEntry {
   label: string;
-  header: string; // bg + text para o header da coluna/card
+  header: string; // bg + text para o header da coluna/card (forte)
   border: string; // borda colorida (top de card)
-  badge: string;  // badge sutil
+  badge: string;  // badge
+  cell: string;   // bg + text suaves para pintar células individuais
 }
 
 export const COLUNA_COLORS: Record<string, ColorPaletteEntry> = {
-  navy:    { label: "Navy",    header: "bg-[hsl(220_50%_25%)] text-white",         border: "border-[hsl(220_50%_25%)]",         badge: "bg-[hsl(220_50%_25%)] text-white" },
-  gold:    { label: "Gold",    header: "bg-[hsl(42_70%_45%)] text-white",          border: "border-[hsl(42_70%_45%)]",          badge: "bg-[hsl(42_70%_45%)] text-white" },
-  emerald: { label: "Verde",   header: "bg-emerald-700 text-white",                border: "border-emerald-700",                badge: "bg-emerald-700 text-white" },
-  ruby:    { label: "Rubi",    header: "bg-rose-700 text-white",                   border: "border-rose-700",                   badge: "bg-rose-700 text-white" },
-  indigo:  { label: "Índigo",  header: "bg-indigo-700 text-white",                 border: "border-indigo-700",                 badge: "bg-indigo-700 text-white" },
-  slate:   { label: "Grafite", header: "bg-slate-700 text-white",                  border: "border-slate-700",                  badge: "bg-slate-700 text-white" },
-  teal:    { label: "Teal",    header: "bg-teal-700 text-white",                   border: "border-teal-700",                   badge: "bg-teal-700 text-white" },
-  copper:  { label: "Cobre",   header: "bg-orange-700 text-white",                 border: "border-orange-700",                 badge: "bg-orange-700 text-white" },
+  // Tons fortes (Navy & Gold + complementares)
+  navy:    { label: "Navy",    header: "bg-[hsl(220_50%_25%)] text-white", border: "border-[hsl(220_50%_25%)]", badge: "bg-[hsl(220_50%_25%)] text-white", cell: "bg-[hsl(220_50%_92%)] text-[hsl(220_50%_20%)]" },
+  gold:    { label: "Gold",    header: "bg-[hsl(42_70%_45%)] text-white",  border: "border-[hsl(42_70%_45%)]",  badge: "bg-[hsl(42_70%_45%)] text-white",  cell: "bg-[hsl(42_80%_90%)] text-[hsl(42_70%_25%)]" },
+  emerald: { label: "Verde",   header: "bg-emerald-700 text-white",        border: "border-emerald-700",        badge: "bg-emerald-700 text-white",        cell: "bg-emerald-100 text-emerald-900" },
+  ruby:    { label: "Rubi",    header: "bg-rose-700 text-white",           border: "border-rose-700",           badge: "bg-rose-700 text-white",           cell: "bg-rose-100 text-rose-900" },
+  indigo:  { label: "Índigo",  header: "bg-indigo-700 text-white",         border: "border-indigo-700",         badge: "bg-indigo-700 text-white",         cell: "bg-indigo-100 text-indigo-900" },
+  slate:   { label: "Grafite", header: "bg-slate-700 text-white",          border: "border-slate-700",          badge: "bg-slate-700 text-white",          cell: "bg-slate-200 text-slate-900" },
+  teal:    { label: "Teal",    header: "bg-teal-700 text-white",           border: "border-teal-700",           badge: "bg-teal-700 text-white",           cell: "bg-teal-100 text-teal-900" },
+  copper:  { label: "Cobre",   header: "bg-orange-700 text-white",         border: "border-orange-700",         badge: "bg-orange-700 text-white",         cell: "bg-orange-100 text-orange-900" },
+  violet:  { label: "Violeta", header: "bg-violet-700 text-white",         border: "border-violet-700",         badge: "bg-violet-700 text-white",         cell: "bg-violet-100 text-violet-900" },
+  rose:    { label: "Rosa",    header: "bg-pink-600 text-white",           border: "border-pink-600",           badge: "bg-pink-600 text-white",           cell: "bg-pink-100 text-pink-900" },
+  amber:   { label: "Âmbar",   header: "bg-amber-600 text-white",          border: "border-amber-600",          badge: "bg-amber-600 text-white",          cell: "bg-amber-100 text-amber-900" },
+  sky:     { label: "Céu",     header: "bg-sky-600 text-white",            border: "border-sky-600",            badge: "bg-sky-600 text-white",            cell: "bg-sky-100 text-sky-900" },
+  lime:    { label: "Lima",    header: "bg-lime-600 text-white",           border: "border-lime-600",           badge: "bg-lime-600 text-white",           cell: "bg-lime-100 text-lime-900" },
+  fuchsia: { label: "Fúcsia",  header: "bg-fuchsia-700 text-white",        border: "border-fuchsia-700",        badge: "bg-fuchsia-700 text-white",        cell: "bg-fuchsia-100 text-fuchsia-900" },
+  cyan:    { label: "Ciano",   header: "bg-cyan-700 text-white",           border: "border-cyan-700",           badge: "bg-cyan-700 text-white",           cell: "bg-cyan-100 text-cyan-900" },
+  red:     { label: "Vermelho",header: "bg-red-700 text-white",            border: "border-red-700",            badge: "bg-red-700 text-white",            cell: "bg-red-100 text-red-900" },
+  yellow:  { label: "Amarelo", header: "bg-yellow-500 text-yellow-950",    border: "border-yellow-500",         badge: "bg-yellow-500 text-yellow-950",    cell: "bg-yellow-100 text-yellow-900" },
+  green:   { label: "Verde C.",header: "bg-green-600 text-white",          border: "border-green-600",          badge: "bg-green-600 text-white",          cell: "bg-green-100 text-green-900" },
+  zinc:    { label: "Zinco",   header: "bg-zinc-700 text-white",           border: "border-zinc-700",           badge: "bg-zinc-700 text-white",           cell: "bg-zinc-200 text-zinc-900" },
+  black:   { label: "Preto",   header: "bg-neutral-900 text-white",        border: "border-neutral-900",        badge: "bg-neutral-900 text-white",        cell: "bg-neutral-200 text-neutral-900" },
 };
 
 export function getColunaColor(key: string | null | undefined): ColorPaletteEntry | null {
   if (!key) return null;
   return COLUNA_COLORS[key] ?? null;
+}
+
+// Resolve a cor de uma célula específica de um plano (pelo nome do critério).
+export function getCellColorClass(coresCelulas: any, field: string): string {
+  if (!coresCelulas || typeof coresCelulas !== "object") return "";
+  const key = coresCelulas[field];
+  if (!key) return "";
+  const c = COLUNA_COLORS[key];
+  return c ? c.cell : "";
+}
+
+export function getCellColorKey(coresCelulas: any, field: string): string | null {
+  if (!coresCelulas || typeof coresCelulas !== "object") return null;
+  return coresCelulas[field] ?? null;
 }
 
 // Agrupa operadoras por nome (preserva ordem da primeira ocorrência).
