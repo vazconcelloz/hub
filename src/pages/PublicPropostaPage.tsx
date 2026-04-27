@@ -333,6 +333,7 @@ export default function PublicPropostaPage() {
 
   const camposComCorCelula = new Set<string>([
     "plano_nome",
+    "coparticipacao",
     "acomodacao",
     "abrangencia",
     "reembolso",
