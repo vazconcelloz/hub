@@ -11,6 +11,7 @@ import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import PropostaFormPage from "./pages/PropostaFormPage";
 import PublicPropostaPage from "./pages/PublicPropostaPage";
+import AdminCatalogoPage from "./pages/AdminCatalogoPage";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/admin" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+            <Route path="/admin/catalogo" element={<ProtectedRoute><AdminCatalogoPage /></ProtectedRoute>} />
             <Route path="/admin/proposta/:id" element={<ProtectedRoute><PropostaFormPage /></ProtectedRoute>} />
             <Route path="/admin/cotacao/:slug" element={<ProtectedRoute><PublicPropostaPage /></ProtectedRoute>} />
             <Route path="/cotacao/:slug" element={<PublicPropostaPage />} />
