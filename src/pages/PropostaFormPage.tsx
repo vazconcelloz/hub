@@ -203,6 +203,7 @@ export default function PropostaFormPage() {
           previsao_reajuste_faixa: extracted.previsao_reajuste_faixa || "",
         };
 
+        const operadoraNome = extracted.operadora_nome || operadoras[index]?.operadora_nome || "";
         const planos = extracted.planos && Array.isArray(extracted.planos) && extracted.planos.length > 0
           ? extracted.planos
           : [{ plano_nome: extracted.plano_nome || "", faixas_etarias: extracted.faixas_etarias || "" }];
@@ -226,7 +227,8 @@ export default function PropostaFormPage() {
             ...(plano.reembolso ? { reembolso: plano.reembolso } : {}),
             ...(plano.resumo_cobertura ? { resumo_cobertura: plano.resumo_cobertura } : {}),
             pdf_file: file,
-            plano_nome: plano.plano_nome || "",
+            operadora_nome: operadoraNome,
+            plano_nome: limparNomePlano(plano.plano_nome || "", operadoraNome),
             faixas_etarias: plano.faixas_etarias || "",
             ordem_exibicao: newOperadoras.length + 1,
           };
