@@ -438,34 +438,20 @@ export default function PublicPropostaPage() {
     return c ? c.border : "border-primary";
   };
 
-  // ====== Renderização da tabela comparativa (reutilizada no comparador) ======
-  const renderComparativeTable = (ops: Operadora[]) => {
+  // ====== Renderização da tabela comparativa ======
+  // Por padrão é usada para uma única operadora (uma tabela por operadora).
+  // Quando `showOperadoraInHeader` é true, exibe o nome da operadora junto ao plano (usado no modal de comparação misturando operadoras).
+  const renderComparativeTable = (ops: Operadora[], opts: { showOperadoraInHeader?: boolean } = {}) => {
+    const { showOperadoraInHeader = false } = opts;
     const totais = ops.map((op) => totalById.get(op.id) ?? null);
     const maior = Math.max(...totais.filter((t): t is number => t !== null), 0);
     const algum = totais.some((t) => t !== null);
-    const grupoOps = agruparPorOperadora(ops);
 
     return (
       <div className="rounded-lg border border-border overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>
-              {/* Linha 1: nome da operadora (agrupador) */}
-              <tr className="bg-muted">
-                <th className="text-left px-4 py-2 font-semibold w-56 align-middle border-r border-border text-xs uppercase tracking-wide text-muted-foreground">
-                  Operadora
-                </th>
-                {grupoOps.map((g) => (
-                  <th
-                    key={g.nome}
-                    colSpan={g.planos.length}
-                    className="px-4 py-2 font-bold text-base text-center border-r border-border last:border-r-0 bg-secondary/40 text-foreground"
-                  >
-                    {g.nome}
-                  </th>
-                ))}
-              </tr>
-              {/* Linha 2: plano */}
               <tr>
                 <th className="text-left px-4 py-3 font-semibold w-56 align-top border-r border-border bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
                   Planos
@@ -479,7 +465,6 @@ export default function PublicPropostaPage() {
                     )}
                   >
                     <div className="space-y-1">
-                      {/* Checkbox de comparação (modo cliente apenas) */}
                       {!editMode && (
                         <label className="flex items-center gap-1.5 text-[10px] font-normal opacity-90 cursor-pointer mb-1">
                           <Checkbox
@@ -526,6 +511,9 @@ export default function PublicPropostaPage() {
                         </>
                       ) : (
                         <>
+                          {showOperadoraInHeader && op.operadora_nome && (
+                            <div className="text-[10px] uppercase tracking-wide opacity-80">{op.operadora_nome}</div>
+                          )}
                           {op.plano_nome && (
                             <div className="text-base leading-tight font-bold">{op.plano_nome}</div>
                           )}
@@ -547,16 +535,27 @@ export default function PublicPropostaPage() {
                   <td className="px-4 py-3 font-medium text-foreground border-r border-border align-top">
                     {crit.label}
                   </td>
-                  {ops.map((op) => (
-                    <td
-                      key={op.id}
-                      className="px-4 py-3 text-foreground border-r border-border last:border-r-0 align-top"
-                    >
-                      {editMode
-                        ? renderEditableCell(op, crit)
-                        : renderCellValue(op[crit.field as keyof Operadora] as string | null)}
-                    </td>
-                  ))}
+                  {ops.map((op) => {
+                    const cellColor = getCellColorClass((op as any).cores_celulas, crit.field);
+                    return (
+                      <td
+                        key={op.id}
+                        className={cn(
+                          "px-4 py-3 text-foreground border-r border-border last:border-r-0 align-top",
+                          cellColor
+                        )}
+                      >
+                        {editMode ? (
+                          <div className="flex items-start gap-1.5">
+                            <div className="flex-1 min-w-0">{renderEditableCell(op, crit)}</div>
+                            <CellColorPicker op={op} field={crit.field} />
+                          </div>
+                        ) : (
+                          renderCellValue(op[crit.field as keyof Operadora] as string | null)
+                        )}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
