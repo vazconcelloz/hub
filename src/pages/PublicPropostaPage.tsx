@@ -182,7 +182,7 @@ export default function PublicPropostaPage() {
               <thead>
                 <tr className="bg-primary text-primary-foreground">
                   <th className="text-left px-4 py-4 font-semibold w-56 align-top border-r border-primary-foreground/10">
-                    Critério
+                    Planos
                   </th>
                   {operadoras.map((op) => (
                     <th
