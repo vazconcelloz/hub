@@ -342,6 +342,7 @@ export default function PublicPropostaPage() {
     { label: "Abrangência", field: "abrangencia", type: "text" },
     { label: "Reembolso", field: "reembolso", type: "reembolso" },
     { label: "Rede credenciada", field: "rede_credenciada_resumo", type: "textarea" },
+    { label: "Faixa etária", field: "faixas_etarias", type: "textarea" },
   ];
 
   const camposComCorCelula = new Set<string>([
@@ -351,6 +352,7 @@ export default function PublicPropostaPage() {
     "abrangencia",
     "reembolso",
     "rede_credenciada_resumo",
+    "faixas_etarias",
     "valor_mensal",
   ]);
 
