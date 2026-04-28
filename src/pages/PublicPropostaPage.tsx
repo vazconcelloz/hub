@@ -214,6 +214,43 @@ export default function PublicPropostaPage() {
     setDraftOperadoras([]);
   };
 
+  const addDraftOperadora = () => {
+    setDraftOperadoras((ops) => {
+      const tempId = `new-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const maxOrdem = ops.reduce((m, o) => Math.max(m, (o as any).ordem_exibicao ?? 0), 0);
+      const nova: Operadora = {
+        id: tempId,
+        proposta_id: proposta?.id ?? "",
+        operadora_nome: "Nova Operadora",
+        plano_nome: "Novo Plano",
+        valor_mensal: null,
+        coparticipacao: null,
+        acomodacao: null,
+        abrangencia: null,
+        reembolso: null,
+        resumo_cobertura: null,
+        rede_credenciada_resumo: null,
+        destaque_comercial: null,
+        ordem_exibicao: maxOrdem + 1,
+        pdf_url: null,
+        faixas_etarias: null,
+        previsao_reajuste_faixa: null,
+        cor_coluna: null,
+        grupo_soma: null,
+        cores_celulas: null,
+        coparticipacao_detalhes: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as any;
+      return [...ops, nova];
+    });
+    toast.success("Coluna adicionada", { description: "Preencha os dados e clique em Salvar." });
+  };
+
+  const removeDraftOperadora = (id: string) => {
+    setDraftOperadoras((ops) => ops.filter((o) => o.id !== id));
+  };
+
   const updateDraftProposta = <K extends keyof Proposta>(field: K, value: Proposta[K]) => {
     setDraftProposta((p) => (p ? { ...p, [field]: value } : p));
   };
@@ -287,7 +324,48 @@ export default function PublicPropostaPage() {
         .eq("id", proposta.id);
       if (e1) throw e1;
 
+      // 1) Inserir colunas novas (id começa com "new-")
+      const novas = draftOperadoras.filter((d) => String(d.id).startsWith("new-"));
+      if (novas.length > 0) {
+        const { error: eIns } = await supabase
+          .from("proposta_operadoras")
+          .insert(novas.map((d) => ({
+            proposta_id: proposta.id,
+            operadora_nome: d.operadora_nome,
+            plano_nome: d.plano_nome,
+            valor_mensal: d.valor_mensal,
+            coparticipacao: d.coparticipacao,
+            acomodacao: d.acomodacao,
+            abrangencia: d.abrangencia,
+            reembolso: d.reembolso,
+            resumo_cobertura: d.resumo_cobertura,
+            rede_credenciada_resumo: d.rede_credenciada_resumo,
+            destaque_comercial: d.destaque_comercial,
+            ordem_exibicao: (d as any).ordem_exibicao ?? 0,
+            cor_coluna: (d as any).cor_coluna,
+            cores_celulas: (d as any).cores_celulas ?? null,
+            coparticipacao_detalhes: (d as any).coparticipacao_detalhes ?? null,
+            grupo_soma: ((d as any).grupo_soma || "").trim() || null,
+            faixas_etarias: (d as any).faixas_etarias ?? null,
+            previsao_reajuste_faixa: (d as any).previsao_reajuste_faixa ?? null,
+          })) as any);
+        if (eIns) throw eIns;
+      }
+
+      // 2) Apagar colunas que estavam no original e foram removidas no draft
+      const draftIds = new Set(draftOperadoras.map((d) => d.id));
+      const removidas = operadoras.filter((o) => !draftIds.has(o.id));
+      if (removidas.length > 0) {
+        const { error: eDel } = await supabase
+          .from("proposta_operadoras")
+          .delete()
+          .in("id", removidas.map((o) => o.id));
+        if (eDel) throw eDel;
+      }
+
+      // 3) Atualizar colunas existentes que mudaram
       for (const draft of draftOperadoras) {
+        if (String(draft.id).startsWith("new-")) continue;
         const original = operadoras.find((o) => o.id === draft.id);
         if (!original) continue;
         const fieldsToCheck: EditableOperadoraField[] = [
@@ -1042,6 +1120,9 @@ export default function PublicPropostaPage() {
                 </>
               ) : (
                 <>
+                  <Button variant="outline" size="sm" onClick={addDraftOperadora} disabled={saving}>
+                    <Plus className="w-3.5 h-3.5 mr-1.5" /> Adicionar coluna
+                  </Button>
                   <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={saving}>
                     <X className="w-3.5 h-3.5 mr-1.5" /> Cancelar
                   </Button>
