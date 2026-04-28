@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { supabase } from "@/integrations/supabase/client";
 import { generateSlug, parseFaixasEtarias, parseIdades, calcularTotalPorFaixas, agruparPorOperadora } from "@/lib/proposal-utils";
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Save, ArrowLeft, Plus, Trash2, Upload, GripVertical, Sparkles, Loader2 } from "lucide-react";
+import { Save, ArrowLeft, Plus, Trash2, Upload, GripVertical, Sparkles, Loader2, PencilLine } from "lucide-react";
 
 const ESTADOS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
@@ -54,7 +54,9 @@ const limparNomePlano = (planoNome: string, operadoraNome: string) => {
 export default function PropostaFormPage() {
   const { id } = useParams();
   const isEdit = !!id && id !== "nova";
-  
+  const [searchParams] = useSearchParams();
+  const modoManual = searchParams.get("modo") === "manual" && !isEdit;
+
   const navigate = useNavigate();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
