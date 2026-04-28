@@ -203,32 +203,86 @@ export default function CatalogoPage() {
           {/* REDE */}
           <TabsContent value="rede">
             <Card>
-              <CardHeader className="flex-row justify-between items-center">
+              <CardHeader className="flex-row justify-between items-center flex-wrap gap-2">
                 <CardTitle>Rede Credenciada ({rede.length})</CardTitle>
-                <Button onClick={() => {
-                  setRedeNew(true);
-                  setRedeDialog({ id: "", operadora_id: operadoras[0]?.id ?? "", nome: "", tipo: "hospital", cep: "", endereco: "", bairro: "", cidade: "", estado: "", telefone: "", especialidades: [], planos_aplicaveis: [], ativo: true, destaque: false });
-                }}><Plus className="w-4 h-4 mr-1" />Novo</Button>
+                <div className="flex gap-2">
+                  <Button variant="default" onClick={() => { setImportResult(null); setImportFile(null); setImportOperadoraId(operadoras[0]?.id ?? ""); setImportDialog(true); }}>
+                    <Upload className="w-4 h-4 mr-1" />Importar PDF/Excel
+                  </Button>
+                  <Button variant="outline" onClick={() => {
+                    setRedeNew(true);
+                    setRedeDialog({ id: "", operadora_id: operadoras[0]?.id ?? "", nome: "", tipo: "hospital", cep: "", endereco: "", bairro: "", cidade: "", estado: "", telefone: "", especialidades: [], planos_aplicaveis: [], coberturas_por_plano: {}, ativo: true, destaque: false });
+                  }}><Plus className="w-4 h-4 mr-1" />Manual</Button>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-2">
-                {rede.map(r => (
-                  <div key={r.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
-                    <div>
-                      <div className="font-medium flex items-center gap-2">
-                        {r.nome}
-                        <Badge variant="outline">{r.tipo}</Badge>
-                        {r.destaque && <Badge className="bg-accent text-accent-foreground">Destaque</Badge>}
+              <CardContent className="space-y-3">
+                {/* Filtros */}
+                <div className="flex flex-wrap gap-2">
+                  <Input placeholder="Buscar por nome ou cidade..." value={redeBusca} onChange={e => setRedeBusca(e.target.value)} className="max-w-xs" />
+                  <Select value={redeFiltroOperadora} onValueChange={setRedeFiltroOperadora}>
+                    <SelectTrigger className="w-48"><SelectValue placeholder="Operadora" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas operadoras</SelectItem>
+                      {operadoras.map(o => <SelectItem key={o.id} value={o.id}>{o.nome}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Select value={redeFiltroPlano} onValueChange={setRedeFiltroPlano}>
+                    <SelectTrigger className="w-48"><SelectValue placeholder="Plano" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos planos</SelectItem>
+                      {Array.from(new Set(rede.flatMap(r => Object.keys(r.coberturas_por_plano ?? {})))).sort().map(p => (
+                        <SelectItem key={p} value={p}>{p}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {(() => {
+                  const q = redeBusca.toLowerCase();
+                  const filtered = rede.filter(r => {
+                    if (redeFiltroOperadora !== "todas" && r.operadora_id !== redeFiltroOperadora) return false;
+                    if (redeFiltroPlano !== "todos" && !(r.coberturas_por_plano ?? {})[redeFiltroPlano]) return false;
+                    if (q && !r.nome.toLowerCase().includes(q) && !r.cidade.toLowerCase().includes(q)) return false;
+                    return true;
+                  });
+                  return (
+                    <>
+                      <p className="text-xs text-muted-foreground">{filtered.length} resultados</p>
+                      <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                        {filtered.slice(0, 200).map(r => (
+                          <div key={r.id} className="flex items-start justify-between p-3 border rounded-lg hover:bg-muted/50 gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium flex items-center gap-2 flex-wrap">
+                                {r.nome}
+                                <Badge variant="outline">{r.tipo}</Badge>
+                                {r.destaque && <Badge className="bg-accent text-accent-foreground">Destaque</Badge>}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {operadoraNome(r.operadora_id)} · {r.cidade}/{r.estado} {r.bairro && `· ${r.bairro}`}
+                              </div>
+                              {r.coberturas_por_plano && Object.keys(r.coberturas_por_plano).length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {Object.entries(r.coberturas_por_plano).map(([plano, cob]) => (
+                                    <Badge key={plano} variant="secondary" className="text-xs">
+                                      <span className="font-semibold">{plano}:</span>&nbsp;{cob}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex gap-1 shrink-0">
+                              <Button size="icon" variant="ghost" onClick={() => { setRedeNew(false); setRedeDialog(r); }}><Pencil className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="ghost" onClick={() => delRede(r.id)}><Trash2 className="w-4 h-4" /></Button>
+                            </div>
+                          </div>
+                        ))}
+                        {filtered.length > 200 && (
+                          <p className="text-xs text-muted-foreground text-center py-2">Mostrando 200 de {filtered.length}. Refine a busca para ver mais.</p>
+                        )}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {operadoraNome(r.operadora_id)} · {r.cidade}/{r.estado} {r.bairro && `· ${r.bairro}`}
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button size="icon" variant="ghost" onClick={() => { setRedeNew(false); setRedeDialog(r); }}><Pencil className="w-4 h-4" /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => delRede(r.id)}><Trash2 className="w-4 h-4" /></Button>
-                    </div>
-                  </div>
-                ))}
+                    </>
+                  );
+                })()}
               </CardContent>
             </Card>
           </TabsContent>
