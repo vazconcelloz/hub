@@ -396,8 +396,23 @@ export default function PropostaFormPage() {
           <Button type="button" variant="ghost" size="icon" onClick={() => navigate("/admin")}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-2xl font-bold">{isEdit ? "Editar Proposta" : "Nova Proposta"}</h1>
+          <h1 className="text-2xl font-bold">
+            {isEdit ? "Editar Proposta" : modoManual ? "Nova Proposta (do zero)" : "Nova Proposta"}
+          </h1>
         </div>
+
+        {modoManual && (
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 flex items-start gap-3">
+            <PencilLine className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+            <div className="text-sm">
+              <p className="font-semibold text-foreground">Modo manual</p>
+              <p className="text-muted-foreground">
+                Preencha os dados manualmente e use <strong>"Adicionar Plano/Operadora"</strong> abaixo
+                para criar quantas colunas comparativas quiser. O upload de PDF é opcional.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Client info */}
         <Card>
@@ -497,10 +512,15 @@ export default function PropostaFormPage() {
 
         {/* Operadoras e planos */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">Operadoras e Planos</h2>
-            <Button type="button" variant="outline" onClick={addOperadora}>
-              <Plus className="w-4 h-4 mr-2" /> Adicionar Plano/Operadora
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h2 className="text-xl font-bold">Operadoras e Planos</h2>
+              <p className="text-sm text-muted-foreground">
+                Cada plano vira uma coluna na proposta comparativa do cliente.
+              </p>
+            </div>
+            <Button type="button" onClick={addOperadora} className="gap-2">
+              <Plus className="w-4 h-4" /> Adicionar Coluna / Plano
             </Button>
           </div>
 
