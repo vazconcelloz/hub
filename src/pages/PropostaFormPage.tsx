@@ -651,6 +651,15 @@ export default function PropostaFormPage() {
               </CardContent>
             </Card>
           ))}
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addOperadora}
+            className="w-full border-dashed h-14 text-muted-foreground hover:text-foreground hover:border-primary"
+          >
+            <Plus className="w-4 h-4 mr-2" /> Adicionar outra coluna / plano
+          </Button>
         </div>
 
         {/* Submit */}
