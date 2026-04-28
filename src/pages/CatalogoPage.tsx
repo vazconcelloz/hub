@@ -135,6 +135,36 @@ export default function CatalogoPage() {
     loadAll();
   };
 
+  // IMPORT
+  const handleImport = async () => {
+    if (!importOperadoraId || !importFile) {
+      toast({ title: "Selecione operadora e arquivo", variant: "destructive" });
+      return;
+    }
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const path = `${importOperadoraId}/${Date.now()}-${importFile.name}`;
+      const { error: upErr } = await supabase.storage.from("rede-credenciada-pdfs").upload(path, importFile, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("rede-credenciada-pdfs").getPublicUrl(path);
+
+      const { data, error } = await supabase.functions.invoke("import-rede-credenciada", {
+        body: { operadora_id: importOperadoraId, file_url: pub.publicUrl, file_name: importFile.name },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+
+      setImportResult({ total: (data as any).total, planos: (data as any).planos ?? [] });
+      toast({ title: "Importação concluída", description: `${(data as any).total} itens importados` });
+      loadAll();
+    } catch (e: any) {
+      toast({ title: "Erro na importação", description: e.message ?? "Falha", variant: "destructive" });
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card shadow-card sticky top-0 z-40">
