@@ -214,14 +214,19 @@ export default function PublicPropostaPage() {
     setDraftOperadoras([]);
   };
 
-  const addDraftOperadora = () => {
+  const addDraftOperadora = (operadoraNome?: string) => {
     setDraftOperadoras((ops) => {
       const tempId = `new-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       const maxOrdem = ops.reduce((m, o) => Math.max(m, (o as any).ordem_exibicao ?? 0), 0);
+      // Se nenhum nome foi passado, usa o da última operadora existente para a coluna
+      // entrar na MESMA tabela (o agrupamento é por operadora_nome).
+      const nomeFinal =
+        (operadoraNome && operadoraNome.trim()) ||
+        (ops.length > 0 ? ops[ops.length - 1].operadora_nome : "Nova Operadora");
       const nova: Operadora = {
         id: tempId,
         proposta_id: proposta?.id ?? "",
-        operadora_nome: "Nova Operadora",
+        operadora_nome: nomeFinal,
         plano_nome: "Novo Plano",
         valor_mensal: null,
         coparticipacao: null,
@@ -244,7 +249,7 @@ export default function PublicPropostaPage() {
       } as any;
       return [...ops, nova];
     });
-    toast.success("Coluna adicionada", { description: "Preencha os dados e clique em Salvar." });
+    toast.success("Coluna adicionada", { description: "Edite o nome do plano e demais campos." });
   };
 
   const removeDraftOperadora = (id: string) => {
