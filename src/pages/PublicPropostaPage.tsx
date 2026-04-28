@@ -214,7 +214,43 @@ export default function PublicPropostaPage() {
     setDraftOperadoras([]);
   };
 
-  const updateDraftProposta = <K extends keyof Proposta>(field: K, value: Proposta[K]) => {
+  const addDraftOperadora = () => {
+    setDraftOperadoras((ops) => {
+      const tempId = `new-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const maxOrdem = ops.reduce((m, o) => Math.max(m, (o as any).ordem_exibicao ?? 0), 0);
+      const nova: Operadora = {
+        id: tempId,
+        proposta_id: proposta?.id ?? "",
+        operadora_nome: "Nova Operadora",
+        plano_nome: "Novo Plano",
+        valor_mensal: null,
+        coparticipacao: null,
+        acomodacao: null,
+        abrangencia: null,
+        reembolso: null,
+        resumo_cobertura: null,
+        rede_credenciada_resumo: null,
+        destaque_comercial: null,
+        ordem_exibicao: maxOrdem + 1,
+        pdf_url: null,
+        faixas_etarias: null,
+        previsao_reajuste_faixa: null,
+        cor_coluna: null,
+        grupo_soma: null,
+        cores_celulas: null,
+        coparticipacao_detalhes: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as any;
+      return [...ops, nova];
+    });
+    toast.success("Coluna adicionada", { description: "Preencha os dados e clique em Salvar." });
+  };
+
+  const removeDraftOperadora = (id: string) => {
+    setDraftOperadoras((ops) => ops.filter((o) => o.id !== id));
+  };
+
     setDraftProposta((p) => (p ? { ...p, [field]: value } : p));
   };
 
