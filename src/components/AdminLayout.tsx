@@ -2,6 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { LogOut, FileText, Shield, BookOpen } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { signOut } = useAuth();
@@ -24,12 +25,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <span className="hidden sm:inline">Propostas</span>
               </Button>
             </Link>
-            <Link to="/admin/catalogo">
-              <Button variant={location.pathname === "/admin/catalogo" ? "default" : "ghost"} size="sm">
+            <Link to="/catalogo">
+              <Button variant={location.pathname.includes("/catalogo") ? "default" : "ghost"} size="sm">
                 <BookOpen className="w-4 h-4 mr-1" />
                 <span className="hidden sm:inline">Catálogo</span>
               </Button>
             </Link>
+            <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={signOut}>
               <LogOut className="w-4 h-4 mr-1" />
               <span className="hidden sm:inline">Sair</span>
