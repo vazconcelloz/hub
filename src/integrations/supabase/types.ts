@@ -249,6 +249,7 @@ export type Database = {
           bairro: string | null
           cep: string | null
           cidade: string
+          coberturas_por_plano: Json
           created_at: string
           destaque: boolean
           endereco: string | null
@@ -269,6 +270,7 @@ export type Database = {
           bairro?: string | null
           cep?: string | null
           cidade: string
+          coberturas_por_plano?: Json
           created_at?: string
           destaque?: boolean
           endereco?: string | null
@@ -289,6 +291,7 @@ export type Database = {
           bairro?: string | null
           cep?: string | null
           cidade?: string
+          coberturas_por_plano?: Json
           created_at?: string
           destaque?: boolean
           endereco?: string | null
@@ -313,6 +316,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rede_credenciada_uploads: {
+        Row: {
+          arquivo_nome: string
+          arquivo_url: string
+          created_at: string
+          id: string
+          observacoes: string | null
+          operadora_id: string
+          planos_detectados: string[]
+          status: string
+          total_importado: number
+        }
+        Insert: {
+          arquivo_nome: string
+          arquivo_url: string
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          operadora_id: string
+          planos_detectados?: string[]
+          status?: string
+          total_importado?: number
+        }
+        Update: {
+          arquivo_nome?: string
+          arquivo_url?: string
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          operadora_id?: string
+          planos_detectados?: string[]
+          status?: string
+          total_importado?: number
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
