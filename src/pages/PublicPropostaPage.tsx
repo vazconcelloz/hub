@@ -967,6 +967,20 @@ export default function PublicPropostaPage() {
                   </th>
                   );
                 })}
+                {editMode && (
+                  <th className="bg-muted/40 border-l border-border align-middle p-2 w-12">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      title="Adicionar coluna nesta tabela"
+                      onClick={() => addDraftOperadora(ops[0]?.operadora_nome)}
+                      className="h-8 w-8 mx-auto"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
