@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, Fragment } from "react";
 import { useLocation, useParams, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+
 import {
   Proposta,
   Operadora,
@@ -149,7 +149,7 @@ export default function PublicPropostaPage() {
   const { slug } = useParams();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { user, loading: authLoading } = useAuth();
+  
   const [proposta, setProposta] = useState<Proposta | null>(null);
   const [operadoras, setOperadoras] = useState<Operadora[]>([]);
   const [loading, setLoading] = useState(true);
@@ -168,8 +168,8 @@ export default function PublicPropostaPage() {
   const isPortalPreview = location.pathname.startsWith("/admin/cotacao/") || searchParams.get("portal") === "1";
 
   const canEdit = useMemo(
-    () => isPortalPreview && !authLoading && !!user && !!proposta,
-    [isPortalPreview, authLoading, user, proposta]
+    () => isPortalPreview && !!proposta,
+    [isPortalPreview, proposta]
   );
 
   useEffect(() => {

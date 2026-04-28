@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Proposta, STATUS_LABELS, STATUS_COLORS } from "@/lib/proposal-utils";
 import AdminLayout from "@/components/AdminLayout";
@@ -15,7 +14,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  
   const navigate = useNavigate();
   const { toast } = useToast();
   const [propostas, setPropostas] = useState<Proposta[]>([]);
@@ -26,14 +25,12 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchPropostas();
-  }, [user]);
+  }, []);
 
   const fetchPropostas = async () => {
-    if (!user) return;
     const { data, error } = await supabase
       .from("propostas")
       .select("*")
-      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -54,7 +51,6 @@ export default function DashboardPage() {
     const { data: newProposta, error } = await supabase
       .from("propostas")
       .insert({
-        user_id: user!.id,
         nome_cliente: proposta.nome_cliente + " (cópia)",
         telefone_cliente: proposta.telefone_cliente,
         cidade: proposta.cidade,

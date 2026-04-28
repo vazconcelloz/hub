@@ -1,11 +1,9 @@
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { LogOut, FileText, Shield, BookOpen } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import ThemeToggle from "@/components/ThemeToggle";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { signOut } = useAuth();
   const location = useLocation();
 
   return (
@@ -32,10 +30,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </Button>
             </Link>
             <ThemeToggle />
-            <Button variant="ghost" size="sm" onClick={signOut}>
-              <LogOut className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">Sair</span>
-            </Button>
           </nav>
         </div>
       </header>

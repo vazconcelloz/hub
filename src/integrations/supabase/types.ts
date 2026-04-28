@@ -194,7 +194,7 @@ export type Database = {
           telefone_cliente: string | null
           tipo_produto: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
           validade_proposta: string | null
         }
         Insert: {
@@ -216,7 +216,7 @@ export type Database = {
           telefone_cliente?: string | null
           tipo_produto?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
           validade_proposta?: string | null
         }
         Update: {
@@ -238,7 +238,7 @@ export type Database = {
           telefone_cliente?: string | null
           tipo_produto?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           validade_proposta?: string | null
         }
         Relationships: []

@@ -18,7 +18,7 @@ export default function Index() {
             Crie estudos comparativos em minutos. Envie links e feche mais contratos.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
-            <Link to="/login">
+            <Link to="/admin">
               <Button variant="accent" size="lg" className="text-base px-8">
                 Acessar o sistema
                 <ArrowRight className="w-5 h-5 ml-2" />
