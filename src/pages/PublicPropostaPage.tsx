@@ -1086,6 +1086,7 @@ export default function PublicPropostaPage() {
                 })}
                 {editMode && <td className={cn("border-l border-primary-foreground/10 w-12", rotuloColClass || "bg-primary")} />}
               </tr>
+              {!editMode && algum && ops.length > 1 && (
                 <tr className="bg-accent/20">
                   <td className="px-4 py-3 font-medium text-foreground border-r border-border">Economia vs. mais caro</td>
                   {ops.map((op, i) => {
