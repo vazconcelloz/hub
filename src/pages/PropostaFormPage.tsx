@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+
 import { supabase } from "@/integrations/supabase/client";
 import { generateSlug, parseFaixasEtarias, parseIdades, calcularTotalPorFaixas, agruparPorOperadora } from "@/lib/proposal-utils";
 import AdminLayout from "@/components/AdminLayout";
@@ -54,7 +54,7 @@ const limparNomePlano = (planoNome: string, operadoraNome: string) => {
 export default function PropostaFormPage() {
   const { id } = useParams();
   const isEdit = !!id && id !== "nova";
-  const { user } = useAuth();
+  
   const navigate = useNavigate();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
@@ -341,7 +341,7 @@ export default function PropostaFormPage() {
         const slug = generateSlug();
         const { data, error } = await supabase.from("propostas").insert({
           ...form,
-          user_id: user.id,
+          
           slug,
           consultora_foto_url: consultorPhotoUrl,
           validade_proposta: form.validade_proposta || null,
