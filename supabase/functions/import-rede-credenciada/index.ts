@@ -8,7 +8,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const GEMINI_MODELS = ["gemini-2.5-pro", "gemini-2.5-flash"];
+const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.5-pro"];
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function callGemini(apiKey: string, body: Record<string, unknown>) {
