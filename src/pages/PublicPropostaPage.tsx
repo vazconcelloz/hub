@@ -1125,7 +1125,7 @@ export default function PublicPropostaPage() {
                 </>
               ) : (
                 <>
-                  <Button variant="outline" size="sm" onClick={addDraftOperadora} disabled={saving}>
+                  <Button variant="outline" size="sm" onClick={() => addDraftOperadora()} disabled={saving}>
                     <Plus className="w-3.5 h-3.5 mr-1.5" /> Adicionar coluna
                   </Button>
                   <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={saving}>
