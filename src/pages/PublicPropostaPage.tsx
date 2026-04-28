@@ -876,10 +876,24 @@ export default function PublicPropostaPage() {
                   <th
                     key={op.id}
                     className={cn(
-                      "text-left px-4 py-3 font-semibold align-top border-r border-white/10 last:border-r-0 min-w-[180px]",
+                      "text-left px-4 py-3 font-semibold align-top border-r border-white/10 last:border-r-0 min-w-[180px] relative",
                       headerBg
                     )}
                   >
+                    {editMode && viewOps.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm(`Excluir a coluna "${op.plano_nome || op.operadora_nome || "este plano"}"?`)) {
+                            removeDraftOperadora(op.id);
+                          }
+                        }}
+                        title="Excluir esta coluna"
+                        className="absolute top-1 right-1 w-6 h-6 rounded-md bg-white/15 hover:bg-destructive hover:text-destructive-foreground flex items-center justify-center transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <div className="space-y-1">
                       {!editMode && (
                         <label className="flex items-center gap-1.5 text-[10px] font-normal opacity-90 cursor-pointer mb-1">
