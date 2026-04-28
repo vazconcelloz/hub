@@ -214,14 +214,19 @@ export default function PublicPropostaPage() {
     setDraftOperadoras([]);
   };
 
-  const addDraftOperadora = () => {
+  const addDraftOperadora = (operadoraNome?: string) => {
     setDraftOperadoras((ops) => {
       const tempId = `new-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       const maxOrdem = ops.reduce((m, o) => Math.max(m, (o as any).ordem_exibicao ?? 0), 0);
+      // Se nenhum nome foi passado, usa o da última operadora existente para a coluna
+      // entrar na MESMA tabela (o agrupamento é por operadora_nome).
+      const nomeFinal =
+        (operadoraNome && operadoraNome.trim()) ||
+        (ops.length > 0 ? ops[ops.length - 1].operadora_nome : "Nova Operadora");
       const nova: Operadora = {
         id: tempId,
         proposta_id: proposta?.id ?? "",
-        operadora_nome: "Nova Operadora",
+        operadora_nome: nomeFinal,
         plano_nome: "Novo Plano",
         valor_mensal: null,
         coparticipacao: null,
@@ -244,7 +249,7 @@ export default function PublicPropostaPage() {
       } as any;
       return [...ops, nova];
     });
-    toast.success("Coluna adicionada", { description: "Preencha os dados e clique em Salvar." });
+    toast.success("Coluna adicionada", { description: "Edite o nome do plano e demais campos." });
   };
 
   const removeDraftOperadora = (id: string) => {
@@ -962,6 +967,20 @@ export default function PublicPropostaPage() {
                   </th>
                   );
                 })}
+                {editMode && (
+                  <th className="bg-muted/40 border-l border-border align-middle p-2 w-12">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      title="Adicionar coluna nesta tabela"
+                      onClick={() => addDraftOperadora(ops[0]?.operadora_nome)}
+                      className="h-8 w-8 mx-auto"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -1015,6 +1034,7 @@ export default function PublicPropostaPage() {
                       </td>
                     );
                   })}
+                  {editMode && <td className="bg-muted/30 border-l border-border w-12" />}
                 </tr>
                 );
               })}
@@ -1064,6 +1084,7 @@ export default function PublicPropostaPage() {
                     </td>
                   );
                 })}
+                {editMode && <td className={cn("border-l border-primary-foreground/10 w-12", rotuloColClass || "bg-primary")} />}
               </tr>
               {!editMode && algum && ops.length > 1 && (
                 <tr className="bg-accent/20">
@@ -1120,7 +1141,7 @@ export default function PublicPropostaPage() {
                 </>
               ) : (
                 <>
-                  <Button variant="outline" size="sm" onClick={addDraftOperadora} disabled={saving}>
+                  <Button variant="outline" size="sm" onClick={() => addDraftOperadora()} disabled={saving}>
                     <Plus className="w-3.5 h-3.5 mr-1.5" /> Adicionar coluna
                   </Button>
                   <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={saving}>
