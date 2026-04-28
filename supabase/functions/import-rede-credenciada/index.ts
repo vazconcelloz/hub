@@ -43,8 +43,17 @@ function parseJsonLoose(raw: string) {
   return JSON.parse(cleaned);
 }
 
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + CHUNK)));
+  }
+  return btoa(binary);
+}
+
 async function pdfToText(pdfBytes: Uint8Array, apiKey: string): Promise<string> {
-  const base64 = btoa(String.fromCharCode(...pdfBytes));
+  const base64 = bytesToBase64(pdfBytes);
   const result = await callGemini(apiKey, {
     messages: [
       {
