@@ -451,6 +451,65 @@ export default function CatalogoPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* IMPORT DIALOG */}
+      <Dialog open={importDialog} onOpenChange={(o) => { if (!importing) { setImportDialog(o); if (!o) { setImportFile(null); setImportResult(null); } } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Upload className="w-5 h-5" />Importar Rede Credenciada</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Envie o PDF ou planilha (Excel) com a rede credenciada da operadora. A IA vai identificar os planos, os hospitais e a cobertura de cada plano automaticamente.
+              <br /><strong className="text-destructive">Atenção:</strong> isso substitui toda a rede atual da operadora selecionada.
+            </p>
+            <div>
+              <Label>Operadora *</Label>
+              <Select value={importOperadoraId} onValueChange={setImportOperadoraId} disabled={importing}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>{operadoras.map(o => <SelectItem key={o.id} value={o.id}>{o.nome}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Arquivo (PDF, XLSX, XLS) *</Label>
+              <Input type="file" accept=".pdf,.xlsx,.xls" disabled={importing}
+                onChange={e => setImportFile(e.target.files?.[0] ?? null)} />
+              {importFile && (
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <FileText className="w-3 h-3" />{importFile.name} · {(importFile.size / 1024).toFixed(0)} KB
+                </p>
+              )}
+            </div>
+            {importing && (
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg text-sm">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Processando arquivo com IA... isso pode levar até 1 minuto.
+              </div>
+            )}
+            {importResult && (
+              <div className="p-3 bg-accent/10 border border-accent rounded-lg text-sm space-y-1">
+                <p className="font-semibold">✓ {importResult.total} itens importados</p>
+                {importResult.planos.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <span className="text-xs text-muted-foreground">Planos detectados:</span>
+                    {importResult.planos.map(p => <Badge key={p} variant="secondary" className="text-xs">{p}</Badge>)}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" disabled={importing} onClick={() => setImportDialog(false)}>
+              {importResult ? "Fechar" : "Cancelar"}
+            </Button>
+            {!importResult && (
+              <Button onClick={handleImport} disabled={importing || !importOperadoraId || !importFile}>
+                {importing ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" />Importando</> : <><Upload className="w-4 h-4 mr-1" />Importar</>}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
