@@ -251,6 +251,7 @@ export default function PublicPropostaPage() {
     setDraftOperadoras((ops) => ops.filter((o) => o.id !== id));
   };
 
+  const updateDraftProposta = <K extends keyof Proposta>(field: K, value: Proposta[K]) => {
     setDraftProposta((p) => (p ? { ...p, [field]: value } : p));
   };
 
