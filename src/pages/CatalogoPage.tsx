@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, Building2, MapPin, Receipt, Shield, ArrowLeft } from "lucide-react";
+import { Plus, Pencil, Trash2, Building2, MapPin, Receipt, Shield, ArrowLeft, Upload, Loader2, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -21,6 +21,7 @@ type RedeItem = {
   cep: string | null; endereco: string | null; bairro: string | null;
   cidade: string; estado: string; telefone: string | null;
   especialidades: string[] | null; planos_aplicaveis: string[] | null;
+  coberturas_por_plano: Record<string, string> | null;
   ativo: boolean; destaque: boolean;
 };
 type Coparticipacao = {
@@ -44,6 +45,18 @@ export default function CatalogoPage() {
   const [redeNew, setRedeNew] = useState(false);
   const [coDialog, setCoDialog] = useState<Coparticipacao | null>(null);
   const [coNew, setCoNew] = useState(false);
+
+  // Importação
+  const [importDialog, setImportDialog] = useState(false);
+  const [importOperadoraId, setImportOperadoraId] = useState<string>("");
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ total: number; planos: string[] } | null>(null);
+
+  // Filtros da rede
+  const [redeBusca, setRedeBusca] = useState("");
+  const [redeFiltroOperadora, setRedeFiltroOperadora] = useState<string>("todas");
+  const [redeFiltroPlano, setRedeFiltroPlano] = useState<string>("todos");
 
   const loadAll = async () => {
     setLoading(true);
@@ -122,6 +135,36 @@ export default function CatalogoPage() {
     loadAll();
   };
 
+  // IMPORT
+  const handleImport = async () => {
+    if (!importOperadoraId || !importFile) {
+      toast({ title: "Selecione operadora e arquivo", variant: "destructive" });
+      return;
+    }
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const path = `${importOperadoraId}/${Date.now()}-${importFile.name}`;
+      const { error: upErr } = await supabase.storage.from("rede-credenciada-pdfs").upload(path, importFile, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("rede-credenciada-pdfs").getPublicUrl(path);
+
+      const { data, error } = await supabase.functions.invoke("import-rede-credenciada", {
+        body: { operadora_id: importOperadoraId, file_url: pub.publicUrl, file_name: importFile.name },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+
+      setImportResult({ total: (data as any).total, planos: (data as any).planos ?? [] });
+      toast({ title: "Importação concluída", description: `${(data as any).total} itens importados` });
+      loadAll();
+    } catch (e: any) {
+      toast({ title: "Erro na importação", description: e.message ?? "Falha", variant: "destructive" });
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card shadow-card sticky top-0 z-40">
@@ -190,32 +233,86 @@ export default function CatalogoPage() {
           {/* REDE */}
           <TabsContent value="rede">
             <Card>
-              <CardHeader className="flex-row justify-between items-center">
+              <CardHeader className="flex-row justify-between items-center flex-wrap gap-2">
                 <CardTitle>Rede Credenciada ({rede.length})</CardTitle>
-                <Button onClick={() => {
-                  setRedeNew(true);
-                  setRedeDialog({ id: "", operadora_id: operadoras[0]?.id ?? "", nome: "", tipo: "hospital", cep: "", endereco: "", bairro: "", cidade: "", estado: "", telefone: "", especialidades: [], planos_aplicaveis: [], ativo: true, destaque: false });
-                }}><Plus className="w-4 h-4 mr-1" />Novo</Button>
+                <div className="flex gap-2">
+                  <Button variant="default" onClick={() => { setImportResult(null); setImportFile(null); setImportOperadoraId(operadoras[0]?.id ?? ""); setImportDialog(true); }}>
+                    <Upload className="w-4 h-4 mr-1" />Importar PDF/Excel
+                  </Button>
+                  <Button variant="outline" onClick={() => {
+                    setRedeNew(true);
+                    setRedeDialog({ id: "", operadora_id: operadoras[0]?.id ?? "", nome: "", tipo: "hospital", cep: "", endereco: "", bairro: "", cidade: "", estado: "", telefone: "", especialidades: [], planos_aplicaveis: [], coberturas_por_plano: {}, ativo: true, destaque: false });
+                  }}><Plus className="w-4 h-4 mr-1" />Manual</Button>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-2">
-                {rede.map(r => (
-                  <div key={r.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
-                    <div>
-                      <div className="font-medium flex items-center gap-2">
-                        {r.nome}
-                        <Badge variant="outline">{r.tipo}</Badge>
-                        {r.destaque && <Badge className="bg-accent text-accent-foreground">Destaque</Badge>}
+              <CardContent className="space-y-3">
+                {/* Filtros */}
+                <div className="flex flex-wrap gap-2">
+                  <Input placeholder="Buscar por nome ou cidade..." value={redeBusca} onChange={e => setRedeBusca(e.target.value)} className="max-w-xs" />
+                  <Select value={redeFiltroOperadora} onValueChange={setRedeFiltroOperadora}>
+                    <SelectTrigger className="w-48"><SelectValue placeholder="Operadora" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas operadoras</SelectItem>
+                      {operadoras.map(o => <SelectItem key={o.id} value={o.id}>{o.nome}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Select value={redeFiltroPlano} onValueChange={setRedeFiltroPlano}>
+                    <SelectTrigger className="w-48"><SelectValue placeholder="Plano" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos planos</SelectItem>
+                      {Array.from(new Set(rede.flatMap(r => Object.keys(r.coberturas_por_plano ?? {})))).sort().map(p => (
+                        <SelectItem key={p} value={p}>{p}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {(() => {
+                  const q = redeBusca.toLowerCase();
+                  const filtered = rede.filter(r => {
+                    if (redeFiltroOperadora !== "todas" && r.operadora_id !== redeFiltroOperadora) return false;
+                    if (redeFiltroPlano !== "todos" && !(r.coberturas_por_plano ?? {})[redeFiltroPlano]) return false;
+                    if (q && !r.nome.toLowerCase().includes(q) && !r.cidade.toLowerCase().includes(q)) return false;
+                    return true;
+                  });
+                  return (
+                    <>
+                      <p className="text-xs text-muted-foreground">{filtered.length} resultados</p>
+                      <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                        {filtered.slice(0, 200).map(r => (
+                          <div key={r.id} className="flex items-start justify-between p-3 border rounded-lg hover:bg-muted/50 gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium flex items-center gap-2 flex-wrap">
+                                {r.nome}
+                                <Badge variant="outline">{r.tipo}</Badge>
+                                {r.destaque && <Badge className="bg-accent text-accent-foreground">Destaque</Badge>}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {operadoraNome(r.operadora_id)} · {r.cidade}/{r.estado} {r.bairro && `· ${r.bairro}`}
+                              </div>
+                              {r.coberturas_por_plano && Object.keys(r.coberturas_por_plano).length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {Object.entries(r.coberturas_por_plano).map(([plano, cob]) => (
+                                    <Badge key={plano} variant="secondary" className="text-xs">
+                                      <span className="font-semibold">{plano}:</span>&nbsp;{cob}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex gap-1 shrink-0">
+                              <Button size="icon" variant="ghost" onClick={() => { setRedeNew(false); setRedeDialog(r); }}><Pencil className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="ghost" onClick={() => delRede(r.id)}><Trash2 className="w-4 h-4" /></Button>
+                            </div>
+                          </div>
+                        ))}
+                        {filtered.length > 200 && (
+                          <p className="text-xs text-muted-foreground text-center py-2">Mostrando 200 de {filtered.length}. Refine a busca para ver mais.</p>
+                        )}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {operadoraNome(r.operadora_id)} · {r.cidade}/{r.estado} {r.bairro && `· ${r.bairro}`}
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button size="icon" variant="ghost" onClick={() => { setRedeNew(false); setRedeDialog(r); }}><Pencil className="w-4 h-4" /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => delRede(r.id)}><Trash2 className="w-4 h-4" /></Button>
-                    </div>
-                  </div>
-                ))}
+                    </>
+                  );
+                })()}
               </CardContent>
             </Card>
           </TabsContent>
@@ -351,6 +448,65 @@ export default function CatalogoPage() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => { setCoDialog(null); setCoNew(false); }}>Cancelar</Button>
             <Button onClick={() => coDialog && saveCopart(coDialog)}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* IMPORT DIALOG */}
+      <Dialog open={importDialog} onOpenChange={(o) => { if (!importing) { setImportDialog(o); if (!o) { setImportFile(null); setImportResult(null); } } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Upload className="w-5 h-5" />Importar Rede Credenciada</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Envie o PDF ou planilha (Excel) com a rede credenciada da operadora. A IA vai identificar os planos, os hospitais e a cobertura de cada plano automaticamente.
+              <br /><strong className="text-destructive">Atenção:</strong> isso substitui toda a rede atual da operadora selecionada.
+            </p>
+            <div>
+              <Label>Operadora *</Label>
+              <Select value={importOperadoraId} onValueChange={setImportOperadoraId} disabled={importing}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>{operadoras.map(o => <SelectItem key={o.id} value={o.id}>{o.nome}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Arquivo (PDF, XLSX, XLS) *</Label>
+              <Input type="file" accept=".pdf,.xlsx,.xls" disabled={importing}
+                onChange={e => setImportFile(e.target.files?.[0] ?? null)} />
+              {importFile && (
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <FileText className="w-3 h-3" />{importFile.name} · {(importFile.size / 1024).toFixed(0)} KB
+                </p>
+              )}
+            </div>
+            {importing && (
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg text-sm">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Processando arquivo com IA... isso pode levar até 1 minuto.
+              </div>
+            )}
+            {importResult && (
+              <div className="p-3 bg-accent/10 border border-accent rounded-lg text-sm space-y-1">
+                <p className="font-semibold">✓ {importResult.total} itens importados</p>
+                {importResult.planos.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <span className="text-xs text-muted-foreground">Planos detectados:</span>
+                    {importResult.planos.map(p => <Badge key={p} variant="secondary" className="text-xs">{p}</Badge>)}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" disabled={importing} onClick={() => setImportDialog(false)}>
+              {importResult ? "Fechar" : "Cancelar"}
+            </Button>
+            {!importResult && (
+              <Button onClick={handleImport} disabled={importing || !importOperadoraId || !importFile}>
+                {importing ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" />Importando</> : <><Upload className="w-4 h-4 mr-1" />Importar</>}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
