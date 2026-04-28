@@ -46,6 +46,18 @@ export default function CatalogoPage() {
   const [coDialog, setCoDialog] = useState<Coparticipacao | null>(null);
   const [coNew, setCoNew] = useState(false);
 
+  // Importação
+  const [importDialog, setImportDialog] = useState(false);
+  const [importOperadoraId, setImportOperadoraId] = useState<string>("");
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ total: number; planos: string[] } | null>(null);
+
+  // Filtros da rede
+  const [redeBusca, setRedeBusca] = useState("");
+  const [redeFiltroOperadora, setRedeFiltroOperadora] = useState<string>("todas");
+  const [redeFiltroPlano, setRedeFiltroPlano] = useState<string>("todos");
+
   const loadAll = async () => {
     setLoading(true);
     const [op, rd, co] = await Promise.all([
