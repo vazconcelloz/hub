@@ -315,7 +315,6 @@ export default function PropostaFormPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
     setSaving(true);
 
     try {
