@@ -21,6 +21,7 @@ type RedeItem = {
   cep: string | null; endereco: string | null; bairro: string | null;
   cidade: string; estado: string; telefone: string | null;
   especialidades: string[] | null; planos_aplicaveis: string[] | null;
+  coberturas_por_plano: Record<string, string> | null;
   ativo: boolean; destaque: boolean;
 };
 type Coparticipacao = {
