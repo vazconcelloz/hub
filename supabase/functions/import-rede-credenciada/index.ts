@@ -8,7 +8,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const GEMINI_MODELS = ["gemini-2.5-pro", "gemini-2.5-flash"];
+const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.5-pro"];
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function callGemini(apiKey: string, body: Record<string, unknown>) {
@@ -32,8 +32,12 @@ async function callGemini(apiKey: string, body: Record<string, unknown>) {
       lastErr = await resp.text();
       console.error(`Gemini ${model} attempt ${attempt + 1}:`, resp.status, lastErr.slice(0, 300));
       if (![429, 500, 502, 503, 504].includes(resp.status)) break;
+      if (resp.status === 429) break; // não adianta retry no mesmo modelo, pula pro próximo
       await wait(800 * (attempt + 1));
     }
+  }
+  if (lastStatus === 429) {
+    throw new Error("Quota da IA esgotada no momento. Tente novamente em alguns minutos ou faça upgrade do plano Gemini.");
   }
   throw new Error(`AI error ${lastStatus}: ${lastErr.slice(0, 200)}`);
 }
