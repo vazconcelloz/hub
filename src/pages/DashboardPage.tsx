@@ -148,10 +148,16 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-bold text-foreground">Propostas</h1>
             <p className="text-muted-foreground text-sm">Gerencie suas cotações e propostas</p>
           </div>
-          <Button onClick={() => navigate("/admin/proposta/nova")} size="lg">
-            <Plus className="w-4 h-4 mr-2" />
-            Nova Proposta
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => navigate("/admin/proposta/nova?modo=manual")} size="lg" variant="outline">
+              <Plus className="w-4 h-4 mr-2" />
+              Criar do zero
+            </Button>
+            <Button onClick={() => navigate("/admin/proposta/nova")} size="lg">
+              <FileText className="w-4 h-4 mr-2" />
+              Importar PDF
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}
@@ -203,9 +209,14 @@ export default function DashboardPage() {
           <Card className="p-12 text-center">
             <FileText className="w-12 h-12 mx-auto text-muted-foreground/40 mb-3" />
             <p className="text-muted-foreground">Nenhuma proposta encontrada</p>
-            <Button onClick={() => navigate("/admin/proposta/nova")} className="mt-4">
-              <Plus className="w-4 h-4 mr-2" /> Criar primeira proposta
-            </Button>
+            <div className="mt-4 flex flex-wrap gap-2 justify-center">
+              <Button onClick={() => navigate("/admin/proposta/nova?modo=manual")} variant="outline">
+                <Plus className="w-4 h-4 mr-2" /> Criar do zero
+              </Button>
+              <Button onClick={() => navigate("/admin/proposta/nova")}>
+                <FileText className="w-4 h-4 mr-2" /> Importar PDF
+              </Button>
+            </div>
           </Card>
         ) : (
           <div className="space-y-3">

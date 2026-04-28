@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { supabase } from "@/integrations/supabase/client";
 import { generateSlug, parseFaixasEtarias, parseIdades, calcularTotalPorFaixas, agruparPorOperadora } from "@/lib/proposal-utils";
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Save, ArrowLeft, Plus, Trash2, Upload, GripVertical, Sparkles, Loader2 } from "lucide-react";
+import { Save, ArrowLeft, Plus, Trash2, Upload, GripVertical, Sparkles, Loader2, PencilLine } from "lucide-react";
 
 const ESTADOS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
@@ -54,7 +54,9 @@ const limparNomePlano = (planoNome: string, operadoraNome: string) => {
 export default function PropostaFormPage() {
   const { id } = useParams();
   const isEdit = !!id && id !== "nova";
-  
+  const [searchParams] = useSearchParams();
+  const modoManual = searchParams.get("modo") === "manual" && !isEdit;
+
   const navigate = useNavigate();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
@@ -394,8 +396,23 @@ export default function PropostaFormPage() {
           <Button type="button" variant="ghost" size="icon" onClick={() => navigate("/admin")}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-2xl font-bold">{isEdit ? "Editar Proposta" : "Nova Proposta"}</h1>
+          <h1 className="text-2xl font-bold">
+            {isEdit ? "Editar Proposta" : modoManual ? "Nova Proposta (do zero)" : "Nova Proposta"}
+          </h1>
         </div>
+
+        {modoManual && (
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 flex items-start gap-3">
+            <PencilLine className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+            <div className="text-sm">
+              <p className="font-semibold text-foreground">Modo manual</p>
+              <p className="text-muted-foreground">
+                Preencha os dados manualmente e use <strong>"Adicionar Plano/Operadora"</strong> abaixo
+                para criar quantas colunas comparativas quiser. O upload de PDF é opcional.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Client info */}
         <Card>
@@ -495,10 +512,15 @@ export default function PropostaFormPage() {
 
         {/* Operadoras e planos */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">Operadoras e Planos</h2>
-            <Button type="button" variant="outline" onClick={addOperadora}>
-              <Plus className="w-4 h-4 mr-2" /> Adicionar Plano/Operadora
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h2 className="text-xl font-bold">Operadoras e Planos</h2>
+              <p className="text-sm text-muted-foreground">
+                Cada plano vira uma coluna na proposta comparativa do cliente.
+              </p>
+            </div>
+            <Button type="button" onClick={addOperadora} className="gap-2">
+              <Plus className="w-4 h-4" /> Adicionar Coluna / Plano
             </Button>
           </div>
 
@@ -629,6 +651,15 @@ export default function PropostaFormPage() {
               </CardContent>
             </Card>
           ))}
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addOperadora}
+            className="w-full border-dashed h-14 text-muted-foreground hover:text-foreground hover:border-primary"
+          >
+            <Plus className="w-4 h-4 mr-2" /> Adicionar outra coluna / plano
+          </Button>
         </div>
 
         {/* Submit */}
