@@ -252,6 +252,49 @@ export default function PublicPropostaPage() {
     toast.success("Coluna adicionada", { description: "Edite o nome do plano e demais campos." });
   };
 
+  const addDraftSeguradora = () => {
+    // Gera um nome único para criar uma NOVA tabela (agrupamento por operadora_nome)
+    setDraftOperadoras((ops) => {
+      const base = "Nova Seguradora";
+      const nomesExistentes = new Set(
+        ops.map((o) => (o.operadora_nome ?? "").trim().toLowerCase())
+      );
+      let nomeFinal = base;
+      let i = 2;
+      while (nomesExistentes.has(nomeFinal.trim().toLowerCase())) {
+        nomeFinal = `${base} ${i++}`;
+      }
+      const tempId = `new-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const maxOrdem = ops.reduce((m, o) => Math.max(m, (o as any).ordem_exibicao ?? 0), 0);
+      const nova: Operadora = {
+        id: tempId,
+        proposta_id: proposta?.id ?? "",
+        operadora_nome: nomeFinal,
+        plano_nome: "Novo Plano",
+        valor_mensal: null,
+        coparticipacao: null,
+        acomodacao: null,
+        abrangencia: null,
+        reembolso: null,
+        resumo_cobertura: null,
+        rede_credenciada_resumo: null,
+        destaque_comercial: null,
+        ordem_exibicao: maxOrdem + 1,
+        pdf_url: null,
+        faixas_etarias: null,
+        previsao_reajuste_faixa: null,
+        cor_coluna: null,
+        grupo_soma: null,
+        cores_celulas: null,
+        coparticipacao_detalhes: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as any;
+      return [...ops, nova];
+    });
+    toast.success("Seguradora adicionada", { description: "Uma nova tabela foi criada. Edite o nome da seguradora e os planos." });
+  };
+
   const removeDraftOperadora = (id: string) => {
     setDraftOperadoras((ops) => ops.filter((o) => o.id !== id));
   };
@@ -1086,8 +1129,8 @@ export default function PublicPropostaPage() {
                 </>
               ) : (
                 <>
-                  <Button variant="outline" size="sm" onClick={() => addDraftOperadora()} disabled={saving}>
-                    <Plus className="w-3.5 h-3.5 mr-1.5" /> Adicionar coluna
+                  <Button variant="outline" size="sm" onClick={() => addDraftSeguradora()} disabled={saving}>
+                    <Plus className="w-3.5 h-3.5 mr-1.5" /> Adicionar seguradora
                   </Button>
                   <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={saving}>
                     <X className="w-3.5 h-3.5 mr-1.5" /> Cancelar
