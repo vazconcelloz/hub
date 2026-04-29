@@ -950,8 +950,8 @@ export default function PublicPropostaPage() {
               {criteriosVisiveis.map((crit, rowIdx) => {
                 const oculta = linhasOcultas.includes(crit.field as string);
                 return (
-                <tr key={crit.label} className={cn(rowIdx % 2 === 0 ? "bg-background" : "bg-muted/40", editMode && oculta && "opacity-60")}>
-                  <td className="px-4 py-3 font-medium border-r border-border align-top text-foreground">
+                <tr key={crit.label} className={cn(editMode && oculta && "opacity-60")}>
+                  <td className={cn("px-4 py-3 font-medium border-r border-border align-top", rotuloCellClassFor(ops[0]))}>
                     <div className="flex items-center justify-between gap-2">
                       <span>{crit.label}{editMode && oculta && <span className="ml-1 text-[10px] opacity-70">(oculta)</span>}</span>
                       {editMode && (
