@@ -1240,11 +1240,9 @@ export default function PublicPropostaPage() {
               const total = grupoInfo ? grupoInfo.total : (totalById.get(op.id) ?? null);
               const headerCls = headerClassFor(op);
               const borderCls = borderClassFor(op);
-              const planoCellColor = getCellColorClass((op as any).cores_celulas, "plano_nome");
-              const mensCellColor = getCellColorClass((op as any).cores_celulas, "valor_mensal");
               return (
                 <Card key={op.id} className={cn("overflow-hidden border-t-4", borderCls)}>
-                  <div className={cn("p-4", planoCellColor || headerCls)}>
+                  <div className={cn("p-4", headerCls)}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
                         {editMode ? (
@@ -1259,7 +1257,6 @@ export default function PublicPropostaPage() {
                             />
                             <div className="flex items-center gap-1 flex-wrap">
                               <ColorPicker op={op} />
-                              <CellColorPicker op={op} field="plano_nome" label="Cor do plano" />
                             </div>
                           </div>
                         ) : (
@@ -1297,23 +1294,20 @@ export default function PublicPropostaPage() {
                         {DESTAQUE_LABELS[op.destaque_comercial]}
                       </Badge>
                     )}
-                    <div className={cn("mt-3 pt-3 border-t border-white/20 -mx-4 -mb-4 px-4 pb-4", mensCellColor)}>
+                    <div className="mt-3 pt-3 border-t border-white/20 -mx-4 -mb-4 px-4 pb-4">
                       <p className="text-xs opacity-80 uppercase tracking-wide">
                         Mensalidade Total{grupoInfo ? " (grupo)" : ""}
                       </p>
                       {editMode ? (
-                        <div className="flex items-start gap-1.5 mt-1">
-                          <Input
-                            type="number"
-                            step="0.01"
-                            value={op.valor_mensal ?? ""}
-                            onChange={(e) =>
-                              updateDraftOperadora(op.id, "valor_mensal", e.target.value === "" ? null : parseFloat(e.target.value))
-                            }
-                            className="h-9 text-base text-foreground"
-                          />
-                          <CellColorPicker op={op} field="valor_mensal" label="Cor" />
-                        </div>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={op.valor_mensal ?? ""}
+                          onChange={(e) =>
+                            updateDraftOperadora(op.id, "valor_mensal", e.target.value === "" ? null : parseFloat(e.target.value))
+                          }
+                          className="h-9 text-base text-foreground mt-1"
+                        />
                       ) : (
                         <p className="text-2xl font-bold">{total !== null ? formatCurrency(total) : "—"}</p>
                       )}
@@ -1324,13 +1318,11 @@ export default function PublicPropostaPage() {
                       const v = op[crit.field as keyof Operadora] as string | null;
                       if (!editMode && !v) return null;
                       const oculta = linhasOcultas.includes(crit.field as string);
-                      const cellColor = getCellColorClass((op as any).cores_celulas, crit.field);
                       return (
                         <div
                           key={crit.label}
                           className={cn(
                             "flex flex-col gap-1 pb-2 border-b last:border-b-0 -mx-2 px-2 rounded",
-                            cellColor,
                             editMode && oculta && "opacity-60"
                           )}
                         >
@@ -1339,17 +1331,14 @@ export default function PublicPropostaPage() {
                               {crit.label}{editMode && oculta && <span className="ml-1 normal-case">(oculta)</span>}
                             </span>
                             {editMode && (
-                              <div className="flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => toggleLinhaOculta(crit.field as string)}
-                                  className="h-6 w-6 rounded border flex items-center justify-center hover:bg-muted shrink-0"
-                                  title={oculta ? "Exibir esta linha" : "Ocultar do cliente"}
-                                >
-                                  {oculta ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                </button>
-                                {podePintarCelula(crit.field) && <CellColorPicker op={op} field={crit.field} label="Cor" />}
-                              </div>
+                              <button
+                                type="button"
+                                onClick={() => toggleLinhaOculta(crit.field as string)}
+                                className="h-6 w-6 rounded border flex items-center justify-center hover:bg-muted shrink-0"
+                                title={oculta ? "Exibir esta linha" : "Ocultar do cliente"}
+                              >
+                                {oculta ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                              </button>
                             )}
                           </div>
                           <div className="text-foreground space-y-1">
