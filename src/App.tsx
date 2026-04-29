@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import Index from "./pages/Index.tsx";
+import { Navigate } from "react-router-dom";
 import NotFound from "./pages/NotFound.tsx";
 import DashboardPage from "./pages/DashboardPage";
 import PropostaFormPage from "./pages/PropostaFormPage";
@@ -21,7 +21,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<Navigate to="/admin" replace />} />
             <Route path="/catalogo" element={<CatalogoPage />} />
             <Route path="/admin" element={<DashboardPage />} />
             <Route path="/admin/proposta/:id" element={<PropostaFormPage />} />
