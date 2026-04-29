@@ -784,6 +784,11 @@ export default function PublicPropostaPage() {
     const c = getColunaColor((op as any).cor_coluna);
     return c ? c.border : "border-primary";
   };
+  const rotuloCellClassFor = (op: Operadora | undefined) => {
+    if (!op) return "bg-muted/40 text-foreground";
+    const c = getColunaColor((op as any).cor_coluna);
+    return c ? c.cell : "bg-muted/40 text-foreground";
+  };
 
   // ====== Renderização da tabela comparativa ======
   // Por padrão é usada para uma única operadora (uma tabela por operadora).
@@ -805,7 +810,10 @@ export default function PublicPropostaPage() {
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr>
-                <th className="text-left px-4 py-3 font-semibold w-56 align-top border-r border-border text-xs uppercase tracking-wide bg-muted/60 text-muted-foreground">
+                <th className={cn(
+                  "text-left px-4 py-3 font-semibold w-56 align-top border-r border-border text-xs uppercase tracking-wide",
+                  ops.length > 0 ? headerClassFor(ops[0]) : "bg-muted/60 text-muted-foreground"
+                )}>
                   <div className="flex items-center justify-between gap-2">
                     <span>Planos</span>
                     {editMode && ops.length > 0 && (
@@ -942,8 +950,8 @@ export default function PublicPropostaPage() {
               {criteriosVisiveis.map((crit, rowIdx) => {
                 const oculta = linhasOcultas.includes(crit.field as string);
                 return (
-                <tr key={crit.label} className={cn(rowIdx % 2 === 0 ? "bg-background" : "bg-muted/40", editMode && oculta && "opacity-60")}>
-                  <td className="px-4 py-3 font-medium border-r border-border align-top text-foreground">
+                <tr key={crit.label} className={cn(editMode && oculta && "opacity-60")}>
+                  <td className={cn("px-4 py-3 font-medium border-r border-border align-top", rotuloCellClassFor(ops[0]))}>
                     <div className="flex items-center justify-between gap-2">
                       <span>{crit.label}{editMode && oculta && <span className="ml-1 text-[10px] opacity-70">(oculta)</span>}</span>
                       {editMode && (
