@@ -774,62 +774,8 @@ export default function PublicPropostaPage() {
     );
   };
 
-  // Seletor de cor de uma célula individual
-  const CellColorPicker = ({ op, field, label = "Cor" }: { op: Operadora; field: string; label?: string }) => {
-    const current = getCellColorKey((op as any).cores_celulas, field);
-    return (
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className={cn(
-              "h-7 px-2 text-[11px] gap-1 border shadow-sm shrink-0 bg-background text-foreground hover:bg-muted",
-              current && COLUNA_COLORS[current]?.header
-            )}
-            title="Cor da célula"
-          >
-            <Palette className={cn("w-3 h-3", current ? "text-white" : "text-muted-foreground")} />
-            {label}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-64 p-3">
-          <p className="text-xs font-medium mb-2">Cor desta célula</p>
-          {renderPalette(current, (k) => updateCellColor(op.id, field, k))}
-        </PopoverContent>
-      </Popover>
-    );
-  };
+  // Cores por célula e por coluna de rótulos foram removidas — agora só a tabela inteira recebe cor (via OperadoraColorPicker).
 
-  // Cor única da COLUNA inteira de rótulos (não por linha) — vem da proposta
-  const coresRotulos = ((view as any)?.cores_rotulos ?? {}) as Record<string, string>;
-  const ROTULO_COL_KEY = "__coluna__";
-  const rotuloColKey = coresRotulos[ROTULO_COL_KEY] ?? null;
-  const rotuloColClass = rotuloColKey ? (COLUNA_COLORS[rotuloColKey]?.header ?? "") : "";
-  const RotuloColumnColorPicker = () => (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          className={cn(
-            "h-7 px-2 text-[11px] gap-1 border shadow-sm shrink-0 bg-background text-foreground hover:bg-muted",
-            rotuloColKey && COLUNA_COLORS[rotuloColKey]?.header
-          )}
-          title="Cor da coluna de rótulos"
-        >
-          <Palette className={cn("w-3 h-3", rotuloColKey ? "text-white" : "text-muted-foreground")} />
-          Coluna
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-64 p-3">
-        <p className="text-xs font-medium mb-2">Cor da coluna de rótulos</p>
-        {renderPalette(rotuloColKey, (k) => updateRotuloColor(ROTULO_COL_KEY, k))}
-      </PopoverContent>
-    </Popover>
-  );
   const headerClassFor = (op: Operadora) => {
     const c = getColunaColor((op as any).cor_coluna);
     return c ? c.header : "bg-primary text-primary-foreground";
