@@ -774,62 +774,8 @@ export default function PublicPropostaPage() {
     );
   };
 
-  // Seletor de cor de uma célula individual
-  const CellColorPicker = ({ op, field, label = "Cor" }: { op: Operadora; field: string; label?: string }) => {
-    const current = getCellColorKey((op as any).cores_celulas, field);
-    return (
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className={cn(
-              "h-7 px-2 text-[11px] gap-1 border shadow-sm shrink-0 bg-background text-foreground hover:bg-muted",
-              current && COLUNA_COLORS[current]?.header
-            )}
-            title="Cor da célula"
-          >
-            <Palette className={cn("w-3 h-3", current ? "text-white" : "text-muted-foreground")} />
-            {label}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-64 p-3">
-          <p className="text-xs font-medium mb-2">Cor desta célula</p>
-          {renderPalette(current, (k) => updateCellColor(op.id, field, k))}
-        </PopoverContent>
-      </Popover>
-    );
-  };
+  // Cores por célula e por coluna de rótulos foram removidas — agora só a tabela inteira recebe cor (via OperadoraColorPicker).
 
-  // Cor única da COLUNA inteira de rótulos (não por linha) — vem da proposta
-  const coresRotulos = ((view as any)?.cores_rotulos ?? {}) as Record<string, string>;
-  const ROTULO_COL_KEY = "__coluna__";
-  const rotuloColKey = coresRotulos[ROTULO_COL_KEY] ?? null;
-  const rotuloColClass = rotuloColKey ? (COLUNA_COLORS[rotuloColKey]?.header ?? "") : "";
-  const RotuloColumnColorPicker = () => (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          className={cn(
-            "h-7 px-2 text-[11px] gap-1 border shadow-sm shrink-0 bg-background text-foreground hover:bg-muted",
-            rotuloColKey && COLUNA_COLORS[rotuloColKey]?.header
-          )}
-          title="Cor da coluna de rótulos"
-        >
-          <Palette className={cn("w-3 h-3", rotuloColKey ? "text-white" : "text-muted-foreground")} />
-          Coluna
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-64 p-3">
-        <p className="text-xs font-medium mb-2">Cor da coluna de rótulos</p>
-        {renderPalette(rotuloColKey, (k) => updateRotuloColor(ROTULO_COL_KEY, k))}
-      </PopoverContent>
-    </Popover>
-  );
   const headerClassFor = (op: Operadora) => {
     const c = getColunaColor((op as any).cor_coluna);
     return c ? c.header : "bg-primary text-primary-foreground";
@@ -859,25 +805,16 @@ export default function PublicPropostaPage() {
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr>
-                <th className={cn(
-                  "text-left px-4 py-3 font-semibold w-56 align-top border-r border-border text-xs uppercase tracking-wide",
-                  rotuloColClass || "bg-muted/60 text-muted-foreground"
-                )}>
-                  <div className="flex items-center justify-between gap-2">
-                    <span>Planos</span>
-                    {editMode && <RotuloColumnColorPicker />}
-                  </div>
+                <th className="text-left px-4 py-3 font-semibold w-56 align-top border-r border-border text-xs uppercase tracking-wide bg-muted/60 text-muted-foreground">
+                  <span>Planos</span>
                 </th>
                 {ops.map((op) => {
-                  const planoCellColor = getCellColorClass((op as any).cores_celulas, "plano_nome");
-                  const hasColColor = !!(op as any).cor_coluna;
-                  const headerBg = planoCellColor || (hasColColor ? headerClassFor(op) : (rotuloColClass || headerClassFor(op)));
                   return (
                   <th
                     key={op.id}
                     className={cn(
                       "text-left px-4 py-3 font-semibold align-top border-r border-white/10 last:border-r-0 min-w-[180px] relative",
-                      headerBg
+                      headerClassFor(op)
                     )}
                   >
                     {editMode && viewOps.length > 1 && (
@@ -944,7 +881,6 @@ export default function PublicPropostaPage() {
                               </SelectContent>
                             </Select>
                             <ColorPicker op={op} />
-                            <CellColorPicker op={op} field="plano_nome" label="Cor do plano" />
                           </div>
                         </>
                       ) : (
@@ -1002,10 +938,7 @@ export default function PublicPropostaPage() {
                 const oculta = linhasOcultas.includes(crit.field as string);
                 return (
                 <tr key={crit.label} className={cn(rowIdx % 2 === 0 ? "bg-background" : "bg-muted/40", editMode && oculta && "opacity-60")}>
-                  <td className={cn(
-                    "px-4 py-3 font-medium border-r border-border align-top",
-                    rotuloColClass || "text-foreground"
-                  )}>
+                  <td className="px-4 py-3 font-medium border-r border-border align-top text-foreground">
                     <div className="flex items-center justify-between gap-2">
                       <span>{crit.label}{editMode && oculta && <span className="ml-1 text-[10px] opacity-70">(oculta)</span>}</span>
                       {editMode && (
@@ -1021,21 +954,14 @@ export default function PublicPropostaPage() {
                     </div>
                   </td>
                   {ops.map((op) => {
-                    const cellColor = getCellColorClass((op as any).cores_celulas, crit.field);
                     return (
                       <td
                         key={op.id}
-                        className={cn(
-                          "px-4 py-3 text-foreground border-r border-border last:border-r-0 align-top",
-                          cellColor
-                        )}
+                        className="px-4 py-3 text-foreground border-r border-border last:border-r-0 align-top"
                       >
                         {editMode ? (
                           <div className="space-y-1">
-                            <div className="flex items-start gap-1.5">
-                              <div className="flex-1 min-w-0">{renderEditableCell(op, crit)}</div>
-                              {podePintarCelula(crit.field) && <CellColorPicker op={op} field={crit.field} label="Cor" />}
-                            </div>
+                            <div className="flex-1 min-w-0">{renderEditableCell(op, crit)}</div>
                             {crit.field === "coparticipacao" && <CoparticipacaoEditor op={op} onChange={updateDraftOperadora} />}
                           </div>
                         ) : (
@@ -1054,37 +980,30 @@ export default function PublicPropostaPage() {
               })}
             </tbody>
             <tfoot>
-              <tr className={cn("text-primary-foreground", rotuloColClass || "bg-primary")}>
+              <tr className="text-primary-foreground bg-primary">
                 <td className="px-4 py-4 font-bold uppercase tracking-wide text-sm border-r border-primary-foreground/10">
                   Mensalidade Total
                 </td>
                 {ops.map((op, i) => {
                   const grupoInfo = grupoSomaInfoById.get(op.id);
                   const valorExibido = grupoInfo ? grupoInfo.total : totais[i];
-                  const mensCellColor = getCellColorClass((op as any).cores_celulas, "valor_mensal");
                   return (
-                    <td key={op.id} className={cn(
-                      "px-4 py-4 font-bold text-lg border-r border-primary-foreground/10 last:border-r-0 align-top",
-                      mensCellColor
-                    )}>
+                    <td key={op.id} className="px-4 py-4 font-bold text-lg border-r border-primary-foreground/10 last:border-r-0 align-top">
                       {editMode ? (
-                        <div className="flex items-start gap-1.5">
-                          <Input
-                            type="number"
-                            step="0.01"
-                            value={op.valor_mensal ?? ""}
-                            onChange={(e) =>
-                              updateDraftOperadora(
-                                op.id,
-                                "valor_mensal",
-                                e.target.value === "" ? null : parseFloat(e.target.value)
-                              )
-                            }
-                            className="h-9 text-base text-foreground"
-                            placeholder="0,00"
-                          />
-                          <CellColorPicker op={op} field="valor_mensal" label="Cor" />
-                        </div>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={op.valor_mensal ?? ""}
+                          onChange={(e) =>
+                            updateDraftOperadora(
+                              op.id,
+                              "valor_mensal",
+                              e.target.value === "" ? null : parseFloat(e.target.value)
+                            )
+                          }
+                          className="h-9 text-base text-foreground"
+                          placeholder="0,00"
+                        />
                       ) : (
                         <div>
                           {valorExibido !== null ? formatCurrency(valorExibido) : "—"}
@@ -1098,7 +1017,7 @@ export default function PublicPropostaPage() {
                     </td>
                   );
                 })}
-                {editMode && <td className={cn("border-l border-primary-foreground/10 w-12", rotuloColClass || "bg-primary")} />}
+                {editMode && <td className="border-l border-primary-foreground/10 w-12 bg-primary" />}
               </tr>
               {!editMode && algum && ops.length > 1 && (
                 <tr className="bg-accent/20">
@@ -1267,11 +1186,9 @@ export default function PublicPropostaPage() {
               const total = grupoInfo ? grupoInfo.total : (totalById.get(op.id) ?? null);
               const headerCls = headerClassFor(op);
               const borderCls = borderClassFor(op);
-              const planoCellColor = getCellColorClass((op as any).cores_celulas, "plano_nome");
-              const mensCellColor = getCellColorClass((op as any).cores_celulas, "valor_mensal");
               return (
                 <Card key={op.id} className={cn("overflow-hidden border-t-4", borderCls)}>
-                  <div className={cn("p-4", planoCellColor || headerCls)}>
+                  <div className={cn("p-4", headerCls)}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
                         {editMode ? (
@@ -1286,7 +1203,6 @@ export default function PublicPropostaPage() {
                             />
                             <div className="flex items-center gap-1 flex-wrap">
                               <ColorPicker op={op} />
-                              <CellColorPicker op={op} field="plano_nome" label="Cor do plano" />
                             </div>
                           </div>
                         ) : (
@@ -1324,23 +1240,20 @@ export default function PublicPropostaPage() {
                         {DESTAQUE_LABELS[op.destaque_comercial]}
                       </Badge>
                     )}
-                    <div className={cn("mt-3 pt-3 border-t border-white/20 -mx-4 -mb-4 px-4 pb-4", mensCellColor)}>
+                    <div className="mt-3 pt-3 border-t border-white/20 -mx-4 -mb-4 px-4 pb-4">
                       <p className="text-xs opacity-80 uppercase tracking-wide">
                         Mensalidade Total{grupoInfo ? " (grupo)" : ""}
                       </p>
                       {editMode ? (
-                        <div className="flex items-start gap-1.5 mt-1">
-                          <Input
-                            type="number"
-                            step="0.01"
-                            value={op.valor_mensal ?? ""}
-                            onChange={(e) =>
-                              updateDraftOperadora(op.id, "valor_mensal", e.target.value === "" ? null : parseFloat(e.target.value))
-                            }
-                            className="h-9 text-base text-foreground"
-                          />
-                          <CellColorPicker op={op} field="valor_mensal" label="Cor" />
-                        </div>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={op.valor_mensal ?? ""}
+                          onChange={(e) =>
+                            updateDraftOperadora(op.id, "valor_mensal", e.target.value === "" ? null : parseFloat(e.target.value))
+                          }
+                          className="h-9 text-base text-foreground mt-1"
+                        />
                       ) : (
                         <p className="text-2xl font-bold">{total !== null ? formatCurrency(total) : "—"}</p>
                       )}
@@ -1351,13 +1264,11 @@ export default function PublicPropostaPage() {
                       const v = op[crit.field as keyof Operadora] as string | null;
                       if (!editMode && !v) return null;
                       const oculta = linhasOcultas.includes(crit.field as string);
-                      const cellColor = getCellColorClass((op as any).cores_celulas, crit.field);
                       return (
                         <div
                           key={crit.label}
                           className={cn(
                             "flex flex-col gap-1 pb-2 border-b last:border-b-0 -mx-2 px-2 rounded",
-                            cellColor,
                             editMode && oculta && "opacity-60"
                           )}
                         >
@@ -1366,17 +1277,14 @@ export default function PublicPropostaPage() {
                               {crit.label}{editMode && oculta && <span className="ml-1 normal-case">(oculta)</span>}
                             </span>
                             {editMode && (
-                              <div className="flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => toggleLinhaOculta(crit.field as string)}
-                                  className="h-6 w-6 rounded border flex items-center justify-center hover:bg-muted shrink-0"
-                                  title={oculta ? "Exibir esta linha" : "Ocultar do cliente"}
-                                >
-                                  {oculta ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                </button>
-                                {podePintarCelula(crit.field) && <CellColorPicker op={op} field={crit.field} label="Cor" />}
-                              </div>
+                              <button
+                                type="button"
+                                onClick={() => toggleLinhaOculta(crit.field as string)}
+                                className="h-6 w-6 rounded border flex items-center justify-center hover:bg-muted shrink-0"
+                                title={oculta ? "Exibir esta linha" : "Ocultar do cliente"}
+                              >
+                                {oculta ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                              </button>
                             )}
                           </div>
                           <div className="text-foreground space-y-1">
