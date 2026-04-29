@@ -784,6 +784,11 @@ export default function PublicPropostaPage() {
     const c = getColunaColor((op as any).cor_coluna);
     return c ? c.border : "border-primary";
   };
+  const rotuloCellClassFor = (op: Operadora | undefined) => {
+    if (!op) return "bg-muted/40 text-foreground";
+    const c = getColunaColor((op as any).cor_coluna);
+    return c ? c.cell : "bg-muted/40 text-foreground";
+  };
 
   // ====== Renderização da tabela comparativa ======
   // Por padrão é usada para uma única operadora (uma tabela por operadora).
