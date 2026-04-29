@@ -893,7 +893,6 @@ export default function PublicPropostaPage() {
                                 ))}
                               </SelectContent>
                             </Select>
-                            <ColorPicker op={op} />
                           </div>
                         </>
                       ) : (
@@ -1213,9 +1212,6 @@ export default function PublicPropostaPage() {
                               className="h-6 text-[10px] text-foreground bg-amber-50 border-amber-300"
                               placeholder='Grupo soma (admin)'
                             />
-                            <div className="flex items-center gap-1 flex-wrap">
-                              <ColorPicker op={op} />
-                            </div>
                           </div>
                         ) : (
                           <>
