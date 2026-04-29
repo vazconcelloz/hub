@@ -978,7 +978,7 @@ export default function PublicPropostaPage() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      title="Adicionar plano nesta seguradora"
+                      title="Adicionar coluna nesta tabela"
                       onClick={() => addDraftOperadora(ops[0]?.operadora_nome)}
                       className="h-8 w-8 mx-auto"
                     >
