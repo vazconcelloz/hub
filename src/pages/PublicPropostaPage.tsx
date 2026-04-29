@@ -1129,8 +1129,8 @@ export default function PublicPropostaPage() {
                 </>
               ) : (
                 <>
-                  <Button variant="outline" size="sm" onClick={() => addDraftOperadora()} disabled={saving}>
-                    <Plus className="w-3.5 h-3.5 mr-1.5" /> Adicionar coluna
+                  <Button variant="outline" size="sm" onClick={() => addDraftSeguradora()} disabled={saving}>
+                    <Plus className="w-3.5 h-3.5 mr-1.5" /> Adicionar seguradora
                   </Button>
                   <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={saving}>
                     <X className="w-3.5 h-3.5 mr-1.5" /> Cancelar
