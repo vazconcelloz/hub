@@ -893,7 +893,6 @@ export default function PublicPropostaPage() {
                                 ))}
                               </SelectContent>
                             </Select>
-                            <ColorPicker op={op} />
                           </div>
                         </>
                       ) : (
