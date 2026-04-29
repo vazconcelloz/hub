@@ -806,7 +806,12 @@ export default function PublicPropostaPage() {
             <thead>
               <tr>
                 <th className="text-left px-4 py-3 font-semibold w-56 align-top border-r border-border text-xs uppercase tracking-wide bg-muted/60 text-muted-foreground">
-                  <span>Planos</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span>Planos</span>
+                    {editMode && ops.length > 0 && (
+                      <OperadoraColorPicker operadoraNome={ops[0].operadora_nome || ""} planos={ops} />
+                    )}
+                  </div>
                 </th>
                 {ops.map((op) => {
                   return (
@@ -1160,7 +1165,6 @@ export default function PublicPropostaPage() {
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-3 flex-wrap">
                 <h2 className="text-xl md:text-2xl font-bold text-foreground tracking-tight">{g.nome}</h2>
-                {editMode && <OperadoraColorPicker operadoraNome={g.nome} planos={g.planos} />}
               </div>
               <span className="text-xs uppercase tracking-wider text-muted-foreground">
                 {g.planos.length} {g.planos.length === 1 ? "plano" : "planos"}
