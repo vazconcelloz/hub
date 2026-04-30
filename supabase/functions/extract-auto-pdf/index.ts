@@ -133,9 +133,19 @@ REGRA #1 — UM PDF, MÚLTIPLAS COTAÇÕES (SEGURADORAS)
 Um PDF de cotação de auto normalmente compara VÁRIAS seguradoras lado a lado em uma tabela (cada coluna = uma seguradora/produto). Extraia TODAS as colunas como itens separados em 'cotacoes[]'. Algumas colunas podem ser de produtos parciais (ex: "Proteção para Vidros" da Ituran, "Roubo/Furto" da Suhai) — extraia também, são opções válidas.
 
 ═══════════════════════════════════════
-REGRA #2 — DADOS DO CLIENTE/VEÍCULO
+REGRA #2 — DADOS DO CLIENTE/VEÍCULO/COTAÇÃO
 ═══════════════════════════════════════
-Extraia somente o NOME DO SEGURADO e a MARCA/MODELO do veículo. Ignore CEP, vigência, condutor adicional, etc. — não precisamos.
+Extraia:
+- 'cliente_nome': nome do segurado
+- 'veiculo_marca_modelo': marca/modelo do veículo
+- 'tipo_cotacao': use EXATAMENTE um destes códigos quando identificável no PDF:
+   • "novo" — seguro novo / primeira contratação
+   • "renovacao_congenere" — renovação vinda de outra seguradora (congênere)
+   • "renovacao_mesma" — renovação na MESMA seguradora atual
+- 'vigencia_inicio' e 'vigencia_fim': datas de início e fim da vigência no formato ISO YYYY-MM-DD (converta de DD/MM/AAAA).
+- 'cep_pernoite': CEP do local de pernoite do veículo (formato 00000-000 se disponível).
+- 'condutor_18_26': boolean true/false — true se o PDF indicar condutor (principal ou eventual) com idade entre 18 e 26 anos. Se não houver menção, omita.
+Ignore demais dados (vigência detalhada do condutor adicional, etc.).
 
 ═══════════════════════════════════════
 REGRA #3 — VALORES NUMÉRICOS (CRÍTICO — FORMATO BR)
