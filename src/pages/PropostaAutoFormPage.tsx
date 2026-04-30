@@ -161,6 +161,11 @@ export default function PropostaAutoFormPage() {
         ...f,
         nome_cliente: f.nome_cliente || ext.cliente_nome || "",
         veiculo_marca_modelo: f.veiculo_marca_modelo || ext.veiculo_marca_modelo || "",
+        tipo_cotacao: f.tipo_cotacao || ext.tipo_cotacao || "",
+        vigencia_inicio: f.vigencia_inicio || ext.vigencia_inicio || "",
+        vigencia_fim: f.vigencia_fim || ext.vigencia_fim || "",
+        cep_pernoite: f.cep_pernoite || ext.cep_pernoite || "",
+        condutor_18_26: f.condutor_18_26 || !!ext.condutor_18_26,
       }));
 
       const novos: AutoCardForm[] = (ext.cotacoes || []).map((c: any, i: number) => ({
