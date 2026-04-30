@@ -381,8 +381,15 @@ export default function PublicPropostaAutoPage() {
       )}`
     : "#";
 
-  // Lista visualizada: draft em edi��o, cota��es publicadas no modo leitura.
+  // Lista visualizada: draft em edição, cotações publicadas no modo leitura.
   const view = editMode ? draft : cotacoes;
+  const corRotulosAtiva = editMode
+    ? draftCorRotulos
+    : ((proposta as any).cor_rotulos as string | null) ?? null;
+  const rotuloCol = getColunaColor(corRotulosAtiva);
+  const algumaTemPagamento = view.some(
+    (c) => parseFormasPagamento((c as any).formas_pagamento_detalhes).length > 0
+  );
 
   // Render de uma c�lula edit�vel para um crit�rio + cota��o
   const renderEditableCell = (c: AutoCotacao, crit: Criterio) => {
