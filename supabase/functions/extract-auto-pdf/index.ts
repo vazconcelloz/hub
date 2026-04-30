@@ -69,29 +69,39 @@ REGRA #2 — DADOS DO CLIENTE/VEÍCULO
 Extraia somente o NOME DO SEGURADO e a MARCA/MODELO do veículo. Ignore CEP, vigência, condutor adicional, etc. — não precisamos.
 
 ═══════════════════════════════════════
-REGRA #3 — VALORES (PRIORIDADE MÁXIMA)
+REGRA #3 — VALORES NUMÉRICOS (CRÍTICO — FORMATO BR)
 ═══════════════════════════════════════
-- 'premio_total': "Valor do seguro", "Prêmio total", "Total", "Valor total" — apenas número (ex: 4154.35), sem R$.
-- 'franquia_valor': "Valor da franquia" — apenas número.
-- 'danos_materiais', 'danos_corporais', 'danos_morais', 'app_morte_invalidez': números limpos.
-- 'parcelamento': string como "10x de R$ 415,39" ou "10x de R$ 182,13*".
+**ATENÇÃO MÁXIMA AO FORMATO DECIMAL BRASILEIRO**: no Brasil usa-se VÍRGULA como separador decimal e PONTO como separador de milhar.
+- "R$ 4.154,35" → enviar 4154.35 (NÃO 415435, NÃO 4.15435)
+- "R$ 182,13" → enviar 182.13 (NÃO 18213)
+- "R$ 50.000,00" → enviar 50000
+- "R$ 1.281,24" → enviar 1281.24
+- "R$ 10.047,82" → enviar 10047.82
+
+REGRA DE OURO: a vírgula brasileira SEMPRE indica os centavos. NUNCA envie um valor monetário como inteiro quando o PDF mostra ",XX" no fim — divida mentalmente por 100 se necessário, mas NUNCA inclua os centavos como parte da parte inteira.
+
+Campos numéricos ('premio_total', 'franquia_valor', 'danos_materiais', 'danos_corporais', 'danos_morais', 'app_morte_invalidez'): número decimal limpo, sem R$, sem pontos de milhar.
+'parcelamento': STRING tal como aparece no PDF (ex: "10x de R$ 415,39").
 
 ═══════════════════════════════════════
 REGRA #4 — CAMPOS DE TEXTO
 ═══════════════════════════════════════
-- 'seguradora_nome': nome canônico (ex: "Mapfre", "Porto Seguro", "Zurich", "Suhai", "Ituran", "Allianz", "HDI", "Tokio Marine", "Bradesco Auto", "Liberty", "Sompo", "Azul Seguros", "Itaú").
-- 'produto_nome': nome do produto/plano da seguradora (ex: "Completo", "Zurich Automóvel", "Roubo/Furto Total + Assistência 24h - 500 km", "Proteção para Vidros").
-- 'cobertura_resumo': descrição curta da cobertura principal (ex: "Colisão, Incêndio, Roubo e Furto", "Apenas roubo/furto", "CIR + Terceiros").
-- 'franquia_tipo': "Reduzida (50%)", "Normal/Obrigatória", "Majorada", "A - REDUZIDA 50%", etc.
+- 'seguradora_nome': nome canônico (Mapfre, Porto Seguro, Zurich, Suhai, Ituran, Allianz, HDI, Tokio Marine, Bradesco Auto, Liberty, Sompo, Azul Seguros, Itaú).
+- 'produto_nome', 'cobertura_resumo', 'franquia_tipo', 'assistencia_24h', 'formas_pagamento': descrição curta como aparece.
 - 'percentual_fipe': "100%", "0%" ou "Valor determinado: R$ X" — exatamente como no PDF.
-- 'assistencia_24h': resumo curto (ex: "Reboque 500 km", "Assistência 24h - 500 km", "800 km de Reboque + chaveiro").
-- 'vidros' e 'carro_reserva': "Sim", "Não contemplado" ou descrição curta. Se não for contemplado, use "Não contemplado".
-- 'formas_pagamento': resumo (ex: "Cartão de crédito 10x", "Boleto à vista + 9x cartão").
 
 ═══════════════════════════════════════
-REGRA #5 — HONESTIDADE
+REGRA #5 — MARCADORES "X" / NEGAÇÃO (IMPORTANTE)
 ═══════════════════════════════════════
-NUNCA invente. Se um campo não aparece no PDF, deixe vazio (string "") ou omita o número. Faça o máximo esforço para encontrar antes de desistir.`,
+Em tabelas comparativas é comum que uma célula tenha "X", "—", "✗", "Não" ou esteja em branco indicando que aquela cobertura NÃO está incluída naquele produto. Trate assim:
+- Para campos de TEXTO ('vidros', 'carro_reserva', 'assistencia_24h'): se for "X" / "Não" / vazio / "—" / "✗", envie EXATAMENTE a string "Não incluso". Se houver descrição (ex: "Reboque 500 km"), envie a descrição.
+- Para campos NUMÉRICOS: se a célula tiver "X" / "Não" / vazio, OMITA o campo (NÃO envie 0).
+- NUNCA escreva "Não contemplado" — sempre "Não incluso".
+
+═══════════════════════════════════════
+REGRA #6 — HONESTIDADE
+═══════════════════════════════════════
+NUNCA invente. Se não aparece no PDF, omita (numérico) ou deixe vazio (texto).`,
         },
         {
           role: "user",
