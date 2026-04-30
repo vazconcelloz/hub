@@ -65,6 +65,7 @@ export default function HubLayout() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
           </header>
 
           <main className="flex-1 min-w-0">
