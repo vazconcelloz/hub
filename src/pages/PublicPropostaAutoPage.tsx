@@ -223,10 +223,12 @@ export default function PublicPropostaAutoPage() {
 
   const enterEdit = () => {
     setDraft(cotacoes.map((c) => ({ ...c })));
+    setDraftCorRotulos(((proposta as any)?.cor_rotulos as string | null) ?? null);
     setEditMode(true);
   };
   const cancelEdit = () => {
     setDraft([]);
+    setDraftCorRotulos(null);
     setEditMode(false);
   };
 
