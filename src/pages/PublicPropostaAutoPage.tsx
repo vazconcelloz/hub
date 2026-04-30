@@ -30,6 +30,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import {
   Shield,
@@ -45,10 +50,51 @@ import {
   Palette,
   Check,
   Loader2,
+  CreditCard,
+  ChevronDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import heroBg from "@/assets/proposta-hero-bg.jpg";
+
+// ============== Formas de pagamento (gaveta) ==============
+interface FormaPagamento {
+  tipo: string;
+  descricao: string;
+}
+
+const FORMA_TIPOS = [
+  "Cartão de crédito",
+  "Cartão de débito",
+  "Boleto",
+  "Débito em conta",
+  "PIX",
+  "Dinheiro",
+  "Transferência",
+];
+
+const FORMA_PADRAO: FormaPagamento[] = [
+  { tipo: "Cartão de crédito", descricao: "" },
+  { tipo: "Boleto", descricao: "" },
+];
+
+function parseFormasPagamento(raw: any): FormaPagamento[] {
+  if (!raw) return [];
+  try {
+    const arr = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (Array.isArray(arr)) {
+      return arr
+        .filter((x) => x && typeof x === "object")
+        .map((x: any) => ({
+          tipo: String(x.tipo ?? ""),
+          descricao: String(x.descricao ?? ""),
+        }));
+    }
+  } catch {
+    /* noop */
+  }
+  return [];
+}
 
 const fmt = (v: number | null | undefined) =>
   v == null ? "—" : formatCurrency(v);
