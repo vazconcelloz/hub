@@ -298,6 +298,7 @@ export default function PublicPropostaAutoPage() {
         setCotacoes([]);
       }
 
+      setProposta((p) => (p ? ({ ...p, cor_rotulos: draftCorRotulos } as any) : p));
       setEditMode(false);
       setDraft([]);
       toast({ title: "Alterações salvas!" });
