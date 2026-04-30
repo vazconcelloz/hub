@@ -649,7 +649,7 @@ export default function PublicPropostaAutoPage() {
                       )}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span>Critério</span>
+                        <span>Seguradora</span>
                         {editMode && (
                           <Popover>
                             <PopoverTrigger asChild>
