@@ -248,6 +248,7 @@ export type Database = {
           danos_morais: number | null
           destaque_comercial: string | null
           formas_pagamento: string | null
+          formas_pagamento_detalhes: Json | null
           franquia_tipo: string | null
           franquia_valor: number | null
           id: string
@@ -275,6 +276,7 @@ export type Database = {
           danos_morais?: number | null
           destaque_comercial?: string | null
           formas_pagamento?: string | null
+          formas_pagamento_detalhes?: Json | null
           franquia_tipo?: string | null
           franquia_valor?: number | null
           id?: string
@@ -302,6 +304,7 @@ export type Database = {
           danos_morais?: number | null
           destaque_comercial?: string | null
           formas_pagamento?: string | null
+          formas_pagamento_detalhes?: Json | null
           franquia_tipo?: string | null
           franquia_valor?: number | null
           id?: string
