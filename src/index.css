@@ -97,6 +97,18 @@
     --sidebar-accent-foreground: 220 20% 90%;
     --sidebar-border: 222 30% 18%;
     --sidebar-ring: 40 90% 51%;
+
+    /* Hub Grupo FBN — dark */
+    --hub-bg: 222 47% 6%;
+    --hub-surface: 222 40% 10%;
+    --hub-surface-muted: 222 30% 14%;
+    --hub-primary: 40 90% 51%;
+    --hub-primary-hover: 40 90% 58%;
+    --hub-primary-foreground: 222 60% 12%;
+    --hub-text: 220 20% 92%;
+    --hub-text-muted: 220 10% 65%;
+    --hub-border: 222 30% 18%;
+    --hub-accent: 40 90% 51%;
   }
 }
 
