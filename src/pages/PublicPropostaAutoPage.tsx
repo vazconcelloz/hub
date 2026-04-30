@@ -721,7 +721,12 @@ export default function PublicPropostaAutoPage() {
                     })}
                   </tr>
                   <tr className="bg-primary/5">
-                    <th className="text-left px-4 py-3 font-semibold text-foreground">
+                    <th
+                      className={cn(
+                        "text-left px-4 py-3 font-semibold",
+                        rotuloCol ? rotuloCol.header : "text-foreground"
+                      )}
+                    >
                       Prêmio total
                     </th>
                     {view.map((c) => (
@@ -782,7 +787,7 @@ export default function PublicPropostaAutoPage() {
                       <td
                         className={cn(
                           "px-4 py-3 font-medium",
-                          rotuloCol ? rotuloCol.cell : "text-foreground"
+                          rotuloCol ? rotuloCol.header : "text-foreground"
                         )}
                       >
                         {crit.label}
@@ -802,7 +807,7 @@ export default function PublicPropostaAutoPage() {
                       <td
                         className={cn(
                           "px-4 py-3 font-medium align-top",
-                          rotuloCol ? rotuloCol.cell : "text-foreground"
+                          rotuloCol ? rotuloCol.header : "text-foreground"
                         )}
                       >
                         {editMode ? (
