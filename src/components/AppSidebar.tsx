@@ -35,7 +35,7 @@ const items = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, toggleSidebar } = useSidebar();
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
   const navigate = useNavigate();
