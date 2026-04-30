@@ -168,7 +168,7 @@ export default function PublicPropostaPage() {
 
   const isPortalPreview =
     location.pathname.startsWith("/admin/cotacao/") ||
-    location.pathname.startsWith("/app/cotacoes/cotacao/") ||
+    location.pathname.startsWith("/app/cotacoes/saude/cotacao/") ||
     searchParams.get("portal") === "1";
 
   const canEdit = useMemo(
@@ -1121,7 +1121,7 @@ export default function PublicPropostaPage() {
             <div className="flex items-center gap-2">
               {!editMode ? (
                 <>
-                  <Link to={`/app/cotacoes/proposta/${proposta.id}`}>
+                  <Link to={`/app/cotacoes/saude/proposta/${proposta.id}`}>
                     <Button variant="outline" size="sm">
                       <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
                       Editor completo
