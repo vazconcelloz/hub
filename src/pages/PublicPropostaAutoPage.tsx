@@ -272,6 +272,7 @@ export default function PublicPropostaAutoPage() {
           carro_reserva: c.carro_reserva,
           parcelamento: c.parcelamento,
           formas_pagamento: c.formas_pagamento,
+          formas_pagamento_detalhes: c.formas_pagamento_detalhes,
           destaque_comercial: c.destaque_comercial,
           cor_coluna: c.cor_coluna,
           ordem_exibicao: i + 1,
