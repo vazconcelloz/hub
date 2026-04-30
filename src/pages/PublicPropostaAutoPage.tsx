@@ -30,6 +30,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import {
   Shield,
@@ -45,10 +50,51 @@ import {
   Palette,
   Check,
   Loader2,
+  CreditCard,
+  ChevronDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import heroBg from "@/assets/proposta-hero-bg.jpg";
+
+// ============== Formas de pagamento (gaveta) ==============
+interface FormaPagamento {
+  tipo: string;
+  descricao: string;
+}
+
+const FORMA_TIPOS = [
+  "Cartão de crédito",
+  "Cartão de débito",
+  "Boleto",
+  "Débito em conta",
+  "PIX",
+  "Dinheiro",
+  "Transferência",
+];
+
+const FORMA_PADRAO: FormaPagamento[] = [
+  { tipo: "Cartão de crédito", descricao: "" },
+  { tipo: "Boleto", descricao: "" },
+];
+
+function parseFormasPagamento(raw: any): FormaPagamento[] {
+  if (!raw) return [];
+  try {
+    const arr = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (Array.isArray(arr)) {
+      return arr
+        .filter((x) => x && typeof x === "object")
+        .map((x: any) => ({
+          tipo: String(x.tipo ?? ""),
+          descricao: String(x.descricao ?? ""),
+        }));
+    }
+  } catch {
+    /* noop */
+  }
+  return [];
+}
 
 const fmt = (v: number | null | undefined) =>
   v == null ? "—" : formatCurrency(v);
@@ -94,7 +140,6 @@ const CRITERIOS: Criterio[] = [
   { label: "Assistência 24h", field: "assistencia_24h", type: "text", render: (c) => txt(c.assistencia_24h) },
   { label: "Vidros", field: "vidros", type: "text", render: (c) => txt(c.vidros) },
   { label: "Carro reserva", field: "carro_reserva", type: "text", render: (c) => txt(c.carro_reserva) },
-  { label: "Formas de pagamento", field: "formas_pagamento", type: "text", render: (c) => txt(c.formas_pagamento) },
 ];
 
 // Cota��o vazia (template para "Adicionar")
@@ -117,6 +162,7 @@ const emptyCotacao = (proposta_id: string, ordem: number): AutoCotacao => ({
   carro_reserva: null,
   parcelamento: null,
   formas_pagamento: null,
+  formas_pagamento_detalhes: null,
   destaque_comercial: null,
   cor_coluna: null,
   cores_celulas: null,
@@ -226,6 +272,7 @@ export default function PublicPropostaAutoPage() {
           carro_reserva: c.carro_reserva,
           parcelamento: c.parcelamento,
           formas_pagamento: c.formas_pagamento,
+          formas_pagamento_detalhes: c.formas_pagamento_detalhes,
           destaque_comercial: c.destaque_comercial,
           cor_coluna: c.cor_coluna,
           ordem_exibicao: i + 1,
@@ -346,6 +393,114 @@ export default function PublicPropostaAutoPage() {
         onChange={(e) => updateDraft(c.id, crit.field, e.target.value || null)}
         className="h-8 text-sm text-center"
       />
+    );
+  };
+
+  // ============== Célula "Formas de pagamento" (gaveta) ==============
+  const FormasPagamentoCell = ({ c }: { c: AutoCotacao }) => {
+    const lista = parseFormasPagamento((c as any).formas_pagamento_detalhes);
+
+    if (editMode) {
+      const atual = lista.length > 0 ? lista : FORMA_PADRAO;
+      const update = (next: FormaPagamento[]) => {
+        const limpos = next.filter((d) => d.tipo.trim() || d.descricao.trim());
+        updateDraft(
+          c.id,
+          "formas_pagamento_detalhes" as any,
+          limpos.length > 0 ? (limpos as any) : null
+        );
+      };
+      return (
+        <div className="rounded-md border border-border/60 bg-background/60 p-2 space-y-1.5">
+          <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide text-left">
+            Opções de pagamento
+          </div>
+          {atual.map((d, i) => (
+            <div key={i} className="flex items-center gap-1.5">
+              <Select
+                value={d.tipo || ""}
+                onValueChange={(v) => {
+                  const next = [...atual];
+                  next[i] = { ...next[i], tipo: v };
+                  update(next);
+                }}
+              >
+                <SelectTrigger className="h-7 text-xs w-36">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {FORMA_TIPOS.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                value={d.descricao}
+                onChange={(e) => {
+                  const next = [...atual];
+                  next[i] = { ...next[i], descricao: e.target.value };
+                  update(next);
+                }}
+                placeholder="Ex.: até 10x sem juros"
+                className="h-7 text-xs flex-1"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const next = atual.filter((_, idx) => idx !== i);
+                  update(next);
+                }}
+                className="text-muted-foreground hover:text-destructive p-1"
+                title="Remover"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 text-[11px] w-full"
+            onClick={() => update([...atual, { tipo: "", descricao: "" }])}
+          >
+            <Plus className="w-3 h-3 mr-1" /> Adicionar opção
+          </Button>
+        </div>
+      );
+    }
+
+    // Modo leitura: gaveta colapsável
+    if (lista.length === 0) {
+      return <span className="text-muted-foreground text-xs">—</span>;
+    }
+    return (
+      <Collapsible>
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+          >
+            <CreditCard className="w-3.5 h-3.5" />
+            {lista.length} {lista.length === 1 ? "opção" : "opções"}
+            <ChevronDown className="w-3 h-3 transition-transform data-[state=open]:rotate-180" />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-2">
+          <ul className="text-xs text-left space-y-1 bg-muted/40 rounded-md p-2 border border-border/60">
+            {lista.map((d, i) => (
+              <li key={i} className="flex flex-col">
+                <span className="font-semibold text-foreground">{d.tipo || "—"}</span>
+                {d.descricao && (
+                  <span className="text-muted-foreground">{d.descricao}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </CollapsibleContent>
+      </Collapsible>
     );
   };
 
@@ -654,6 +809,16 @@ export default function PublicPropostaAutoPage() {
                       ))}
                     </tr>
                   ))}
+                  <tr className={CRITERIOS.length % 2 ? "bg-muted/20" : ""}>
+                    <td className="px-4 py-3 font-medium text-foreground">
+                      Formas de pagamento
+                    </td>
+                    {view.map((c) => (
+                      <td key={c.id} className="px-4 py-3 text-center align-top">
+                        <FormasPagamentoCell c={c} />
+                      </td>
+                    ))}
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -848,6 +1013,12 @@ export default function PublicPropostaAutoPage() {
                           </dd>
                         </div>
                       ))}
+                      <div className="pt-2">
+                        <p className="text-muted-foreground text-xs uppercase tracking-wide mb-1">
+                          Formas de pagamento
+                        </p>
+                        <FormasPagamentoCell c={c} />
+                      </div>
                     </dl>
                   </div>
                 </Card>
