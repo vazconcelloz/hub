@@ -853,7 +853,6 @@ export default function PublicPropostaAutoPage() {
           {/* Cards (mobile) */}
           <section className="container py-6 md:hidden space-y-4">
             {view.map((c) => {
-              const col = getColunaColor(c.cor_coluna);
               const destKey = c.destaque_comercial || "";
               const destLabel =
                 DESTAQUE_LABELS[destKey] ||
@@ -862,37 +861,11 @@ export default function PublicPropostaAutoPage() {
                 DESTAQUE_COLORS[destKey] ||
                 "bg-primary text-primary-foreground";
               return (
-                <Card
-                  key={c.id}
-                  className={cn(
-                    "overflow-hidden p-0",
-                    col && `border-t-4 ${col.border}`
-                  )}
-                >
-                  <div className={cn("p-4", col ? col.header : "bg-muted/30")}>
+                <Card key={c.id} className="overflow-hidden p-0 border-t-4 border-primary">
+                  <div className="p-4 bg-muted/30">
                     {editMode ? (
                       <div className="space-y-2">
                         <div className="flex items-center justify-end gap-1">
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-7 text-[11px] gap-1 text-foreground"
-                              >
-                                <Palette className="w-3 h-3" /> Cor
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-64 p-3">
-                              <ColorPalette
-                                current={c.cor_coluna}
-                                onPick={(k) =>
-                                  updateDraft(c.id, "cor_coluna", k)
-                                }
-                              />
-                            </PopoverContent>
-                          </Popover>
                           <Button
                             type="button"
                             variant="ghost"
@@ -906,11 +879,7 @@ export default function PublicPropostaAutoPage() {
                         <Input
                           value={c.seguradora_nome ?? ""}
                           onChange={(e) =>
-                            updateDraft(
-                              c.id,
-                              "seguradora_nome",
-                              e.target.value
-                            )
+                            updateDraft(c.id, "seguradora_nome", e.target.value)
                           }
                           placeholder="Seguradora"
                           className="h-8 text-foreground"
@@ -918,11 +887,7 @@ export default function PublicPropostaAutoPage() {
                         <Input
                           value={c.produto_nome ?? ""}
                           onChange={(e) =>
-                            updateDraft(
-                              c.id,
-                              "produto_nome",
-                              e.target.value || null
-                            )
+                            updateDraft(c.id, "produto_nome", e.target.value || null)
                           }
                           placeholder="Produto"
                           className="h-7 text-xs text-foreground"
@@ -953,20 +918,10 @@ export default function PublicPropostaAutoPage() {
                     ) : (
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <p
-                            className={cn(
-                              "text-xs uppercase tracking-wider",
-                              col ? "text-white/80" : "text-muted-foreground"
-                            )}
-                          >
+                          <p className="text-xs uppercase tracking-wider text-muted-foreground">
                             {c.seguradora_nome}
                           </p>
-                          <h3
-                            className={cn(
-                              "font-bold",
-                              col ? "text-white" : "text-foreground"
-                            )}
-                          >
+                          <h3 className="font-bold text-foreground">
                             {txt(c.produto_nome)}
                           </h3>
                         </div>
