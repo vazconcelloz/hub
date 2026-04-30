@@ -128,6 +128,22 @@ REGRA #4 — CAMPOS DE TEXTO
 - 'percentual_fipe': "100%", "0%" ou "Valor determinado: R$ X" — exatamente como no PDF.
 
 ═══════════════════════════════════════
+REGRA #4.1 — FORMAS DE PAGAMENTO ESTRUTURADAS (IMPORTANTE)
+═══════════════════════════════════════
+Além do campo 'formas_pagamento' (texto livre), preencha SEMPRE 'formas_pagamento_detalhes' como um ARRAY de objetos { tipo, descricao } com TODAS as opções listadas no PDF para aquela cotação.
+
+- 'tipo' deve ser EXATAMENTE um destes valores: "Cartão de crédito", "Cartão de débito", "Boleto", "Débito em conta", "PIX", "Dinheiro", "Transferência".
+- 'descricao' = condição da opção, ex.: "até 10x sem juros", "à vista com 5% desconto", "1+9 sem juros", "1+5 boletos", "1+3 PIX".
+
+Exemplos:
+- PDF: "Cartão de crédito em até 10x sem juros • Boleto à vista" →
+  [{"tipo":"Cartão de crédito","descricao":"até 10x sem juros"},{"tipo":"Boleto","descricao":"à vista"}]
+- PDF: "1+9 no cartão / 1+3 boleto" →
+  [{"tipo":"Cartão de crédito","descricao":"1+9"},{"tipo":"Boleto","descricao":"1+3"}]
+
+Se o PDF não tem nenhuma opção explícita, OMITA 'formas_pagamento_detalhes'.
+
+═══════════════════════════════════════
 REGRA #5 — MARCADORES "X" / NEGAÇÃO (IMPORTANTE)
 ═══════════════════════════════════════
 Em tabelas comparativas é comum que uma célula tenha "X", "—", "✗", "Não" ou esteja em branco indicando que aquela cobertura NÃO está incluída naquele produto. Trate assim:
