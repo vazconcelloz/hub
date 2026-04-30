@@ -100,6 +100,11 @@ export default function PropostaAutoFormPage() {
       validade_proposta: p.validade_proposta || "",
       observacoes_gerais: p.observacoes_gerais || "",
       status: p.status,
+      tipo_cotacao: (p as any).tipo_cotacao || "",
+      vigencia_inicio: (p as any).vigencia_inicio || "",
+      vigencia_fim: (p as any).vigencia_fim || "",
+      cep_pernoite: (p as any).cep_pernoite || "",
+      condutor_18_26: !!(p as any).condutor_18_26,
     });
     const { data: cs } = await supabase
       .from("proposta_auto_seguradoras")
