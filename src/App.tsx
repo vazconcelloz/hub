@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import NotFound from "./pages/NotFound.tsx";
 import DashboardPage from "./pages/DashboardPage";
+import CotacoesIndexPage from "./pages/CotacoesIndexPage";
 import PropostaFormPage from "./pages/PropostaFormPage";
 import PublicPropostaPage from "./pages/PublicPropostaPage";
 import CatalogoPage from "./pages/CatalogoPage";
@@ -44,19 +45,24 @@ const App = () => (
               <Route path="/app/treinamentos" element={<TreinamentosPage />} />
               <Route path="/app/manuais" element={<ManuaisPage />} />
               <Route path="/app/segmentacoes" element={<SegmentacoesPage />} />
-              <Route path="/app/cotacoes" element={<DashboardPage />} />
-              <Route path="/app/cotacoes/proposta/:id" element={<PropostaFormPage />} />
-              <Route path="/app/cotacoes/catalogo" element={<CatalogoPage />} />
-              <Route path="/app/cotacoes/cotacao/:slug" element={<PublicPropostaPage />} />
+              <Route path="/app/cotacoes" element={<CotacoesIndexPage />} />
+              <Route path="/app/cotacoes/saude" element={<DashboardPage />} />
+              <Route path="/app/cotacoes/saude/proposta/:id" element={<PropostaFormPage />} />
+              <Route path="/app/cotacoes/saude/catalogo" element={<CatalogoPage />} />
+              <Route path="/app/cotacoes/saude/cotacao/:slug" element={<PublicPropostaPage />} />
+              {/* Compat: rotas antigas sem /saude */}
+              <Route path="/app/cotacoes/proposta/:id" element={<RedirectPropostaLegacy />} />
+              <Route path="/app/cotacoes/catalogo" element={<Navigate to="/app/cotacoes/saude/catalogo" replace />} />
+              <Route path="/app/cotacoes/cotacao/:slug" element={<RedirectCotacaoSaudeLegacy />} />
               <Route path="/app/configuracoes" element={<ConfiguracoesPage />} />
             </Route>
 
             {/* Redirects de compatibilidade */}
             <Route path="/" element={<Navigate to="/app" replace />} />
-            <Route path="/admin" element={<Navigate to="/app/cotacoes" replace />} />
+            <Route path="/admin" element={<Navigate to="/app/cotacoes/saude" replace />} />
             <Route path="/admin/proposta/:id" element={<RedirectPropostaLegacy />} />
-            <Route path="/admin/catalogo" element={<Navigate to="/app/cotacoes/catalogo" replace />} />
-            <Route path="/catalogo" element={<Navigate to="/app/cotacoes/catalogo" replace />} />
+            <Route path="/admin/catalogo" element={<Navigate to="/app/cotacoes/saude/catalogo" replace />} />
+            <Route path="/catalogo" element={<Navigate to="/app/cotacoes/saude/catalogo" replace />} />
             <Route path="/admin/cotacao/:slug" element={<RedirectCotacaoLegacy />} />
 
             <Route path="*" element={<NotFound />} />
@@ -70,11 +76,15 @@ const App = () => (
 import { useParams } from "react-router-dom";
 function RedirectPropostaLegacy() {
   const { id } = useParams();
-  return <Navigate to={`/app/cotacoes/proposta/${id}`} replace />;
+  return <Navigate to={`/app/cotacoes/saude/proposta/${id}`} replace />;
 }
 function RedirectCotacaoLegacy() {
   const { slug } = useParams();
   return <Navigate to={`/cotacao/${slug}`} replace />;
+}
+function RedirectCotacaoSaudeLegacy() {
+  const { slug } = useParams();
+  return <Navigate to={`/app/cotacoes/saude/cotacao/${slug}`} replace />;
 }
 
 export default App;
