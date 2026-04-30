@@ -649,7 +649,7 @@ export default function PublicPropostaAutoPage() {
                       )}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span>Critério</span>
+                        <span>Seguradora</span>
                         {editMode && (
                           <Popover>
                             <PopoverTrigger asChild>
@@ -711,51 +711,11 @@ export default function PublicPropostaAutoPage() {
                                 placeholder="Seguradora"
                                 className="h-8 text-sm font-semibold text-foreground"
                               />
-                              <Input
-                                value={c.produto_nome ?? ""}
-                                onChange={(e) =>
-                                  updateDraft(c.id, "produto_nome", e.target.value || null)
-                                }
-                                placeholder="Produto / Plano"
-                                className="h-7 text-xs text-foreground"
-                              />
-                              <Select
-                                value={c.destaque_comercial || "none"}
-                                onValueChange={(v) =>
-                                  updateDraft(
-                                    c.id,
-                                    "destaque_comercial",
-                                    v === "none" ? null : v
-                                  )
-                                }
-                              >
-                                <SelectTrigger className="h-7 text-xs text-foreground">
-                                  <SelectValue placeholder="Sem destaque" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">Sem destaque</SelectItem>
-                                  {Object.entries(DESTAQUE_LABELS).map(([k, v]) => (
-                                    <SelectItem key={k} value={k}>
-                                      {v}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
                             </div>
                           ) : (
-                            <div className="space-y-1">
-                              <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                                {c.seguradora_nome}
-                              </p>
-                              <p className="font-bold text-foreground">
-                                {txt(c.produto_nome)}
-                              </p>
-                              {destLabel && (
-                                <Badge className={cn("mt-1", destClass)}>
-                                  {destLabel}
-                                </Badge>
-                              )}
-                            </div>
+                            <p className="font-bold text-foreground">
+                              {c.seguradora_nome}
+                            </p>
                           )}
                         </th>
                       );
