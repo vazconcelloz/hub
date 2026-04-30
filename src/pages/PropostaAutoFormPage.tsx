@@ -11,6 +11,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Save, ArrowLeft, Plus, Trash2, Upload, Loader2 } from "lucide-react";
 import { generateSlug, STATUS_LABELS } from "@/lib/proposal-auto-utils";
+import { DESTAQUE_LABELS, COLUNA_COLORS } from "@/lib/proposal-utils";
+import { cn } from "@/lib/utils";
+import { Check } from "lucide-react";
 
 interface AutoCardForm {
   id?: string;
@@ -31,6 +34,7 @@ interface AutoCardForm {
   parcelamento: string;
   formas_pagamento: string;
   destaque_comercial: string;
+  cor_coluna: string;
   ordem_exibicao: number;
 }
 
@@ -39,7 +43,7 @@ const empty: AutoCardForm = {
   franquia_valor: "", franquia_tipo: "", percentual_fipe: "",
   danos_materiais: "", danos_corporais: "", danos_morais: "",
   app_morte_invalidez: "", assistencia_24h: "", vidros: "", carro_reserva: "",
-  parcelamento: "", formas_pagamento: "", destaque_comercial: "", ordem_exibicao: 0,
+  parcelamento: "", formas_pagamento: "", destaque_comercial: "", cor_coluna: "", ordem_exibicao: 0,
 };
 
 const num = (s: string) => {
