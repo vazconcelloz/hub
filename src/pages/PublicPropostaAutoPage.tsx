@@ -91,8 +91,13 @@ function parseFormasPagamento(raw: any): FormaPagamento[] {
   return [];
 }
 
+const NAO_INCLUSO = "Não incluso";
+const isNaoInclusoNum = (v: number | null | undefined) => v === -1;
+const isNaoInclusoTxt = (v: string | null | undefined) =>
+  !!v && v.trim().toLowerCase() === "não incluso";
+
 const fmt = (v: number | null | undefined) =>
-  v == null ? "—" : formatCurrency(v);
+  isNaoInclusoNum(v) ? NAO_INCLUSO : v == null ? "—" : formatCurrency(v);
 const txt = (v: string | null | undefined) =>
   v && v.trim() ? v : "—";
 
