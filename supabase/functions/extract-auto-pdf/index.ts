@@ -76,6 +76,8 @@ function normalizeCurrencyValue(value: unknown, opts: { allowCentsHeuristic?: bo
 }
 
 function normalizeExtractedData(data: any) {
+  // Apenas estes podem ter "centavos colados" (ex: 28512 -> 285.12).
+  const CENTS_HEURISTIC_FIELDS = new Set(["premio_total", "franquia_valor"]);
   const NUM_FIELDS = [
     "premio_total",
     "franquia_valor",
@@ -101,7 +103,7 @@ function normalizeExtractedData(data: any) {
       ? data.cotacoes.map((cotacao: any) => {
           const out: any = { ...cotacao };
           for (const f of NUM_FIELDS) {
-            if (f in out) out[f] = normalizeCurrencyValue(out[f]);
+            if (f in out) out[f] = normalizeCurrencyValue(out[f], { allowCentsHeuristic: CENTS_HEURISTIC_FIELDS.has(f) });
           }
           for (const f of TXT_FIELDS) {
             const v = out[f];
