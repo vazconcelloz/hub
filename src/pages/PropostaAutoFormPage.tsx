@@ -364,7 +364,52 @@ export default function PropostaAutoFormPage() {
               <div><Label>Vidros</Label><Input value={c.vidros} onChange={(e) => updateCard(i, { vidros: e.target.value })} placeholder="Não contemplado" /></div>
               <div><Label>Carro reserva</Label><Input value={c.carro_reserva} onChange={(e) => updateCard(i, { carro_reserva: e.target.value })} /></div>
               <div><Label>Formas de pagamento</Label><Input value={c.formas_pagamento} onChange={(e) => updateCard(i, { formas_pagamento: e.target.value })} /></div>
-              <div className="sm:col-span-2"><Label>Destaque comercial</Label><Input value={c.destaque_comercial} onChange={(e) => updateCard(i, { destaque_comercial: e.target.value })} placeholder="Ex.: Mais Completo" /></div>
+              <div>
+                <Label>Destaque comercial</Label>
+                <Select
+                  value={c.destaque_comercial || "none"}
+                  onValueChange={(v) => updateCard(i, { destaque_comercial: v === "none" ? "" : v })}
+                >
+                  <SelectTrigger><SelectValue placeholder="Sem destaque" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sem destaque</SelectItem>
+                    {Object.entries(DESTAQUE_LABELS).map(([k, v]) => (
+                      <SelectItem key={k} value={k}>{v}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Cor da coluna</Label>
+                <div className="grid grid-cols-10 gap-1.5 p-2 rounded-md border bg-background">
+                  <button
+                    type="button"
+                    onClick={() => updateCard(i, { cor_coluna: "" })}
+                    className={cn(
+                      "h-8 rounded flex items-center justify-center text-[10px] bg-muted text-muted-foreground col-span-2",
+                      !c.cor_coluna && "ring-2 ring-offset-1 ring-foreground"
+                    )}
+                    title="Sem cor"
+                  >
+                    Padrão
+                  </button>
+                  {Object.entries(COLUNA_COLORS).map(([k, col]) => (
+                    <button
+                      key={k}
+                      type="button"
+                      onClick={() => updateCard(i, { cor_coluna: k })}
+                      className={cn(
+                        "h-8 rounded flex items-center justify-center",
+                        col.header,
+                        c.cor_coluna === k && "ring-2 ring-offset-1 ring-foreground"
+                      )}
+                      title={col.label}
+                    >
+                      {c.cor_coluna === k && <Check className="w-3 h-3" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </CardContent>
           </Card>
         ))}
