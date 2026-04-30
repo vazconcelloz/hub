@@ -234,6 +234,98 @@ export type Database = {
         }
         Relationships: []
       }
+      proposta_auto_seguradoras: {
+        Row: {
+          app_morte_invalidez: number | null
+          assistencia_24h: string | null
+          carro_reserva: string | null
+          cobertura_resumo: string | null
+          cor_coluna: string | null
+          cores_celulas: Json | null
+          created_at: string
+          danos_corporais: number | null
+          danos_materiais: number | null
+          danos_morais: number | null
+          destaque_comercial: string | null
+          formas_pagamento: string | null
+          franquia_tipo: string | null
+          franquia_valor: number | null
+          id: string
+          ordem_exibicao: number
+          parcelamento: string | null
+          pdf_url: string | null
+          percentual_fipe: string | null
+          premio_total: number | null
+          produto_nome: string | null
+          proposta_id: string
+          seguradora_nome: string
+          updated_at: string
+          vidros: string | null
+        }
+        Insert: {
+          app_morte_invalidez?: number | null
+          assistencia_24h?: string | null
+          carro_reserva?: string | null
+          cobertura_resumo?: string | null
+          cor_coluna?: string | null
+          cores_celulas?: Json | null
+          created_at?: string
+          danos_corporais?: number | null
+          danos_materiais?: number | null
+          danos_morais?: number | null
+          destaque_comercial?: string | null
+          formas_pagamento?: string | null
+          franquia_tipo?: string | null
+          franquia_valor?: number | null
+          id?: string
+          ordem_exibicao?: number
+          parcelamento?: string | null
+          pdf_url?: string | null
+          percentual_fipe?: string | null
+          premio_total?: number | null
+          produto_nome?: string | null
+          proposta_id: string
+          seguradora_nome: string
+          updated_at?: string
+          vidros?: string | null
+        }
+        Update: {
+          app_morte_invalidez?: number | null
+          assistencia_24h?: string | null
+          carro_reserva?: string | null
+          cobertura_resumo?: string | null
+          cor_coluna?: string | null
+          cores_celulas?: Json | null
+          created_at?: string
+          danos_corporais?: number | null
+          danos_materiais?: number | null
+          danos_morais?: number | null
+          destaque_comercial?: string | null
+          formas_pagamento?: string | null
+          franquia_tipo?: string | null
+          franquia_valor?: number | null
+          id?: string
+          ordem_exibicao?: number
+          parcelamento?: string | null
+          pdf_url?: string | null
+          percentual_fipe?: string | null
+          premio_total?: number | null
+          produto_nome?: string | null
+          proposta_id?: string
+          seguradora_nome?: string
+          updated_at?: string
+          vidros?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposta_auto_seguradoras_proposta_id_fkey"
+            columns: ["proposta_id"]
+            isOneToOne: false
+            referencedRelation: "propostas_auto"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proposta_operadoras: {
         Row: {
           abrangencia: string | null
@@ -383,6 +475,63 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           validade_proposta?: string | null
+        }
+        Relationships: []
+      }
+      propostas_auto: {
+        Row: {
+          consultora_foto_url: string | null
+          consultora_nome: string | null
+          consultora_telefone: string | null
+          cores_rotulos: Json | null
+          created_at: string
+          id: string
+          linhas_ocultas: string[] | null
+          nome_cliente: string
+          observacoes_gerais: string | null
+          slug: string
+          status: string
+          telefone_cliente: string | null
+          updated_at: string
+          user_id: string | null
+          validade_proposta: string | null
+          veiculo_marca_modelo: string | null
+        }
+        Insert: {
+          consultora_foto_url?: string | null
+          consultora_nome?: string | null
+          consultora_telefone?: string | null
+          cores_rotulos?: Json | null
+          created_at?: string
+          id?: string
+          linhas_ocultas?: string[] | null
+          nome_cliente: string
+          observacoes_gerais?: string | null
+          slug: string
+          status?: string
+          telefone_cliente?: string | null
+          updated_at?: string
+          user_id?: string | null
+          validade_proposta?: string | null
+          veiculo_marca_modelo?: string | null
+        }
+        Update: {
+          consultora_foto_url?: string | null
+          consultora_nome?: string | null
+          consultora_telefone?: string | null
+          cores_rotulos?: Json | null
+          created_at?: string
+          id?: string
+          linhas_ocultas?: string[] | null
+          nome_cliente?: string
+          observacoes_gerais?: string | null
+          slug?: string
+          status?: string
+          telefone_cliente?: string | null
+          updated_at?: string
+          user_id?: string | null
+          validade_proposta?: string | null
+          veiculo_marca_modelo?: string | null
         }
         Relationships: []
       }

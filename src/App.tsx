@@ -10,6 +10,9 @@ import CotacoesIndexPage from "./pages/CotacoesIndexPage";
 import PropostaFormPage from "./pages/PropostaFormPage";
 import PublicPropostaPage from "./pages/PublicPropostaPage";
 import CatalogoPage from "./pages/CatalogoPage";
+import DashboardAutoPage from "./pages/DashboardAutoPage";
+import PropostaAutoFormPage from "./pages/PropostaAutoFormPage";
+import PublicPropostaAutoPage from "./pages/PublicPropostaAutoPage";
 import LoginPage from "./pages/LoginPage";
 import HubLayout from "./components/HubLayout";
 import RequireAuth from "./components/RequireAuth";
@@ -32,6 +35,7 @@ const App = () => (
             {/* Pública */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/cotacao/:slug" element={<PublicPropostaPage />} />
+            <Route path="/cotacao-auto/:slug" element={<PublicPropostaAutoPage />} />
 
             {/* Hub autenticado */}
             <Route
@@ -50,6 +54,10 @@ const App = () => (
               <Route path="/app/cotacoes/saude/proposta/:id" element={<PropostaFormPage />} />
               <Route path="/app/cotacoes/saude/catalogo" element={<CatalogoPage />} />
               <Route path="/app/cotacoes/saude/cotacao/:slug" element={<PublicPropostaPage />} />
+              {/* Automóvel */}
+              <Route path="/app/cotacoes/automovel" element={<DashboardAutoPage />} />
+              <Route path="/app/cotacoes/automovel/proposta/:id" element={<PropostaAutoFormPage />} />
+              <Route path="/app/cotacoes/automovel/cotacao/:slug" element={<PublicPropostaAutoPage />} />
               {/* Compat: rotas antigas sem /saude */}
               <Route path="/app/cotacoes/proposta/:id" element={<RedirectPropostaLegacy />} />
               <Route path="/app/cotacoes/catalogo" element={<Navigate to="/app/cotacoes/saude/catalogo" replace />} />
