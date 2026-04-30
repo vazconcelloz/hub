@@ -165,7 +165,10 @@ export default function PublicPropostaPage() {
   const [selectedPlans, setSelectedPlans] = useState<Set<string>>(new Set());
   const [compareOpen, setCompareOpen] = useState(false);
 
-  const isPortalPreview = location.pathname.startsWith("/admin/cotacao/") || searchParams.get("portal") === "1";
+  const isPortalPreview =
+    location.pathname.startsWith("/admin/cotacao/") ||
+    location.pathname.startsWith("/app/cotacoes/cotacao/") ||
+    searchParams.get("portal") === "1";
 
   const canEdit = useMemo(
     () => isPortalPreview && !!proposta,
