@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      convites: {
+        Row: {
+          aceito_em: string | null
+          convidado_por: string | null
+          created_at: string
+          email: string
+          expira_em: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          setor_id: string | null
+          status: string
+          token: string
+        }
+        Insert: {
+          aceito_em?: string | null
+          convidado_por?: string | null
+          created_at?: string
+          email: string
+          expira_em?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          setor_id?: string | null
+          status?: string
+          token?: string
+        }
+        Update: {
+          aceito_em?: string | null
+          convidado_por?: string | null
+          created_at?: string
+          email?: string
+          expira_em?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          setor_id?: string | null
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "convites_setor_id_fkey"
+            columns: ["setor_id"]
+            isOneToOne: false
+            referencedRelation: "setores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coparticipacao_catalogo: {
         Row: {
           ativo: boolean
@@ -124,6 +171,66 @@ export type Database = {
           observacoes?: string | null
           slug?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      permissoes: {
+        Row: {
+          chave: string
+          created_at: string
+          descricao: string | null
+          id: string
+          modulo: string
+          nome: string
+        }
+        Insert: {
+          chave: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          modulo: string
+          nome: string
+        }
+        Update: {
+          chave?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          modulo?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          telefone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          telefone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          telefone?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -422,6 +529,69 @@ export type Database = {
         }
         Relationships: []
       }
+      setor_permissoes: {
+        Row: {
+          created_at: string
+          id: string
+          permissao_chave: string
+          setor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permissao_chave: string
+          setor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permissao_chave?: string
+          setor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "setor_permissoes_permissao_chave_fkey"
+            columns: ["permissao_chave"]
+            isOneToOne: false
+            referencedRelation: "permissoes"
+            referencedColumns: ["chave"]
+          },
+          {
+            foreignKeyName: "setor_permissoes_setor_id_fkey"
+            columns: ["setor_id"]
+            isOneToOne: false
+            referencedRelation: "setores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      setores: {
+        Row: {
+          cor: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          cor?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          cor?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       treinamentos: {
         Row: {
           ativo: boolean
@@ -464,6 +634,38 @@ export type Database = {
         }
         Relationships: []
       }
+      user_permissoes: {
+        Row: {
+          concedida: boolean
+          created_at: string
+          id: string
+          permissao_chave: string
+          user_id: string
+        }
+        Insert: {
+          concedida?: boolean
+          created_at?: string
+          id?: string
+          permissao_chave: string
+          user_id: string
+        }
+        Update: {
+          concedida?: boolean
+          created_at?: string
+          id?: string
+          permissao_chave?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permissoes_permissao_chave_fkey"
+            columns: ["permissao_chave"]
+            isOneToOne: false
+            referencedRelation: "permissoes"
+            referencedColumns: ["chave"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -485,11 +687,44 @@ export type Database = {
         }
         Relationships: []
       }
+      user_setores: {
+        Row: {
+          created_at: string
+          id: string
+          setor_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          setor_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          setor_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_setores_setor_id_fkey"
+            columns: ["setor_id"]
+            isOneToOne: false
+            referencedRelation: "setores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      has_permission: {
+        Args: { _chave: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
