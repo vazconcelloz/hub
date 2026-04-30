@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/contexts/ThemeContext";
+import logoHorizontal from "@/assets/logo-fbn-horizontal.png";
+import logoIcon from "@/assets/favicon-fbn.png";
 
 const items = [
   { title: "Início", url: "/app", icon: Home, exact: true },
@@ -47,16 +49,12 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-[hsl(var(--hub-border))] bg-[hsl(var(--hub-surface))]">
-      <SidebarHeader className="border-b border-[hsl(var(--hub-border))] px-3 py-4">
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-lg bg-[hsl(var(--hub-primary))] text-[hsl(var(--hub-primary-foreground))] flex items-center justify-center font-bold shrink-0">
-            FBN
-          </div>
-          {!collapsed && (
-            <div className="flex flex-col leading-tight">
-              <span className="text-sm font-semibold text-[hsl(var(--hub-text))]">Grupo FBN</span>
-              <span className="text-xs text-[hsl(var(--hub-text-muted))]">Hub Corporativo</span>
-            </div>
+      <SidebarHeader className="border-b border-[hsl(var(--hub-border))] bg-[hsl(var(--hub-surface))] px-3 py-4">
+        <div className="flex items-center justify-center">
+          {collapsed ? (
+            <img src={logoIcon} alt="Grupo FBN" className="h-8 w-8 object-contain" />
+          ) : (
+            <img src={logoHorizontal} alt="Grupo FBN" className="h-12 w-auto object-contain" />
           )}
         </div>
       </SidebarHeader>
