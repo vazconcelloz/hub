@@ -13,9 +13,9 @@ const ramos = [
   {
     title: "Automóvel",
     desc: "Cotações de seguro auto",
-    url: "#",
+    url: "/app/cotacoes/automovel",
     icon: Car,
-    enabled: false,
+    enabled: true,
   },
   {
     title: "Vida",
