@@ -408,111 +408,97 @@ export default function PublicPropostaAutoPage() {
     );
   };
 
-  // ============== Célula "Formas de pagamento" (gaveta) ==============
-  const FormasPagamentoCell = ({ c }: { c: AutoCotacao }) => {
+  // ============== Editor de formas de pagamento (modo edit) ==============
+  const FormasPagamentoEditor = ({ c }: { c: AutoCotacao }) => {
     const lista = parseFormasPagamento((c as any).formas_pagamento_detalhes);
-
-    if (editMode) {
-      const atual = lista.length > 0 ? lista : FORMA_PADRAO;
-      const update = (next: FormaPagamento[]) => {
-        const limpos = next.filter((d) => d.tipo.trim() || d.descricao.trim());
-        updateDraft(
-          c.id,
-          "formas_pagamento_detalhes" as any,
-          limpos.length > 0 ? (limpos as any) : null
-        );
-      };
-      return (
-        <div className="rounded-md border border-border/60 bg-background/60 p-2 space-y-1.5">
-          <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide text-left">
-            Opções de pagamento
-          </div>
-          {atual.map((d, i) => (
-            <div key={i} className="flex items-center gap-1.5">
-              <Select
-                value={d.tipo || ""}
-                onValueChange={(v) => {
-                  const next = [...atual];
-                  next[i] = { ...next[i], tipo: v };
-                  update(next);
-                }}
-              >
-                <SelectTrigger className="h-7 text-xs w-36">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {FORMA_TIPOS.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input
-                value={d.descricao}
-                onChange={(e) => {
-                  const next = [...atual];
-                  next[i] = { ...next[i], descricao: e.target.value };
-                  update(next);
-                }}
-                placeholder="Ex.: até 10x sem juros"
-                className="h-7 text-xs flex-1"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  const next = atual.filter((_, idx) => idx !== i);
-                  update(next);
-                }}
-                className="text-muted-foreground hover:text-destructive p-1"
-                title="Remover"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ))}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-7 text-[11px] w-full"
-            onClick={() => update([...atual, { tipo: "", descricao: "" }])}
-          >
-            <Plus className="w-3 h-3 mr-1" /> Adicionar opção
-          </Button>
-        </div>
+    const atual = lista.length > 0 ? lista : FORMA_PADRAO;
+    const update = (next: FormaPagamento[]) => {
+      const limpos = next.filter((d) => d.tipo.trim() || d.descricao.trim());
+      updateDraft(
+        c.id,
+        "formas_pagamento_detalhes" as any,
+        limpos.length > 0 ? (limpos as any) : null
       );
-    }
+    };
+    return (
+      <div className="rounded-md border border-border/60 bg-background/60 p-2 space-y-1.5">
+        <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide text-left">
+          Opções de pagamento
+        </div>
+        {atual.map((d, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <Select
+              value={d.tipo || ""}
+              onValueChange={(v) => {
+                const next = [...atual];
+                next[i] = { ...next[i], tipo: v };
+                update(next);
+              }}
+            >
+              <SelectTrigger className="h-7 text-xs w-36">
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                {FORMA_TIPOS.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              value={d.descricao}
+              onChange={(e) => {
+                const next = [...atual];
+                next[i] = { ...next[i], descricao: e.target.value };
+                update(next);
+              }}
+              placeholder="Ex.: até 10x sem juros"
+              className="h-7 text-xs flex-1"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const next = atual.filter((_, idx) => idx !== i);
+                update(next);
+              }}
+              className="text-muted-foreground hover:text-destructive p-1"
+              title="Remover"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ))}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-7 text-[11px] w-full"
+          onClick={() => update([...atual, { tipo: "", descricao: "" }])}
+        >
+          <Plus className="w-3 h-3 mr-1" /> Adicionar opção
+        </Button>
+      </div>
+    );
+  };
 
-    // Modo leitura: gaveta colapsável
+  // Lista visual (read-only) das formas de pagamento de UMA seguradora
+  const FormasPagamentoList = ({ c }: { c: AutoCotacao }) => {
+    const lista = parseFormasPagamento((c as any).formas_pagamento_detalhes);
     if (lista.length === 0) {
       return <span className="text-muted-foreground text-xs">—</span>;
     }
     return (
-      <Collapsible>
-        <CollapsibleTrigger asChild>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-          >
-            <CreditCard className="w-3.5 h-3.5" />
-            {lista.length} {lista.length === 1 ? "opção" : "opções"}
-            <ChevronDown className="w-3 h-3 transition-transform data-[state=open]:rotate-180" />
-          </button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="mt-2">
-          <ul className="text-xs text-left space-y-1 bg-muted/40 rounded-md p-2 border border-border/60">
-            {lista.map((d, i) => (
-              <li key={i} className="flex flex-col">
-                <span className="font-semibold text-foreground">{d.tipo || "—"}</span>
-                {d.descricao && (
-                  <span className="text-muted-foreground">{d.descricao}</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </CollapsibleContent>
-      </Collapsible>
+      <ul className="text-xs text-left space-y-1 bg-muted/40 rounded-md p-2 border border-border/60">
+        {lista.map((d, i) => (
+          <li key={i} className="flex flex-col">
+            <span className="font-semibold text-foreground">{d.tipo || "—"}</span>
+            {d.descricao && (
+              <span className="text-muted-foreground">{d.descricao}</span>
+            )}
+          </li>
+        ))}
+      </ul>
     );
   };
 
