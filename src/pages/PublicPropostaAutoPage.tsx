@@ -1013,6 +1013,12 @@ export default function PublicPropostaAutoPage() {
                           </dd>
                         </div>
                       ))}
+                      <div className="pt-2">
+                        <p className="text-muted-foreground text-xs uppercase tracking-wide mb-1">
+                          Formas de pagamento
+                        </p>
+                        <FormasPagamentoCell c={c} />
+                      </div>
                     </dl>
                   </div>
                 </Card>
