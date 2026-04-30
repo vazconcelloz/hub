@@ -173,6 +173,11 @@ export default function PropostaAutoFormPage() {
         carro_reserva: c.carro_reserva || "",
         parcelamento: c.parcelamento || "",
         formas_pagamento: c.formas_pagamento || "",
+        formas_pagamento_detalhes: Array.isArray(c.formas_pagamento_detalhes)
+          ? c.formas_pagamento_detalhes
+              .filter((x: any) => x && (x.tipo || x.descricao))
+              .map((x: any) => ({ tipo: String(x.tipo || ""), descricao: String(x.descricao || "") }))
+          : null,
         destaque_comercial: "",
         ordem_exibicao: i + 1,
       }));
