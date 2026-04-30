@@ -248,6 +248,9 @@ export default function PropostaAutoFormPage() {
           carro_reserva: c.carro_reserva || null,
           parcelamento: c.parcelamento || null,
           formas_pagamento: c.formas_pagamento || null,
+          formas_pagamento_detalhes: c.formas_pagamento_detalhes && c.formas_pagamento_detalhes.length > 0
+            ? c.formas_pagamento_detalhes
+            : null,
           destaque_comercial: c.destaque_comercial || null,
           cor_coluna: c.cor_coluna || null,
           ordem_exibicao: i + 1,
