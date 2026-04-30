@@ -216,6 +216,8 @@ export default function PropostaAutoFormPage() {
       const payload = {
         ...form,
         validade_proposta: form.validade_proposta || null,
+        vigencia_inicio: form.vigencia_inicio || null,
+        vigencia_fim: form.vigencia_fim || null,
         user_id: user?.id,
       };
 
