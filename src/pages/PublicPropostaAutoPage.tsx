@@ -599,11 +599,41 @@ export default function PublicPropostaAutoPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-muted/50">
-                    <th className="text-left px-4 py-3 font-semibold text-foreground w-48">
-                      Critério
+                    <th
+                      className={cn(
+                        "text-left px-4 py-3 font-semibold w-48",
+                        rotuloCol ? rotuloCol.header : "text-foreground"
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span>Critério</span>
+                        {editMode && (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-[11px] gap-1 text-foreground"
+                                title="Cor da coluna de critérios"
+                              >
+                                <Palette className="w-3 h-3" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-64 p-3">
+                              <p className="text-xs font-medium mb-2">
+                                Cor da coluna de critérios
+                              </p>
+                              <ColorPalette
+                                current={draftCorRotulos}
+                                onPick={(k) => setDraftCorRotulos(k)}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        )}
+                      </div>
                     </th>
                     {view.map((c) => {
-                      const col = getColunaColor(c.cor_coluna);
                       const destKey = c.destaque_comercial || "";
                       const destLabel =
                         DESTAQUE_LABELS[destKey] ||
@@ -614,38 +644,11 @@ export default function PublicPropostaAutoPage() {
                       return (
                         <th
                           key={c.id}
-                          className={cn(
-                            "px-4 py-4 text-center align-bottom min-w-[220px]",
-                            col ? col.header : ""
-                          )}
+                          className="px-4 py-4 text-center align-bottom min-w-[220px] bg-muted/30"
                         >
                           {editMode ? (
                             <div className="space-y-2">
                               <div className="flex items-center justify-end gap-1">
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-7 text-[11px] gap-1 text-foreground"
-                                    >
-                                      <Palette className="w-3 h-3" />
-                                      Cor
-                                    </Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-64 p-3">
-                                    <p className="text-xs font-medium mb-2">
-                                      Cor da coluna
-                                    </p>
-                                    <ColorPalette
-                                      current={c.cor_coluna}
-                                      onPick={(k) =>
-                                        updateDraft(c.id, "cor_coluna", k)
-                                      }
-                                    />
-                                  </PopoverContent>
-                                </Popover>
                                 <Button
                                   type="button"
                                   variant="ghost"
@@ -660,11 +663,7 @@ export default function PublicPropostaAutoPage() {
                               <Input
                                 value={c.seguradora_nome ?? ""}
                                 onChange={(e) =>
-                                  updateDraft(
-                                    c.id,
-                                    "seguradora_nome",
-                                    e.target.value
-                                  )
+                                  updateDraft(c.id, "seguradora_nome", e.target.value)
                                 }
                                 placeholder="Seguradora"
                                 className="h-8 text-sm font-semibold text-foreground"
@@ -672,11 +671,7 @@ export default function PublicPropostaAutoPage() {
                               <Input
                                 value={c.produto_nome ?? ""}
                                 onChange={(e) =>
-                                  updateDraft(
-                                    c.id,
-                                    "produto_nome",
-                                    e.target.value || null
-                                  )
+                                  updateDraft(c.id, "produto_nome", e.target.value || null)
                                 }
                                 placeholder="Produto / Plano"
                                 className="h-7 text-xs text-foreground"
@@ -696,32 +691,20 @@ export default function PublicPropostaAutoPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="none">Sem destaque</SelectItem>
-                                  {Object.entries(DESTAQUE_LABELS).map(
-                                    ([k, v]) => (
-                                      <SelectItem key={k} value={k}>
-                                        {v}
-                                      </SelectItem>
-                                    )
-                                  )}
+                                  {Object.entries(DESTAQUE_LABELS).map(([k, v]) => (
+                                    <SelectItem key={k} value={k}>
+                                      {v}
+                                    </SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                             </div>
                           ) : (
                             <div className="space-y-1">
-                              <p
-                                className={cn(
-                                  "text-xs uppercase tracking-wider",
-                                  col ? "text-white/80" : "text-muted-foreground"
-                                )}
-                              >
+                              <p className="text-xs uppercase tracking-wider text-muted-foreground">
                                 {c.seguradora_nome}
                               </p>
-                              <p
-                                className={cn(
-                                  "font-bold",
-                                  col ? "text-white" : "text-foreground"
-                                )}
-                              >
+                              <p className="font-bold text-foreground">
                                 {txt(c.produto_nome)}
                               </p>
                               {destLabel && (
