@@ -33,7 +33,7 @@ export default function InicioPage() {
     <div className="p-6 lg:p-10 max-w-7xl mx-auto">
       <header className="mb-8">
         <h1 className="text-3xl font-semibold text-[hsl(var(--hub-text))]">
-          Olá{email ? `, ${email}` : ""} 👋
+          Olá{email ? `, ${email}` : ""}
         </h1>
         <p className="text-[hsl(var(--hub-text-muted))] mt-1">Bem-vindo ao Hub Grupo FBN.</p>
       </header>
