@@ -4,23 +4,47 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   PropostaAuto,
   AutoCotacao,
+  AutoCotacaoInsert,
   formatCurrency,
 } from "@/lib/proposal-auto-utils";
 import {
   DESTAQUE_LABELS,
   DESTAQUE_COLORS,
+  COLUNA_COLORS,
   getColunaColor,
 } from "@/lib/proposal-utils";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { useToast } from "@/hooks/use-toast";
 import {
   Shield,
   MessageCircle,
   Car,
   Calendar,
   FileText,
+  Pencil,
+  Save,
+  X,
+  Plus,
+  Trash2,
+  Palette,
+  Check,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -31,36 +55,90 @@ const fmt = (v: number | null | undefined) =>
 const txt = (v: string | null | undefined) =>
   v && v.trim() ? v : "—";
 
+// Parse de número BR (R$ 4.154,35 -> 4154.35)
+const parseNum = (s: string): number | null => {
+  const raw = (s || "").trim().replace(/[^\d,.-]/g, "");
+  if (!raw) return null;
+  const normalized = raw.includes(",")
+    ? raw.replace(/\./g, "").replace(",", ".")
+    : /^\d{1,3}(\.\d{3})+$/.test(raw)
+      ? raw.replace(/\./g, "")
+      : raw;
+  const v = Number(normalized);
+  return Number.isFinite(v) ? v : null;
+};
+
+type FieldType = "text" | "number";
+
 interface Criterio {
   label: string;
+  field: keyof AutoCotacao;
+  type: FieldType;
   render: (c: AutoCotacao) => React.ReactNode;
 }
 
 const CRITERIOS: Criterio[] = [
-  { label: "Cobertura", render: (c) => txt(c.cobertura_resumo) },
+  { label: "Cobertura", field: "cobertura_resumo", type: "text", render: (c) => txt(c.cobertura_resumo) },
   {
-    label: "Franquia",
-    render: (c) =>
-      c.franquia_valor != null
-        ? `${fmt(c.franquia_valor)}${c.franquia_tipo ? ` · ${c.franquia_tipo}` : ""}`
-        : txt(c.franquia_tipo),
+    label: "Franquia (R$)",
+    field: "franquia_valor",
+    type: "number",
+    render: (c) => fmt(c.franquia_valor),
   },
-  { label: "% FIPE / Indenização", render: (c) => txt(c.percentual_fipe) },
-  { label: "Danos materiais", render: (c) => fmt(c.danos_materiais) },
-  { label: "Danos corporais", render: (c) => fmt(c.danos_corporais) },
-  { label: "Danos morais", render: (c) => fmt(c.danos_morais) },
-  { label: "APP morte/invalidez", render: (c) => fmt(c.app_morte_invalidez) },
-  { label: "Assistência 24h", render: (c) => txt(c.assistencia_24h) },
-  { label: "Vidros", render: (c) => txt(c.vidros) },
-  { label: "Carro reserva", render: (c) => txt(c.carro_reserva) },
+  { label: "Tipo de franquia", field: "franquia_tipo", type: "text", render: (c) => txt(c.franquia_tipo) },
+  { label: "% FIPE / Indenização", field: "percentual_fipe", type: "text", render: (c) => txt(c.percentual_fipe) },
+  { label: "Danos materiais", field: "danos_materiais", type: "number", render: (c) => fmt(c.danos_materiais) },
+  { label: "Danos corporais", field: "danos_corporais", type: "number", render: (c) => fmt(c.danos_corporais) },
+  { label: "Danos morais", field: "danos_morais", type: "number", render: (c) => fmt(c.danos_morais) },
+  { label: "APP morte/invalidez", field: "app_morte_invalidez", type: "number", render: (c) => fmt(c.app_morte_invalidez) },
+  { label: "Assistência 24h", field: "assistencia_24h", type: "text", render: (c) => txt(c.assistencia_24h) },
+  { label: "Vidros", field: "vidros", type: "text", render: (c) => txt(c.vidros) },
+  { label: "Carro reserva", field: "carro_reserva", type: "text", render: (c) => txt(c.carro_reserva) },
+  { label: "Formas de pagamento", field: "formas_pagamento", type: "text", render: (c) => txt(c.formas_pagamento) },
 ];
+
+// Cota��o vazia (template para "Adicionar")
+const emptyCotacao = (proposta_id: string, ordem: number): AutoCotacao => ({
+  id: `tmp-${Math.random().toString(36).slice(2)}`,
+  proposta_id,
+  seguradora_nome: "Nova seguradora",
+  produto_nome: null,
+  premio_total: null,
+  cobertura_resumo: null,
+  franquia_valor: null,
+  franquia_tipo: null,
+  percentual_fipe: null,
+  danos_materiais: null,
+  danos_corporais: null,
+  danos_morais: null,
+  app_morte_invalidez: null,
+  assistencia_24h: null,
+  vidros: null,
+  carro_reserva: null,
+  parcelamento: null,
+  formas_pagamento: null,
+  destaque_comercial: null,
+  cor_coluna: null,
+  cores_celulas: null,
+  pdf_url: null,
+  ordem_exibicao: ordem,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+});
 
 export default function PublicPropostaAutoPage() {
   const { slug } = useParams();
+  const { toast } = useToast();
   const [proposta, setProposta] = useState<PropostaAuto | null>(null);
   const [cotacoes, setCotacoes] = useState<AutoCotacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+
+  // Modo de edi��o (apenas admin logado)
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [draft, setDraft] = useState<AutoCotacao[]>([]);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -86,9 +164,132 @@ export default function PublicPropostaAutoPage() {
         .eq("proposta_id", p.id)
         .order("ordem_exibicao");
       setCotacoes(cs || []);
+
+      // detecta admin (qualquer usuário autenticado pode editar — RLS valida)
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAdmin(!!user);
+
       setLoading(false);
     })();
   }, [slug]);
+
+  const enterEdit = () => {
+    setDraft(cotacoes.map((c) => ({ ...c })));
+    setEditMode(true);
+  };
+  const cancelEdit = () => {
+    setDraft([]);
+    setEditMode(false);
+  };
+
+  const updateDraft = (id: string, field: keyof AutoCotacao, value: any) => {
+    setDraft((d) => d.map((c) => (c.id === id ? { ...c, [field]: value } : c)));
+  };
+
+  const addCotacao = () => {
+    if (!proposta) return;
+    setDraft((d) => [...d, emptyCotacao(proposta.id, d.length + 1)]);
+  };
+
+  const removeCotacao = (id: string) => {
+    setDraft((d) => d.filter((c) => c.id !== id));
+  };
+
+  const saveEdit = async () => {
+    if (!proposta) return;
+    setSaving(true);
+    try {
+      // Estratégia simples e consistente com o form admin:
+      // deleta todas as cota��es e re-insere a partir do draft.
+      const { error: delErr } = await supabase
+        .from("proposta_auto_seguradoras")
+        .delete()
+        .eq("proposta_id", proposta.id);
+      if (delErr) throw delErr;
+
+      if (draft.length) {
+        const rows: AutoCotacaoInsert[] = draft.map((c, i) => ({
+          proposta_id: proposta.id,
+          seguradora_nome: c.seguradora_nome || "Sem nome",
+          produto_nome: c.produto_nome,
+          premio_total: c.premio_total,
+          cobertura_resumo: c.cobertura_resumo,
+          franquia_valor: c.franquia_valor,
+          franquia_tipo: c.franquia_tipo,
+          percentual_fipe: c.percentual_fipe,
+          danos_materiais: c.danos_materiais,
+          danos_corporais: c.danos_corporais,
+          danos_morais: c.danos_morais,
+          app_morte_invalidez: c.app_morte_invalidez,
+          assistencia_24h: c.assistencia_24h,
+          vidros: c.vidros,
+          carro_reserva: c.carro_reserva,
+          parcelamento: c.parcelamento,
+          formas_pagamento: c.formas_pagamento,
+          destaque_comercial: c.destaque_comercial,
+          cor_coluna: c.cor_coluna,
+          ordem_exibicao: i + 1,
+        }));
+        const { data: inserted, error: insErr } = await supabase
+          .from("proposta_auto_seguradoras")
+          .insert(rows)
+          .select();
+        if (insErr) throw insErr;
+        setCotacoes(inserted || []);
+      } else {
+        setCotacoes([]);
+      }
+
+      setEditMode(false);
+      setDraft([]);
+      toast({ title: "Alterações salvas!" });
+    } catch (e: any) {
+      toast({
+        title: "Erro ao salvar",
+        description: e.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Paleta para cor da coluna
+  const ColorPalette = ({
+    current,
+    onPick,
+  }: {
+    current: string | null | undefined;
+    onPick: (k: string | null) => void;
+  }) => (
+    <div className="grid grid-cols-5 gap-1.5">
+      <button
+        type="button"
+        onClick={() => onPick(null)}
+        className={cn(
+          "h-8 col-span-5 rounded text-[11px] bg-muted text-muted-foreground",
+          !current && "ring-2 ring-offset-1 ring-foreground"
+        )}
+      >
+        Sem cor
+      </button>
+      {Object.entries(COLUNA_COLORS).map(([k, c]) => (
+        <button
+          key={k}
+          type="button"
+          onClick={() => onPick(k)}
+          className={cn(
+            "h-8 rounded flex items-center justify-center",
+            c.header,
+            current === k && "ring-2 ring-offset-1 ring-foreground"
+          )}
+          title={c.label}
+        >
+          {current === k && <Check className="w-3 h-3" />}
+        </button>
+      ))}
+    </div>
+  );
 
   if (loading) {
     return (
@@ -120,6 +321,33 @@ export default function PublicPropostaAutoPage() {
         `Olá! Vi minha proposta de seguro auto e gostaria de mais informações.`
       )}`
     : "#";
+
+  // Lista visualizada: draft em edi��o, cota��es publicadas no modo leitura.
+  const view = editMode ? draft : cotacoes;
+
+  // Render de uma c�lula edit�vel para um crit�rio + cota��o
+  const renderEditableCell = (c: AutoCotacao, crit: Criterio) => {
+    const value = (c as any)[crit.field];
+    if (crit.type === "number") {
+      return (
+        <Input
+          value={value == null ? "" : String(value)}
+          onChange={(e) =>
+            updateDraft(c.id, crit.field, parseNum(e.target.value))
+          }
+          placeholder="0,00"
+          className="h-8 text-sm text-center"
+        />
+      );
+    }
+    return (
+      <Input
+        value={value ?? ""}
+        onChange={(e) => updateDraft(c.id, crit.field, e.target.value || null)}
+        className="h-8 text-sm text-center"
+      />
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -161,13 +389,53 @@ export default function PublicPropostaAutoPage() {
         </div>
       </header>
 
-      {cotacoes.length === 0 ? (
+      {/* Barra de admin */}
+      {isAdmin && (
+        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b">
+          <div className="container py-2 flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-xs text-muted-foreground">
+              Modo administrador {editMode && <span className="text-foreground font-medium">— editando inline</span>}
+            </p>
+            <div className="flex items-center gap-2">
+              {!editMode ? (
+                <Button size="sm" variant="outline" onClick={enterEdit}>
+                  <Pencil className="w-4 h-4 mr-1" /> Editar cotações
+                </Button>
+              ) : (
+                <>
+                  <Button size="sm" variant="outline" onClick={addCotacao}>
+                    <Plus className="w-4 h-4 mr-1" /> Adicionar seguradora
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={cancelEdit} disabled={saving}>
+                    <X className="w-4 h-4 mr-1" /> Cancelar
+                  </Button>
+                  <Button size="sm" onClick={saveEdit} disabled={saving}>
+                    {saving ? (
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-1" />
+                    )}
+                    Salvar
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {view.length === 0 ? (
         <section className="container py-16 text-center">
           <Card className="p-10 max-w-lg mx-auto">
             <FileText className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
             <p className="text-muted-foreground">
               Nenhuma cotação cadastrada ainda.
             </p>
+            {editMode && (
+              <Button className="mt-4" onClick={addCotacao}>
+                <Plus className="w-4 h-4 mr-1" /> Adicionar primeira cotação
+              </Button>
+            )}
           </Card>
         </section>
       ) : (
@@ -181,35 +449,135 @@ export default function PublicPropostaAutoPage() {
                     <th className="text-left px-4 py-3 font-semibold text-foreground w-48">
                       Critério
                     </th>
-                    {cotacoes.map((c) => {
-                      const col = getColunaColor((c as any).cor_coluna);
+                    {view.map((c) => {
+                      const col = getColunaColor(c.cor_coluna);
                       const destKey = c.destaque_comercial || "";
-                      const destLabel = DESTAQUE_LABELS[destKey] || (destKey && !DESTAQUE_LABELS[destKey] ? destKey : null);
-                      const destClass = DESTAQUE_COLORS[destKey] || "bg-primary text-primary-foreground";
+                      const destLabel =
+                        DESTAQUE_LABELS[destKey] ||
+                        (destKey && !DESTAQUE_LABELS[destKey] ? destKey : null);
+                      const destClass =
+                        DESTAQUE_COLORS[destKey] ||
+                        "bg-primary text-primary-foreground";
                       return (
                         <th
                           key={c.id}
                           className={cn(
-                            "px-4 py-4 text-center align-bottom min-w-[200px]",
+                            "px-4 py-4 text-center align-bottom min-w-[220px]",
                             col ? col.header : ""
                           )}
                         >
-                          <div className="space-y-1">
-                            <p className={cn(
-                              "text-xs uppercase tracking-wider",
-                              col ? "text-white/80" : "text-muted-foreground"
-                            )}>
-                              {c.seguradora_nome}
-                            </p>
-                            <p className={cn("font-bold", col ? "text-white" : "text-foreground")}>
-                              {txt(c.produto_nome)}
-                            </p>
-                            {destLabel && (
-                              <Badge className={cn("mt-1", destClass)}>
-                                {destLabel}
-                              </Badge>
-                            )}
-                          </div>
+                          {editMode ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-end gap-1">
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7 text-[11px] gap-1 text-foreground"
+                                    >
+                                      <Palette className="w-3 h-3" />
+                                      Cor
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-64 p-3">
+                                    <p className="text-xs font-medium mb-2">
+                                      Cor da coluna
+                                    </p>
+                                    <ColorPalette
+                                      current={c.cor_coluna}
+                                      onPick={(k) =>
+                                        updateDraft(c.id, "cor_coluna", k)
+                                      }
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => removeCotacao(c.id)}
+                                  title="Remover cotação"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                                </Button>
+                              </div>
+                              <Input
+                                value={c.seguradora_nome ?? ""}
+                                onChange={(e) =>
+                                  updateDraft(
+                                    c.id,
+                                    "seguradora_nome",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="Seguradora"
+                                className="h-8 text-sm font-semibold text-foreground"
+                              />
+                              <Input
+                                value={c.produto_nome ?? ""}
+                                onChange={(e) =>
+                                  updateDraft(
+                                    c.id,
+                                    "produto_nome",
+                                    e.target.value || null
+                                  )
+                                }
+                                placeholder="Produto / Plano"
+                                className="h-7 text-xs text-foreground"
+                              />
+                              <Select
+                                value={c.destaque_comercial || "none"}
+                                onValueChange={(v) =>
+                                  updateDraft(
+                                    c.id,
+                                    "destaque_comercial",
+                                    v === "none" ? null : v
+                                  )
+                                }
+                              >
+                                <SelectTrigger className="h-7 text-xs text-foreground">
+                                  <SelectValue placeholder="Sem destaque" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">Sem destaque</SelectItem>
+                                  {Object.entries(DESTAQUE_LABELS).map(
+                                    ([k, v]) => (
+                                      <SelectItem key={k} value={k}>
+                                        {v}
+                                      </SelectItem>
+                                    )
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          ) : (
+                            <div className="space-y-1">
+                              <p
+                                className={cn(
+                                  "text-xs uppercase tracking-wider",
+                                  col ? "text-white/80" : "text-muted-foreground"
+                                )}
+                              >
+                                {c.seguradora_nome}
+                              </p>
+                              <p
+                                className={cn(
+                                  "font-bold",
+                                  col ? "text-white" : "text-foreground"
+                                )}
+                              >
+                                {txt(c.produto_nome)}
+                              </p>
+                              {destLabel && (
+                                <Badge className={cn("mt-1", destClass)}>
+                                  {destLabel}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
                         </th>
                       );
                     })}
@@ -218,15 +586,50 @@ export default function PublicPropostaAutoPage() {
                     <th className="text-left px-4 py-3 font-semibold text-foreground">
                       Prêmio total
                     </th>
-                    {cotacoes.map((c) => (
+                    {view.map((c) => (
                       <th key={c.id} className="px-4 py-3 text-center">
-                        <p className="text-xl font-bold text-primary">
-                          {fmt(c.premio_total)}
-                        </p>
-                        {c.parcelamento && (
-                          <p className="text-xs text-muted-foreground font-normal mt-0.5">
-                            {c.parcelamento}
-                          </p>
+                        {editMode ? (
+                          <div className="space-y-1">
+                            <Input
+                              value={
+                                c.premio_total == null
+                                  ? ""
+                                  : String(c.premio_total)
+                              }
+                              onChange={(e) =>
+                                updateDraft(
+                                  c.id,
+                                  "premio_total",
+                                  parseNum(e.target.value)
+                                )
+                              }
+                              placeholder="0,00"
+                              className="h-8 text-base font-bold text-center text-primary"
+                            />
+                            <Input
+                              value={c.parcelamento ?? ""}
+                              onChange={(e) =>
+                                updateDraft(
+                                  c.id,
+                                  "parcelamento",
+                                  e.target.value || null
+                                )
+                              }
+                              placeholder="Ex.: 10x R$ 415,39"
+                              className="h-7 text-xs text-center"
+                            />
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-xl font-bold text-primary">
+                              {fmt(c.premio_total)}
+                            </p>
+                            {c.parcelamento && (
+                              <p className="text-xs text-muted-foreground font-normal mt-0.5">
+                                {c.parcelamento}
+                              </p>
+                            )}
+                          </>
                         )}
                       </th>
                     ))}
@@ -241,31 +644,16 @@ export default function PublicPropostaAutoPage() {
                       <td className="px-4 py-3 font-medium text-foreground">
                         {crit.label}
                       </td>
-                      {cotacoes.map((c) => (
+                      {view.map((c) => (
                         <td
                           key={c.id}
                           className="px-4 py-3 text-center text-muted-foreground"
                         >
-                          {crit.render(c)}
+                          {editMode ? renderEditableCell(c, crit) : crit.render(c)}
                         </td>
                       ))}
                     </tr>
                   ))}
-                  {cotacoes.some((c) => c.formas_pagamento) && (
-                    <tr>
-                      <td className="px-4 py-3 font-medium text-foreground">
-                        Formas de pagamento
-                      </td>
-                      {cotacoes.map((c) => (
-                        <td
-                          key={c.id}
-                          className="px-4 py-3 text-center text-xs text-muted-foreground"
-                        >
-                          {txt(c.formas_pagamento)}
-                        </td>
-                      ))}
-                    </tr>
-                  )}
                 </tbody>
               </table>
             </div>
@@ -273,54 +661,190 @@ export default function PublicPropostaAutoPage() {
 
           {/* Cards (mobile) */}
           <section className="container py-6 md:hidden space-y-4">
-            {cotacoes.map((c) => {
-              const col = getColunaColor((c as any).cor_coluna);
+            {view.map((c) => {
+              const col = getColunaColor(c.cor_coluna);
               const destKey = c.destaque_comercial || "";
-              const destLabel = DESTAQUE_LABELS[destKey] || (destKey && !DESTAQUE_LABELS[destKey] ? destKey : null);
-              const destClass = DESTAQUE_COLORS[destKey] || "bg-primary text-primary-foreground";
+              const destLabel =
+                DESTAQUE_LABELS[destKey] ||
+                (destKey && !DESTAQUE_LABELS[destKey] ? destKey : null);
+              const destClass =
+                DESTAQUE_COLORS[destKey] ||
+                "bg-primary text-primary-foreground";
               return (
-                <Card key={c.id} className={cn("overflow-hidden p-0", col && `border-t-4 ${col.border}`)}>
+                <Card
+                  key={c.id}
+                  className={cn(
+                    "overflow-hidden p-0",
+                    col && `border-t-4 ${col.border}`
+                  )}
+                >
                   <div className={cn("p-4", col ? col.header : "bg-muted/30")}>
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className={cn(
-                          "text-xs uppercase tracking-wider",
-                          col ? "text-white/80" : "text-muted-foreground"
-                        )}>
-                          {c.seguradora_nome}
-                        </p>
-                        <h3 className={cn("font-bold", col ? "text-white" : "text-foreground")}>
-                          {txt(c.produto_nome)}
-                        </h3>
+                    {editMode ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-end gap-1">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-[11px] gap-1 text-foreground"
+                              >
+                                <Palette className="w-3 h-3" /> Cor
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-64 p-3">
+                              <ColorPalette
+                                current={c.cor_coluna}
+                                onPick={(k) =>
+                                  updateDraft(c.id, "cor_coluna", k)
+                                }
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => removeCotacao(c.id)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                          </Button>
+                        </div>
+                        <Input
+                          value={c.seguradora_nome ?? ""}
+                          onChange={(e) =>
+                            updateDraft(
+                              c.id,
+                              "seguradora_nome",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Seguradora"
+                          className="h-8 text-foreground"
+                        />
+                        <Input
+                          value={c.produto_nome ?? ""}
+                          onChange={(e) =>
+                            updateDraft(
+                              c.id,
+                              "produto_nome",
+                              e.target.value || null
+                            )
+                          }
+                          placeholder="Produto"
+                          className="h-7 text-xs text-foreground"
+                        />
+                        <Select
+                          value={c.destaque_comercial || "none"}
+                          onValueChange={(v) =>
+                            updateDraft(
+                              c.id,
+                              "destaque_comercial",
+                              v === "none" ? null : v
+                            )
+                          }
+                        >
+                          <SelectTrigger className="h-7 text-xs text-foreground">
+                            <SelectValue placeholder="Sem destaque" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Sem destaque</SelectItem>
+                            {Object.entries(DESTAQUE_LABELS).map(([k, v]) => (
+                              <SelectItem key={k} value={k}>
+                                {v}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                      {destLabel && (
-                        <Badge className={destClass}>{destLabel}</Badge>
-                      )}
-                    </div>
+                    ) : (
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p
+                            className={cn(
+                              "text-xs uppercase tracking-wider",
+                              col ? "text-white/80" : "text-muted-foreground"
+                            )}
+                          >
+                            {c.seguradora_nome}
+                          </p>
+                          <h3
+                            className={cn(
+                              "font-bold",
+                              col ? "text-white" : "text-foreground"
+                            )}
+                          >
+                            {txt(c.produto_nome)}
+                          </h3>
+                        </div>
+                        {destLabel && (
+                          <Badge className={destClass}>{destLabel}</Badge>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="p-4">
                     <div className="bg-primary/5 rounded-lg p-3 text-center mb-4">
                       <p className="text-xs uppercase text-muted-foreground">
                         Prêmio total
                       </p>
-                      <p className="text-2xl font-bold text-primary">
-                        {fmt(c.premio_total)}
-                      </p>
-                      {c.parcelamento && (
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {c.parcelamento}
-                        </p>
+                      {editMode ? (
+                        <div className="space-y-1 mt-1">
+                          <Input
+                            value={
+                              c.premio_total == null
+                                ? ""
+                                : String(c.premio_total)
+                            }
+                            onChange={(e) =>
+                              updateDraft(
+                                c.id,
+                                "premio_total",
+                                parseNum(e.target.value)
+                              )
+                            }
+                            placeholder="0,00"
+                            className="h-9 text-lg font-bold text-center text-primary"
+                          />
+                          <Input
+                            value={c.parcelamento ?? ""}
+                            onChange={(e) =>
+                              updateDraft(
+                                c.id,
+                                "parcelamento",
+                                e.target.value || null
+                              )
+                            }
+                            placeholder="Parcelamento"
+                            className="h-7 text-xs text-center"
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-2xl font-bold text-primary">
+                            {fmt(c.premio_total)}
+                          </p>
+                          {c.parcelamento && (
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {c.parcelamento}
+                            </p>
+                          )}
+                        </>
                       )}
                     </div>
                     <dl className="space-y-2 text-sm">
                       {CRITERIOS.map((crit) => (
                         <div
                           key={crit.label}
-                          className="flex justify-between gap-3 border-b border-border/60 pb-1.5 last:border-0"
+                          className="flex justify-between items-center gap-3 border-b border-border/60 pb-1.5 last:border-0"
                         >
-                          <dt className="text-muted-foreground">{crit.label}</dt>
-                          <dd className="text-right text-foreground font-medium">
-                            {crit.render(c)}
+                          <dt className="text-muted-foreground shrink-0">
+                            {crit.label}
+                          </dt>
+                          <dd className="text-right text-foreground font-medium flex-1 min-w-0">
+                            {editMode ? renderEditableCell(c, crit) : crit.render(c)}
                           </dd>
                         </div>
                       ))}
@@ -334,7 +858,7 @@ export default function PublicPropostaAutoPage() {
       )}
 
       {/* CTA WhatsApp */}
-      {tel && (
+      {!editMode && tel && (
         <section className="container py-8 text-center">
           <Button
             asChild
@@ -352,7 +876,7 @@ export default function PublicPropostaAutoPage() {
         </section>
       )}
 
-      {proposta.observacoes_gerais && (
+      {!editMode && proposta.observacoes_gerais && (
         <section className="container max-w-3xl">
           <Card className="p-5">
             <div className="flex items-center gap-2 mb-2 text-foreground">
