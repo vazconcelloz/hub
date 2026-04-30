@@ -58,6 +58,42 @@ export type Database = {
           },
         ]
       }
+      manuais: {
+        Row: {
+          arquivo_nome: string | null
+          arquivo_url: string
+          categoria: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          tamanho_bytes: number | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          arquivo_nome?: string | null
+          arquivo_url: string
+          categoria?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          tamanho_bytes?: number | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          arquivo_nome?: string | null
+          arquivo_url?: string
+          categoria?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          tamanho_bytes?: number | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       operadoras_catalogo: {
         Row: {
           ativo: boolean
@@ -350,6 +386,81 @@ export type Database = {
           planos_detectados?: string[]
           status?: string
           total_importado?: number
+        }
+        Relationships: []
+      }
+      segmentacoes: {
+        Row: {
+          created_at: string
+          criado_por: string | null
+          criterios: Json
+          descricao: string | null
+          id: string
+          nome: string
+          total_contatos: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          criado_por?: string | null
+          criterios?: Json
+          descricao?: string | null
+          id?: string
+          nome: string
+          total_contatos?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          criado_por?: string | null
+          criterios?: Json
+          descricao?: string | null
+          id?: string
+          nome?: string
+          total_contatos?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      treinamentos: {
+        Row: {
+          ativo: boolean
+          categoria: string | null
+          conteudo: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          ordem: number
+          thumbnail_url: string | null
+          titulo: string
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          categoria?: string | null
+          conteudo?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          ordem?: number
+          thumbnail_url?: string | null
+          titulo: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string | null
+          conteudo?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          ordem?: number
+          thumbnail_url?: string | null
+          titulo?: string
+          updated_at?: string
+          video_url?: string | null
         }
         Relationships: []
       }
