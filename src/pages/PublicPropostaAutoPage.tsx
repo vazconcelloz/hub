@@ -140,7 +140,6 @@ const CRITERIOS: Criterio[] = [
   { label: "Assistência 24h", field: "assistencia_24h", type: "text", render: (c) => txt(c.assistencia_24h) },
   { label: "Vidros", field: "vidros", type: "text", render: (c) => txt(c.vidros) },
   { label: "Carro reserva", field: "carro_reserva", type: "text", render: (c) => txt(c.carro_reserva) },
-  { label: "Formas de pagamento", field: "formas_pagamento", type: "text", render: (c) => txt(c.formas_pagamento) },
 ];
 
 // Cota��o vazia (template para "Adicionar")
