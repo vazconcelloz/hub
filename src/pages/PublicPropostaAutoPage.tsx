@@ -181,26 +181,38 @@ export default function PublicPropostaAutoPage() {
                     <th className="text-left px-4 py-3 font-semibold text-foreground w-48">
                       Critério
                     </th>
-                    {cotacoes.map((c) => (
-                      <th
-                        key={c.id}
-                        className="px-4 py-4 text-center align-bottom min-w-[200px]"
-                      >
-                        <div className="space-y-1">
-                          <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                            {c.seguradora_nome}
-                          </p>
-                          <p className="font-bold text-foreground">
-                            {txt(c.produto_nome)}
-                          </p>
-                          {c.destaque_comercial && (
-                            <Badge className="bg-primary text-primary-foreground mt-1">
-                              {c.destaque_comercial}
-                            </Badge>
+                    {cotacoes.map((c) => {
+                      const col = getColunaColor((c as any).cor_coluna);
+                      const destKey = c.destaque_comercial || "";
+                      const destLabel = DESTAQUE_LABELS[destKey] || (destKey && !DESTAQUE_LABELS[destKey] ? destKey : null);
+                      const destClass = DESTAQUE_COLORS[destKey] || "bg-primary text-primary-foreground";
+                      return (
+                        <th
+                          key={c.id}
+                          className={cn(
+                            "px-4 py-4 text-center align-bottom min-w-[200px]",
+                            col ? col.header : ""
                           )}
-                        </div>
-                      </th>
-                    ))}
+                        >
+                          <div className="space-y-1">
+                            <p className={cn(
+                              "text-xs uppercase tracking-wider",
+                              col ? "text-white/80" : "text-muted-foreground"
+                            )}>
+                              {c.seguradora_nome}
+                            </p>
+                            <p className={cn("font-bold", col ? "text-white" : "text-foreground")}>
+                              {txt(c.produto_nome)}
+                            </p>
+                            {destLabel && (
+                              <Badge className={cn("mt-1", destClass)}>
+                                {destLabel}
+                              </Badge>
+                            )}
+                          </div>
+                        </th>
+                      );
+                    })}
                   </tr>
                   <tr className="bg-primary/5">
                     <th className="text-left px-4 py-3 font-semibold text-foreground">
