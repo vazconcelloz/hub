@@ -1,4 +1,4 @@
-import { Home, GraduationCap, BookOpen, Target, FileSpreadsheet, Settings, LogOut, Moon, Sun } from "lucide-react";
+import { Home, GraduationCap, BookOpen, Target, FileSpreadsheet, Settings, LogOut, Moon, Sun, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
@@ -35,7 +35,7 @@ const items = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, toggleSidebar } = useSidebar();
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -105,6 +105,20 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-[hsl(var(--hub-border))] bg-[hsl(var(--hub-surface))] p-2 gap-1">
+        {/* Recolher / expandir sidebar */}
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={toggleSidebar}
+              tooltip={collapsed ? "Expandir menu" : "Recolher menu"}
+              className="text-[hsl(var(--hub-text))] hover:bg-[hsl(var(--hub-surface-muted))]"
+            >
+              {collapsed ? <PanelLeftOpen className="h-4 w-4 shrink-0" /> : <PanelLeftClose className="h-4 w-4 shrink-0" />}
+              {!collapsed && <span>Recolher menu</span>}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+
         {/* Toggle de tema */}
         <SidebarMenu>
           <SidebarMenuItem>
