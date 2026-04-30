@@ -33,6 +33,7 @@ interface AutoCardForm {
   carro_reserva: string;
   parcelamento: string;
   formas_pagamento: string;
+  formas_pagamento_detalhes: { tipo: string; descricao: string }[] | null;
   destaque_comercial: string;
   cor_coluna: string;
   ordem_exibicao: number;
@@ -43,7 +44,8 @@ const empty: AutoCardForm = {
   franquia_valor: "", franquia_tipo: "", percentual_fipe: "",
   danos_materiais: "", danos_corporais: "", danos_morais: "",
   app_morte_invalidez: "", assistencia_24h: "", vidros: "", carro_reserva: "",
-  parcelamento: "", formas_pagamento: "", destaque_comercial: "", cor_coluna: "", ordem_exibicao: 0,
+  parcelamento: "", formas_pagamento: "", formas_pagamento_detalhes: null,
+  destaque_comercial: "", cor_coluna: "", ordem_exibicao: 0,
 };
 
 const num = (s: string) => {
