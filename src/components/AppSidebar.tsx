@@ -1,6 +1,5 @@
 import { Home, GraduationCap, BookOpen, Target, FileSpreadsheet, Settings, LogOut, Moon, Sun, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -16,14 +15,6 @@ import {
 } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/contexts/ThemeContext";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 const items = [
   { title: "Início", url: "/app", icon: Home, exact: true },
@@ -40,17 +31,14 @@ export function AppSidebar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
-  const [email, setEmail] = useState<string>("");
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? ""));
-  }, []);
 
   const isActive = (url: string, exact?: boolean) =>
     exact ? pathname === url : pathname === url || pathname.startsWith(url + "/");
 
-  const initials = email ? email.slice(0, 2).toUpperCase() : "FB";
-  const userName = email ? email.split("@")[0] : "Usuário";
+  // Na home (/app) a sidebar fica fixa, sem botão de recolher.
+  // Em qualquer outra seção, o botão de recolher aparece.
+  const isHome = pathname === "/app";
+  const showCollapseButton = !isHome;
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -105,22 +93,22 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-[hsl(var(--hub-border))] bg-[hsl(var(--hub-surface))] p-2 gap-1">
-        {/* Recolher / expandir sidebar */}
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={toggleSidebar}
-              tooltip={collapsed ? "Expandir menu" : "Recolher menu"}
-              className="text-[hsl(var(--hub-text))] hover:bg-[hsl(var(--hub-surface-muted))]"
-            >
-              {collapsed ? <PanelLeftOpen className="h-4 w-4 shrink-0" /> : <PanelLeftClose className="h-4 w-4 shrink-0" />}
-              {!collapsed && <span>Recolher menu</span>}
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+          {/* Recolher / expandir — só fora da home */}
+          {showCollapseButton && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={toggleSidebar}
+                tooltip={collapsed ? "Expandir menu" : "Recolher menu"}
+                className="text-[hsl(var(--hub-text))] hover:bg-[hsl(var(--hub-surface-muted))]"
+              >
+                {collapsed ? <PanelLeftOpen className="h-4 w-4 shrink-0" /> : <PanelLeftClose className="h-4 w-4 shrink-0" />}
+                {!collapsed && <span>Recolher menu</span>}
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
 
-        {/* Toggle de tema */}
-        <SidebarMenu>
+          {/* Toggle de tema */}
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={toggleTheme}
@@ -132,38 +120,16 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
 
-          {/* Usuário com dropdown */}
+          {/* Sair */}
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  tooltip={email}
-                  className="text-[hsl(var(--hub-text))] hover:bg-[hsl(var(--hub-surface-muted))] h-auto py-2"
-                >
-                  <div className="w-7 h-7 rounded-full bg-[hsl(var(--hub-primary))] text-[hsl(var(--hub-primary-foreground))] flex items-center justify-center text-xs font-semibold shrink-0">
-                    {initials}
-                  </div>
-                  {!collapsed && (
-                    <div className="flex flex-col leading-tight min-w-0 flex-1 text-left">
-                      <span className="text-sm font-medium truncate">{userName}</span>
-                      <span className="text-xs text-[hsl(var(--hub-text-muted))] truncate">{email}</span>
-                    </div>
-                  )}
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="top" align="start" className="w-56">
-                <DropdownMenuLabel className="text-xs text-muted-foreground truncate">{email || "—"}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/app/configuracoes")}>
-                  <Settings className="w-4 h-4 mr-2" />
-                  Configurações
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={signOut} className="text-destructive">
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sair
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <SidebarMenuButton
+              onClick={signOut}
+              tooltip="Sair"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <LogOut className="h-4 w-4 shrink-0" />
+              {!collapsed && <span>Sair</span>}
+            </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
