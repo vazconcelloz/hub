@@ -33,6 +33,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import heroBg from "@/assets/proposta-hero-bg.jpg";
 
 type EditableOperadoraField =
   | "operadora_nome"
@@ -1150,8 +1151,12 @@ export default function PublicPropostaPage() {
       )}
 
       {/* Hero */}
-      <header className="gradient-hero text-primary-foreground">
-        <div className="container py-8 md:py-12 text-center space-y-3">
+      <header
+        className="relative text-primary-foreground bg-cover bg-center"
+        style={{ backgroundImage: `url(${heroBg})` }}
+      >
+        <div className="absolute inset-0 bg-[hsl(220_70%_8%/0.55)]" aria-hidden />
+        <div className="container relative py-8 md:py-12 text-center space-y-3">
           <div className="w-12 h-12 mx-auto rounded-xl bg-white/10 backdrop-blur flex items-center justify-center mb-2">
             <Shield className="w-7 h-7" />
           </div>
