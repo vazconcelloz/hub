@@ -180,11 +180,13 @@ export default function PublicPropostaAutoPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  // Modo de edi��o (apenas admin logado)
+  // Modo de edição (apenas admin logado)
   const [isAdmin, setIsAdmin] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [draft, setDraft] = useState<AutoCotacao[]>([]);
+  const [draftCorRotulos, setDraftCorRotulos] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [pagamentoOpen, setPagamentoOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
