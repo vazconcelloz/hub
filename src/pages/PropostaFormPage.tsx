@@ -78,7 +78,7 @@ export default function PropostaFormPage() {
 
   const loadProposta = async () => {
     const { data: proposta } = await supabase.from("propostas").select("*").eq("id", id!).single();
-    if (!proposta) { navigate("/admin"); return; }
+    if (!proposta) { navigate("/app/cotacoes"); return; }
     setForm({
       nome_cliente: proposta.nome_cliente || "",
       telefone_cliente: proposta.telefone_cliente || "",
@@ -381,7 +381,7 @@ export default function PropostaFormPage() {
       }
 
       toast({ title: isEdit ? "Proposta atualizada!" : "Proposta criada!" });
-      navigate("/admin");
+      navigate("/app/cotacoes");
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
     } finally {
@@ -393,7 +393,7 @@ export default function PropostaFormPage() {
     <AdminLayout>
       <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl mx-auto">
         <div className="flex items-center gap-3">
-          <Button type="button" variant="ghost" size="icon" onClick={() => navigate("/admin")}>
+          <Button type="button" variant="ghost" size="icon" onClick={() => navigate("/app/cotacoes")}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-2xl font-bold">
@@ -664,7 +664,7 @@ export default function PropostaFormPage() {
 
         {/* Submit */}
         <div className="flex justify-end gap-3 pb-8">
-          <Button type="button" variant="outline" onClick={() => navigate("/admin")}>Cancelar</Button>
+          <Button type="button" variant="outline" onClick={() => navigate("/app/cotacoes")}>Cancelar</Button>
           <Button type="submit" size="lg" disabled={saving}>
             <Save className="w-4 h-4 mr-2" />
             {saving ? "Salvando..." : isEdit ? "Atualizar Proposta" : "Criar Proposta"}

@@ -149,11 +149,11 @@ export default function DashboardPage() {
             <p className="text-muted-foreground text-sm">Gerencie suas cotações e propostas</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => navigate("/admin/proposta/nova?modo=manual")} size="lg" variant="outline">
+            <Button onClick={() => navigate("/app/cotacoes/proposta/nova?modo=manual")} size="lg" variant="outline">
               <Plus className="w-4 h-4 mr-2" />
               Criar do zero
             </Button>
-            <Button onClick={() => navigate("/admin/proposta/nova")} size="lg">
+            <Button onClick={() => navigate("/app/cotacoes/proposta/nova")} size="lg">
               <FileText className="w-4 h-4 mr-2" />
               Importar PDF
             </Button>
@@ -210,10 +210,10 @@ export default function DashboardPage() {
             <FileText className="w-12 h-12 mx-auto text-muted-foreground/40 mb-3" />
             <p className="text-muted-foreground">Nenhuma proposta encontrada</p>
             <div className="mt-4 flex flex-wrap gap-2 justify-center">
-              <Button onClick={() => navigate("/admin/proposta/nova?modo=manual")} variant="outline">
+              <Button onClick={() => navigate("/app/cotacoes/proposta/nova?modo=manual")} variant="outline">
                 <Plus className="w-4 h-4 mr-2" /> Criar do zero
               </Button>
-              <Button onClick={() => navigate("/admin/proposta/nova")}>
+              <Button onClick={() => navigate("/app/cotacoes/proposta/nova")}>
                 <FileText className="w-4 h-4 mr-2" /> Importar PDF
               </Button>
             </div>
@@ -237,10 +237,10 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 flex-wrap">
-                    <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/proposta/${p.id}`)} title="Editar">
+                    <Button variant="ghost" size="icon" onClick={() => navigate(`/app/cotacoes/proposta/${p.id}`)} title="Editar">
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/cotacao/${p.slug}`)} title="Visualizar">
+                    <Button variant="ghost" size="icon" onClick={() => navigate(`/app/cotacoes/cotacao/${p.slug}`)} title="Visualizar">
                       <Eye className="w-4 h-4" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => copyLink(p.slug)} title="Copiar link">

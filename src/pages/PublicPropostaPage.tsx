@@ -1117,7 +1117,7 @@ export default function PublicPropostaPage() {
             <div className="flex items-center gap-2">
               {!editMode ? (
                 <>
-                  <Link to={`/admin/proposta/${proposta.id}`}>
+                  <Link to={`/app/cotacoes/proposta/${proposta.id}`}>
                     <Button variant="outline" size="sm">
                       <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
                       Editor completo

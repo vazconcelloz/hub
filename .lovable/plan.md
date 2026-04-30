@@ -1,173 +1,91 @@
+## Objetivo
 
-Abaixo está o prompt descritivo do sistema. Está escrito de forma neutra (sem citar nenhuma linguagem, framework, banco ou serviço específico), focando em **o que o sistema faz, para quem, quais regras e quais telas**. Pode ser copiado e usado para briefar outra IA, redesenhar, ou recriar o sistema em qualquer stack.
+Transformar este projeto no **Hub Grupo FBN**: um portal corporativo com sidebar permanente onde cada item é uma seção da empresa. O sistema atual de propostas de saúde vira o "recheio" do módulo **Cotações** — tudo que já existe continua funcionando, só passa a viver dentro da nova casca do hub.
 
----
+## Visual e identidade
 
-# Prompt — Sistema de Propostas Comparativas de Planos de Saúde
+- Paleta nova do hub: **branco / off-white (#F8F9FB) + azul-marinho profundo (#0B2545 / #13315C)** + acentos sutis em cinza-azulado.
+- Tipografia limpa (Inter), muito espaço em branco, sombras leves, bordas arredondadas suaves.
+- Estilo: moderno, clean, corporativo — coeso em todas as seções.
+- Layout em **light mode** como padrão (mantém o toggle de tema existente, mas a paleta clara é a principal).
+- O sistema de Cotações continua funcionando com a paleta Navy & Gold internamente (porque a página pública da proposta precisa daquela identidade premium); apenas o **chrome do hub** (sidebar, header, telas internas dos novos módulos) usa a nova identidade clara.
 
-## 1. Visão geral
+## Autenticação restrita @grupofbn.com.br
 
-Construa um sistema web para **corretoras de planos de saúde** que permite a um(a) consultor(a) gerar **propostas comerciais comparativas e personalizadas** para cada cliente, e enviar essas propostas como uma **página pública navegável** (acessível por link único, sem login).
+- Tela de login única em `/login` com email + senha e botão Google.
+- **Defesa em profundidade**:
+  - Front: validação Zod bloqueia qualquer e-mail que não termine em `@grupofbn.com.br` antes de chamar o backend, com mensagem clara.
+  - Banco: trigger em `auth.users` (BEFORE INSERT) que rejeita o cadastro se o domínio do e-mail não for `@grupofbn.com.br`. Isso protege também o login Google e chamadas diretas à API.
+- Auto-confirm continua ligado (acesso imediato após cadastro válido).
+- Todas as rotas internas do hub passam por um `RequireAuth` que redireciona para `/login` se não houver sessão.
+- Páginas públicas existentes (`/cotacao/:slug`) **continuam abertas sem login** — o cliente final não precisa autenticar.
 
-O diferencial do sistema é:
+## Estrutura de navegação (sidebar)
 
-- **Importação automática de PDFs de operadoras** com extração inteligente (IA) de planos, valores, faixas etárias, coberturas e rede credenciada.
-- **Cards comparativos lado a lado** de múltiplos planos de várias seguradoras, com personalização visual (cores, destaques) e edição em tempo real direto na página da proposta.
-- **Cálculo de mensalidade por idade do beneficiário**, agrupamento de planos com soma de valores (ex.: sócios + funcionários) e exibição de tabelas de faixas etárias e reajustes.
-- **Catálogo central** de operadoras, rede credenciada e regras de coparticipação, alimentado por importação de PDFs.
+Sidebar permanente à esquerda (colapsável para modo ícone), com header superior contendo logo, busca futura e menu do usuário (avatar, e-mail, sair).
 
-## 2. Perfis de usuário
+```text
+Hub Grupo FBN
+├── Início                /app
+├── Treinamentos          /app/treinamentos
+├── Manuais               /app/manuais
+├── Segmentações          /app/segmentacoes
+└── Cotações              /app/cotacoes  ← sistema atual de propostas
+    ├── Dashboard         /app/cotacoes
+    ├── Nova proposta     /app/cotacoes/proposta/new
+    ├── Editar            /app/cotacoes/proposta/:id
+    └── Catálogo          /app/cotacoes/catalogo
+```
 
-1. **Administrador / Consultor(a)** — autentica-se no sistema (cadastro livre, sem necessidade de confirmação de e-mail), gerencia propostas, catálogo e configurações.
-2. **Cliente final** — não autentica. Recebe um link público (slug aleatório) e visualiza a proposta. Interage apenas com botão de WhatsApp para falar com o consultor.
+Rotas públicas (fora do hub, sem sidebar e sem login):
+- `/login` — autenticação
+- `/cotacao/:slug` — proposta pública para o cliente final (mantida igual)
 
-## 3. Áreas do sistema
+Redirecionamentos:
+- `/` → `/app` (se logado) ou `/login` (se não)
+- `/admin`, `/admin/proposta/:id`, `/admin/catalogo`, `/admin/cotacao/:slug` → redirecionam para os equivalentes em `/app/cotacoes/...` para não quebrar links antigos.
 
-### 3.1 Painel de Propostas (Dashboard)
+## Conteúdo de cada módulo
 
-Tela inicial do administrador. Mostra:
+**Início** — dashboard de boas-vindas com saudação personalizada, cards de atalhos para os módulos, cards de "últimas atividades" (placeholder por enquanto: últimas propostas criadas, vindas do banco).
 
-- **Cards de estatísticas**: total de propostas, pendentes, enviadas, fechadas.
-- **Lista de propostas** com nome do cliente, cidade/estado, tipo de produto, data de criação, badge colorido de status.
-- **Filtros**: busca por nome do cliente, filtro por status, ordenação por data (mais recentes/mais antigas).
-- **Ações por proposta**: editar, visualizar versão pública, copiar link público, duplicar, marcar como visualizada, excluir.
-- **Status possíveis**: pendente, enviada, visualizada, em atendimento, fechada, perdida.
-- **Dois fluxos de criação**:
-  - **"Criar do zero"** — formulário manual.
-  - **"Importar PDF"** — upload de PDFs das operadoras; uma IA extrai automaticamente todos os planos, valores, coberturas, faixas etárias e dados do cliente, gerando os cards comparativos prontos.
+**Treinamentos** — listagem em grid de cards de treinamentos. Estrutura pronta com tabela `treinamentos` (título, descrição, categoria, link/vídeo, thumbnail, ordem) + tela de listagem + tela de detalhe. Vem com estado vazio elegante e botão "Adicionar treinamento" (admin). Sem conteúdo real ainda — você popula depois.
 
-### 3.2 Formulário de Proposta (criação/edição)
+**Manuais** — listagem de manuais (PDFs/documentos). Tabela `manuais` (título, descrição, categoria, arquivo_url, atualizado_em). Upload para um bucket `manuais` privado, listagem em cards com download/visualizar. Filtro por categoria.
 
-Permite ao consultor configurar:
+**Segmentações** — área para campanhas/listas segmentadas de clientes. Estrutura inicial: tabela `segmentacoes` (nome, descrição, critérios em JSON, criado_por, total_contatos). Tela de listagem + criação/edição com formulário simples. Conteúdo inicial vazio, pronto para evoluir.
 
-**Dados do cliente**: nome, telefone, cidade, estado, tipo de produto (ex.: PME, individual, adesão), perfil/faixa etária, **idades dos beneficiários** (lista separada por vírgula, ex.: `28, 32, 5`), validade da proposta, observações gerais.
+**Cotações** — **TUDO que já existe hoje**, intocado funcionalmente, apenas embrulhado pelo layout do hub:
+- Dashboard de propostas (atual `DashboardPage`)
+- Formulário de proposta (atual `PropostaFormPage`)
+- Catálogo de operadoras / rede / coparticipação (atual `CatalogoPage`)
+- Extração por IA, grupo de soma, faixas etárias, tudo continua igual.
 
-**Dados do consultor**: nome, telefone (WhatsApp), foto.
+## Mudanças técnicas (seção para o lado dev)
 
-**Múltiplos planos / operadoras**: cada plano possui:
+1. **Novo layout** `src/components/HubLayout.tsx` usando `SidebarProvider` + `Sidebar` do shadcn (`collapsible="icon"`), com `AppSidebar` próprio listando os 5 módulos. Header fixo com `SidebarTrigger`, breadcrumb e menu de usuário.
+2. **Novo `RequireAuth`** wrapper que checa sessão Supabase e redireciona para `/login`.
+3. **Nova página** `src/pages/LoginPage.tsx` com tabs login/cadastro, validação Zod do domínio, login Google.
+4. **Novas páginas placeholder com CRUD básico**: `InicioPage`, `TreinamentosPage` (+ `TreinamentoDetalhePage`), `ManuaisPage`, `SegmentacoesPage` (+ form).
+5. **Reestruturar `App.tsx`** com as novas rotas, agrupando as rotas autenticadas dentro de `<Route element={<RequireAuth><HubLayout/></RequireAuth>}>` e mantendo `/cotacao/:slug` e `/login` como públicas. Criar `Navigate` legados para `/admin/*`.
+6. **Renomear visualmente** as páginas existentes para se encaixarem (sem mexer na lógica): `DashboardPage`, `PropostaFormPage`, `CatalogoPage` continuam no mesmo arquivo, só passam a ser renderizadas pelas rotas `/app/cotacoes/*`. Os links internos delas (ex.: botão "Catálogo" no header) precisam apontar para os novos paths.
+7. **CSS tokens**: adicionar nova paleta clara em `src/index.css` (variáveis `--hub-bg`, `--hub-surface`, `--hub-primary`, `--hub-primary-foreground`, `--hub-border`) e aplicar no `HubLayout` e novas páginas. As páginas de Cotações continuam usando os tokens Navy & Gold atuais.
+8. **Migrações Supabase**:
+   - Trigger `validate_grupofbn_email()` em `auth.users` BEFORE INSERT que faz `RAISE EXCEPTION` se `email NOT ILIKE '%@grupofbn.com.br'`.
+   - Tabela `treinamentos` (id, titulo, descricao, categoria, video_url, thumbnail_url, ordem, ativo, created_at, updated_at) com RLS: SELECT autenticado liberado; INSERT/UPDATE/DELETE só admin (usando `has_role`).
+   - Tabela `manuais` (id, titulo, descricao, categoria, arquivo_url, tamanho_bytes, atualizado_em, created_at). Mesma política RLS.
+   - Tabela `segmentacoes` (id, nome, descricao, criterios jsonb, total_contatos int, criado_por uuid, created_at, updated_at). RLS: usuário vê/edita as próprias; admin vê tudo.
+   - Bucket privado `manuais` com policy de leitura para autenticados.
+9. **Memórias**: atualizar `mem://index.md` com a nova estrutura de hub e adicionar `mem://hub/estrutura` documentando módulos e restrição de domínio.
 
-- Nome da operadora e nome do plano (auto-limpeza: remove o nome da operadora repetido no nome do plano).
-- Valor mensal.
-- Coparticipação (Sim / Não / Parcial). Quando "Sim" ou "Parcial", abre um editor de **detalhes de coparticipação** com itens padrão (Consulta, Exames simples, Exames complexos, Terapias, Pronto-socorro, Internação) e valores customizáveis.
-- Acomodação, abrangência, reembolso, resumo de cobertura, resumo de rede credenciada.
-- **Faixas etárias** (formato de texto: `0-18: R$250,00 | 19-23: R$310,00 | 59+: R$1.200,00`) — usado para calcular automaticamente o total mensal por beneficiário.
-- Previsão de reajuste por mudança de faixa.
-- **Destaque comercial** (badge): "Mais Econômico", "Mais Completo", "Recomendado", "Melhor Custo-Benefício".
-- **Cor da coluna** (paleta com ~20 cores nomeadas: Navy, Gold, Verde, Rubi, Índigo, Grafite, Teal, Cobre, Violeta, Rosa, Âmbar, Céu, Lima, Fúcsia, Ciano, Vermelho, Amarelo, Verde Claro, Zinco, Preto).
-- **Grupo de soma** (texto livre, ex.: "Sócios + Funcionários") — planos com mesmo grupo são consolidados em um único card na visão pública, somando os valores mensais.
-- Ordem de exibição.
-- **PDF anexo** (a IA pode extrair automaticamente os dados ao fazer upload).
+## O que NÃO muda
 
-**Ações**:
-- Adicionar/remover planos, reordenar via drag-handle.
-- Salvar proposta (gera slug aleatório de 10 caracteres para o link público).
-- Botão para extrair dados de um PDF específico via IA (preenche os campos automaticamente).
+- Toda a lógica do sistema atual de propostas (extração IA, cálculo por faixa etária, grupo de soma, página pública, catálogo, edge functions) — **zero alteração funcional**.
+- A página pública `/cotacao/:slug` continua exatamente como está hoje (mesma identidade Navy & Gold, mesmo CTA único de WhatsApp).
+- Tabelas existentes (`propostas`, `proposta_operadoras`, catálogos) — sem migração nelas.
 
-### 3.3 Página Pública da Proposta
+## Resultado esperado
 
-Acessada por `/{slug}` sem login. Layout premium e clean (paleta Navy & Gold).
+Você abre `/`, é mandado para `/login`, entra com `voce@grupofbn.com.br`, cai no `/app` (Início) com a sidebar à esquerda mostrando os 5 módulos. Clica em **Cotações** e tem o dashboard de propostas exatamente como hoje, só que dentro do shell do hub. Os outros 4 módulos abrem com tela funcional vazia, prontos para receber conteúdo.
 
-**Cabeçalho**:
-- Saudação com nome do cliente.
-- Cidade, validade da proposta, tipo de produto.
-- Foto, nome e telefone do consultor.
-
-**Tabela comparativa de planos**:
-- **Agrupada por seguradora** — cada operadora vira uma **tabela independente**, com cor própria (definida pela paleta).
-- Colunas = planos. Linhas = critérios (Valor mensal, Coparticipação, Acomodação, Abrangência, Reembolso, Cobertura, Rede credenciada, Faixas etárias, etc.).
-- A primeira coluna ("Planos" / rótulos) usa a cor da seguradora.
-- Cards/colunas exibem badge de destaque comercial quando configurado.
-- Quando o cliente informou idades dos beneficiários, mostra **valor calculado por idade** (mapeando idade → faixa etária → valor) e o total consolidado.
-- Planos com mesmo "grupo de soma" aparecem como **um único card consolidado** com o rótulo do grupo e soma dos valores.
-- Linhas podem ser **ocultadas** pelo administrador (campo `linhas_ocultas`).
-
-**Modo de edição inline (apenas para o admin logado)**:
-- Botão "Editar" no topo. Permite editar qualquer campo direto na visualização.
-- Trocar cor da tabela inteira via picker no cabeçalho da coluna "Planos".
-- Adicionar nova seguradora (cria nova tabela).
-- Adicionar plano (coluna) dentro de uma tabela existente.
-- Remover plano, ocultar/exibir linhas.
-- Salvar/Cancelar alterações.
-
-**Detalhes finais**:
-- Tabela de **faixas etárias e reajustes** por plano.
-- Observações gerais.
-- **CTA único e centralizado**: botão grande de WhatsApp que abre conversa com o consultor (mensagem pré-preenchida mencionando o nome do cliente e a proposta). Não há botões de "tenho interesse" por plano — toda conversão é via WhatsApp.
-
-### 3.4 Catálogo (Administração)
-
-Área para o consultor manter a base mestre de informações reutilizáveis em propostas. Abas:
-
-**Operadoras**: cadastro de seguradoras (nome, slug, logo, ativo/inativo, observações).
-
-**Rede Credenciada**: lista de hospitais, clínicas, laboratórios, prontos-socorros etc., vinculados a uma operadora.
-- Campos: nome, tipo, endereço completo (CEP, endereço, bairro, cidade, estado), telefone, especialidades, planos aplicáveis, **coberturas por plano** (ex.: `{ "Premium": "H/P.S/M/A", "Efetivo": "H/P.S/M" }`), destaque, ativo.
-- **Importação por PDF/Excel**: substitui o cadastro manual em massa. O consultor escolhe a operadora e faz upload de um PDF/planilha da rede; a IA identifica colunas de planos, siglas de cobertura (H = Hospital, P.S = Pronto-Socorro, M = Maternidade, A = Ambulatorial, HDIA = Hospital-Dia) e popula tudo automaticamente, mostrando preview antes de confirmar.
-- Filtros: busca por nome/cidade, filtro por operadora e por plano.
-
-**Coparticipação**: cadastro de modalidades de coparticipação por operadora/plano, com itens (consulta, exames, etc.), valores e observações.
-
-### 3.5 Enriquecimento por localização (rede credenciada)
-
-Quando uma proposta tem cidade do cliente preenchida, a IA pode filtrar e exibir os **5 hospitais/laboratórios mais próximos** do cliente para cada plano, em vez de listar a rede inteira.
-
-## 4. Regras de negócio importantes
-
-1. **Cálculo de mensalidade por faixa etária**: para cada beneficiário, encontra-se a faixa em que a idade se enquadra (`min ≤ idade ≤ max`). Faixas usam o formato `min-max` ou `min+` (aberta, ex.: `59+` significa 59 a 99). Valores em moeda brasileira (BRL), aceita formatos `1.021,63` e `1.021.63`. Total = soma dos valores das faixas correspondentes.
-
-2. **Agrupamento por seguradora**: na visão pública, planos são automaticamente agrupados pelo nome da operadora em tabelas separadas, preservando a ordem da primeira ocorrência.
-
-3. **Grupo de soma**: planos com o mesmo valor (case-insensitive, trimmed) no campo "grupo_soma" são consolidados em um único card virtual cujo valor mensal é a soma dos membros. Útil para cenários como "Plano Sócios + Plano Funcionários" cobrados juntos.
-
-4. **Slug público**: cada proposta recebe um identificador aleatório de 10 caracteres alfanuméricos para o link público (não sequencial, não adivinhável).
-
-5. **Status da proposta**: muda manualmente pelo admin OU automaticamente quando o cliente abre o link público (passa para "visualizada").
-
-6. **Limpeza de nome de plano**: se o nome do plano começa com o nome da operadora (ex.: "Bradesco Saúde Efetivo"), o sistema remove automaticamente o prefixo redundante para exibir apenas "Efetivo".
-
-7. **Destaque comercial**: cada plano pode ter no máximo um destaque visual (badge colorido), exibido em cima do card.
-
-## 5. Identidade visual
-
-- Estilo **premium, clean, sofisticado** — semelhante a apresentações financeiras corporativas.
-- Paleta principal: **Navy (azul-marinho profundo) + Gold (dourado)**, com paleta secundária ampla disponível para personalização por tabela.
-- Tipografia legível, hierarquia clara, muito espaço em branco.
-- Tema claro/escuro toggle.
-- Layout responsivo: tabelas em desktop, cards empilhados em mobile.
-
-## 6. Permissões e segurança
-
-- Cadastro de admin é livre (qualquer e-mail) e auto-confirmado (sem etapa de confirmação por e-mail), para acesso imediato ao painel.
-- Roles armazenados em tabela separada (`user_roles`) — nunca no perfil — para evitar escalonamento de privilégios.
-- Páginas públicas de proposta são acessíveis por qualquer pessoa com o link, sem autenticação.
-- Apenas o admin dono da proposta pode editá-la / excluí-la.
-- Edge functions (IA, importação) validam entrada e tratam arquivos grandes (PDFs com centenas de páginas) em chunks.
-
-## 7. Integrações externas
-
-- **IA generativa multimodal** para extrair dados estruturados de PDFs (planos, valores, coberturas, dados do cliente) e de planilhas Excel da rede credenciada. Recomenda-se modelo com suporte a contexto longo e visão (PDF + texto).
-- **WhatsApp** via deep link `https://wa.me/{telefone}?text={mensagem-pré-preenchida}` para conversão.
-- **Storage público** para guardar PDFs originais das operadoras e fotos dos consultores.
-
-## 8. Modelo de dados (conceitual)
-
-- **Propostas**: cliente, consultor, status, slug público, idades de beneficiários, linhas ocultas, cores dos rótulos.
-- **Planos da proposta** (1:N com Propostas): operadora, plano, valor, coparticipação + detalhes, acomodação, abrangência, reembolso, cobertura, rede, faixas etárias, reajustes, destaque, cor, grupo de soma, ordem.
-- **Catálogo de Operadoras**: dados mestres de seguradoras.
-- **Catálogo de Rede Credenciada**: hospitais/clínicas com coberturas por plano.
-- **Catálogo de Coparticipação**: modalidades padronizadas por operadora.
-- **Uploads de Rede**: histórico de importações de PDFs/Excel da rede.
-- **Roles de usuário**: tabela separada para controle de acesso.
-
-## 9. Resultado esperado
-
-Ao final, um corretor deve conseguir, em poucos minutos:
-1. Subir 3 PDFs de operadoras → ter uma proposta comparativa pronta com cards lado a lado.
-2. Ajustar cores, ocultar linhas irrelevantes, marcar o plano "Recomendado".
-3. Informar as idades dos beneficiários e ver o valor total calculado automaticamente.
-4. Copiar o link público e enviar pelo WhatsApp para o cliente.
-5. Acompanhar pelo dashboard quando o cliente abrir a proposta e mover o status até "Fechada".
-
----
-
-Posso, depois da sua aprovação, salvar este prompt em um arquivo do projeto (ex.: `docs/system-prompt.md`) para ficar versionado, ou apenas devolver o texto na resposta. Me diz qual prefere.
+Posso seguir com essa implementação?
