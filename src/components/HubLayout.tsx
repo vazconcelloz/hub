@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LogOut, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function HubLayout() {
   const navigate = useNavigate();
@@ -40,7 +41,9 @@ export default function HubLayout() {
               <SidebarTrigger className="text-[hsl(var(--hub-text))]" />
             </div>
 
-            <DropdownMenu>
+            <div className="flex items-center gap-1">
+              <ThemeToggle />
+              <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="gap-2 text-[hsl(var(--hub-text))]">
                   <div className="w-7 h-7 rounded-full bg-[hsl(var(--hub-primary))] text-[hsl(var(--hub-primary-foreground))] flex items-center justify-center text-xs font-semibold">
