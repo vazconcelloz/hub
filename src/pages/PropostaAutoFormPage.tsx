@@ -239,6 +239,7 @@ export default function PropostaAutoFormPage() {
           parcelamento: c.parcelamento || null,
           formas_pagamento: c.formas_pagamento || null,
           destaque_comercial: c.destaque_comercial || null,
+          cor_coluna: c.cor_coluna || null,
           ordem_exibicao: i + 1,
         }));
         const { error } = await supabase.from("proposta_auto_seguradoras").insert(rows);
