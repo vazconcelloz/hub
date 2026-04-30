@@ -122,6 +122,7 @@ export default function PropostaAutoFormPage() {
         parcelamento: c.parcelamento || "",
         formas_pagamento: c.formas_pagamento || "",
         destaque_comercial: c.destaque_comercial || "",
+        cor_coluna: (c as any).cor_coluna || "",
         ordem_exibicao: c.ordem_exibicao,
       })));
     }
