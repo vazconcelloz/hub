@@ -50,12 +50,17 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-[hsl(var(--hub-border))] bg-[hsl(var(--hub-surface))]">
       <SidebarHeader className="border-b border-[hsl(var(--hub-border))] bg-[hsl(var(--hub-surface))] px-3 py-4">
-        <div className="flex items-center justify-center">
-          {collapsed ? (
-            <img src={logoIcon} alt="Grupo FBN" className="h-8 w-8 object-contain" />
-          ) : (
-            <img src={logoHorizontal} alt="Grupo FBN" className="h-12 w-auto object-contain" />
-          )}
+        <div className="flex items-center justify-center h-12">
+          <img
+            src={logoHorizontal}
+            alt="Grupo FBN"
+            className={`h-12 w-auto object-contain ${collapsed ? "hidden" : "block"}`}
+          />
+          <img
+            src={logoIcon}
+            alt="Grupo FBN"
+            className={`h-8 w-8 object-contain ${collapsed ? "block" : "hidden"}`}
+          />
         </div>
       </SidebarHeader>
 
