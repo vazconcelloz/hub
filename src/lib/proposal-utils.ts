@@ -48,9 +48,9 @@ export interface ColorPaletteEntry {
 }
 
 export const COLUNA_COLORS: Record<string, ColorPaletteEntry> = {
-  // Tons fortes (Navy & Gold + complementares)
+  // Tons fortes (Navy & complementares)
   navy:    { label: "Navy",    header: "bg-[hsl(220_50%_25%)] text-white", border: "border-[hsl(220_50%_25%)]", badge: "bg-[hsl(220_50%_25%)] text-white", cell: "bg-[hsl(220_50%_92%)] text-[hsl(220_50%_20%)]" },
-  gold:    { label: "Gold",    header: "bg-[hsl(42_70%_45%)] text-white",  border: "border-[hsl(42_70%_45%)]",  badge: "bg-[hsl(42_70%_45%)] text-white",  cell: "bg-[hsl(42_80%_90%)] text-[hsl(42_70%_25%)]" },
+  azure:   { label: "Azul",    header: "bg-[hsl(215_80%_45%)] text-white", border: "border-[hsl(215_80%_45%)]", badge: "bg-[hsl(215_80%_45%)] text-white", cell: "bg-[hsl(215_80%_92%)] text-[hsl(215_80%_25%)]" },
   emerald: { label: "Verde",   header: "bg-emerald-700 text-white",        border: "border-emerald-700",        badge: "bg-emerald-700 text-white",        cell: "bg-emerald-100 text-emerald-900" },
   ruby:    { label: "Rubi",    header: "bg-rose-700 text-white",           border: "border-rose-700",           badge: "bg-rose-700 text-white",           cell: "bg-rose-100 text-rose-900" },
   indigo:  { label: "Índigo",  header: "bg-indigo-700 text-white",         border: "border-indigo-700",         badge: "bg-indigo-700 text-white",         cell: "bg-indigo-100 text-indigo-900" },
