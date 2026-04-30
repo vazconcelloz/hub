@@ -165,44 +165,127 @@ export default function PublicPropostaAutoPage() {
           </Card>
         </section>
       ) : (
-        <section className="container py-8 md:py-10">
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <>
+          {/* Tabela comparativa (desktop) */}
+          <section className="container py-8 md:py-10 hidden md:block">
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/50">
+                    <th className="text-left px-4 py-3 font-semibold text-foreground w-48">
+                      Critério
+                    </th>
+                    {cotacoes.map((c) => (
+                      <th
+                        key={c.id}
+                        className="px-4 py-4 text-center align-bottom min-w-[200px]"
+                      >
+                        <div className="space-y-1">
+                          <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                            {c.seguradora_nome}
+                          </p>
+                          <p className="font-bold text-foreground">
+                            {txt(c.produto_nome)}
+                          </p>
+                          {c.destaque_comercial && (
+                            <Badge className="bg-primary text-primary-foreground mt-1">
+                              {c.destaque_comercial}
+                            </Badge>
+                          )}
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                  <tr className="bg-primary/5">
+                    <th className="text-left px-4 py-3 font-semibold text-foreground">
+                      Prêmio total
+                    </th>
+                    {cotacoes.map((c) => (
+                      <th key={c.id} className="px-4 py-3 text-center">
+                        <p className="text-xl font-bold text-primary">
+                          {fmt(c.premio_total)}
+                        </p>
+                        {c.parcelamento && (
+                          <p className="text-xs text-muted-foreground font-normal mt-0.5">
+                            {c.parcelamento}
+                          </p>
+                        )}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {CRITERIOS.map((crit, i) => (
+                    <tr
+                      key={crit.label}
+                      className={i % 2 ? "bg-muted/20" : ""}
+                    >
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        {crit.label}
+                      </td>
+                      {cotacoes.map((c) => (
+                        <td
+                          key={c.id}
+                          className="px-4 py-3 text-center text-muted-foreground"
+                        >
+                          {crit.render(c)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                  {cotacoes.some((c) => c.formas_pagamento) && (
+                    <tr>
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        Formas de pagamento
+                      </td>
+                      {cotacoes.map((c) => (
+                        <td
+                          key={c.id}
+                          className="px-4 py-3 text-center text-xs text-muted-foreground"
+                        >
+                          {txt(c.formas_pagamento)}
+                        </td>
+                      ))}
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {/* Cards (mobile) */}
+          <section className="container py-6 md:hidden space-y-4">
             {cotacoes.map((c) => (
-              <Card
-                key={c.id}
-                className="p-5 flex flex-col hover:shadow-lg transition-shadow"
-              >
-                <div className="flex items-start justify-between mb-3 gap-2">
-                  <div className="min-w-0">
+              <Card key={c.id} className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
                     <p className="text-xs uppercase tracking-wider text-muted-foreground">
                       {c.seguradora_nome}
                     </p>
-                    <h3 className="font-bold text-foreground text-lg leading-tight">
+                    <h3 className="font-bold text-foreground">
                       {txt(c.produto_nome)}
                     </h3>
                   </div>
                   {c.destaque_comercial && (
-                    <Badge className="bg-primary text-primary-foreground shrink-0">
+                    <Badge className="bg-primary text-primary-foreground">
                       {c.destaque_comercial}
                     </Badge>
                   )}
                 </div>
-
-                <div className="bg-primary/5 rounded-lg p-4 text-center mb-4">
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                <div className="bg-primary/5 rounded-lg p-3 text-center mb-4">
+                  <p className="text-xs uppercase text-muted-foreground">
                     Prêmio total
                   </p>
-                  <p className="text-3xl font-bold text-primary">
+                  <p className="text-2xl font-bold text-primary">
                     {fmt(c.premio_total)}
                   </p>
                   {c.parcelamento && (
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {c.parcelamento}
                     </p>
                   )}
                 </div>
-
-                <dl className="space-y-2 text-sm flex-1">
+                <dl className="space-y-2 text-sm">
                   {CRITERIOS.map((crit) => (
                     <div
                       key={crit.label}
@@ -214,19 +297,11 @@ export default function PublicPropostaAutoPage() {
                       </dd>
                     </div>
                   ))}
-                  {c.formas_pagamento && (
-                    <div className="flex justify-between gap-3 pt-1.5">
-                      <dt className="text-muted-foreground">Formas de pagamento</dt>
-                      <dd className="text-right text-foreground font-medium text-xs">
-                        {c.formas_pagamento}
-                      </dd>
-                    </div>
-                  )}
                 </dl>
               </Card>
             ))}
-          </div>
-        </section>
+          </section>
+        </>
       )}
 
       {/* CTA WhatsApp */}
