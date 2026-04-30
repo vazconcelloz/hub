@@ -6,7 +6,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const GEMINI_MODELS = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"];
+// Apenas modelos PRO para tabelas comparativas — modelos flash/lite embaralham colunas.
+const GEMINI_MODELS = ["gemini-2.5-pro"];
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function callGeminiWithFallback(apiKey: string, body: Record<string, unknown>) {
@@ -131,6 +132,23 @@ serve(async (req) => {
 REGRA #1 — UM PDF, MÚLTIPLAS COTAÇÕES (SEGURADORAS)
 ═══════════════════════════════════════
 Um PDF de cotação de auto normalmente compara VÁRIAS seguradoras lado a lado em uma tabela (cada coluna = uma seguradora/produto). Extraia TODAS as colunas como itens separados em 'cotacoes[]'. Algumas colunas podem ser de produtos parciais (ex: "Proteção para Vidros" da Ituran, "Roubo/Furto" da Suhai) — extraia também, são opções válidas.
+
+═══════════════════════════════════════
+REGRA #1.1 — ALINHAMENTO POR COLUNA (CRÍTICO — NÃO EMBARALHE DADOS)
+═══════════════════════════════════════
+**ESTE É O ERRO MAIS GRAVE QUE VOCÊ PODE COMETER.** Cada valor pertence à coluna (seguradora) imediatamente acima dele na MESMA coordenada horizontal (X). NUNCA pegue um valor de uma coluna e coloque em outra.
+
+PROCESSO OBRIGATÓRIO antes de gerar a saída:
+1. Identifique o cabeçalho da tabela comparativa: liste mentalmente os nomes das seguradoras na ORDEM EXATA da esquerda para a direita (ex: ["Porto", "Mapfre", "Suhai", "Allianz"]).
+2. Para CADA linha (critério: Prêmio, Franquia, Danos Materiais, Vidros, etc.), leia os valores da esquerda para a direita e associe POSIÇÃO 1 → seguradora 1, POSIÇÃO 2 → seguradora 2, e assim por diante. NÃO pule, NÃO inverta, NÃO copie um valor para outra coluna.
+3. Se uma célula está VAZIA / "X" / "—" naquela posição, registre como "Não incluso" (texto) ou -1 (numérico) — NUNCA pegue o valor da coluna ao lado para preencher.
+4. A ordem do array 'cotacoes[]' DEVE seguir a mesma ordem das colunas no PDF (esquerda → direita).
+5. Antes de finalizar, VERIFIQUE coluna por coluna: o prêmio da Mapfre é o que está abaixo do cabeçalho "Mapfre"? A franquia da Suhai é a que está abaixo de "Suhai"? Se houver dúvida, prefira OMITIR o campo a chutar.
+
+PROIBIDO:
+- Copiar o mesmo valor para múltiplas seguradoras "porque parece igual".
+- Usar o valor de uma coluna vizinha quando uma célula está vazia.
+- Reordenar as cotações por preço, alfabeto ou qualquer outro critério.
 
 ═══════════════════════════════════════
 REGRA #2 — DADOS DO CLIENTE/VEÍCULO/COTAÇÃO
