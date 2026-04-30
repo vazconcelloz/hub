@@ -128,6 +128,22 @@ REGRA #4 — CAMPOS DE TEXTO
 - 'percentual_fipe': "100%", "0%" ou "Valor determinado: R$ X" — exatamente como no PDF.
 
 ═══════════════════════════════════════
+REGRA #4.1 — FORMAS DE PAGAMENTO ESTRUTURADAS (IMPORTANTE)
+═══════════════════════════════════════
+Além do campo 'formas_pagamento' (texto livre), preencha SEMPRE 'formas_pagamento_detalhes' como um ARRAY de objetos { tipo, descricao } com TODAS as opções listadas no PDF para aquela cotação.
+
+- 'tipo' deve ser EXATAMENTE um destes valores: "Cartão de crédito", "Cartão de débito", "Boleto", "Débito em conta", "PIX", "Dinheiro", "Transferência".
+- 'descricao' = condição da opção, ex.: "até 10x sem juros", "à vista com 5% desconto", "1+9 sem juros", "1+5 boletos", "1+3 PIX".
+
+Exemplos:
+- PDF: "Cartão de crédito em até 10x sem juros • Boleto à vista" →
+  [{"tipo":"Cartão de crédito","descricao":"até 10x sem juros"},{"tipo":"Boleto","descricao":"à vista"}]
+- PDF: "1+9 no cartão / 1+3 boleto" →
+  [{"tipo":"Cartão de crédito","descricao":"1+9"},{"tipo":"Boleto","descricao":"1+3"}]
+
+Se o PDF não tem nenhuma opção explícita, OMITA 'formas_pagamento_detalhes'.
+
+═══════════════════════════════════════
 REGRA #5 — MARCADORES "X" / NEGAÇÃO (IMPORTANTE)
 ═══════════════════════════════════════
 Em tabelas comparativas é comum que uma célula tenha "X", "—", "✗", "Não" ou esteja em branco indicando que aquela cobertura NÃO está incluída naquele produto. Trate assim:
@@ -186,7 +202,26 @@ NUNCA invente. Se não aparece no PDF, omita (numérico) ou deixe vazio (texto).
                       vidros: { type: "string", description: "Cobertura de vidros (Sim/Não contemplado/descrição)" },
                       carro_reserva: { type: "string", description: "Carro reserva (Sim/Não contemplado/descrição)" },
                       parcelamento: { type: "string", description: "Parcelamento (ex: '10x de R$ 415,39')" },
-                      formas_pagamento: { type: "string", description: "Resumo das formas de pagamento" },
+                      formas_pagamento: { type: "string", description: "Resumo em texto livre das formas de pagamento" },
+                      formas_pagamento_detalhes: {
+                        type: "array",
+                        description: "Lista estruturada das opções de pagamento aceitas. Cada item = { tipo, descricao }.",
+                        items: {
+                          type: "object",
+                          properties: {
+                            tipo: {
+                              type: "string",
+                              enum: ["Cartão de crédito", "Cartão de débito", "Boleto", "Débito em conta", "PIX", "Dinheiro", "Transferência"],
+                              description: "Tipo da forma de pagamento (canônico)",
+                            },
+                            descricao: {
+                              type: "string",
+                              description: "Condição/parcelamento (ex.: 'até 10x sem juros', '1+9', 'à vista')",
+                            },
+                          },
+                          required: ["tipo"],
+                        },
+                      },
                     },
                     required: ["seguradora_nome"],
                   },

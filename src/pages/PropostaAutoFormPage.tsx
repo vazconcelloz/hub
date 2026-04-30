@@ -33,6 +33,7 @@ interface AutoCardForm {
   carro_reserva: string;
   parcelamento: string;
   formas_pagamento: string;
+  formas_pagamento_detalhes: { tipo: string; descricao: string }[] | null;
   destaque_comercial: string;
   cor_coluna: string;
   ordem_exibicao: number;
@@ -43,7 +44,8 @@ const empty: AutoCardForm = {
   franquia_valor: "", franquia_tipo: "", percentual_fipe: "",
   danos_materiais: "", danos_corporais: "", danos_morais: "",
   app_morte_invalidez: "", assistencia_24h: "", vidros: "", carro_reserva: "",
-  parcelamento: "", formas_pagamento: "", destaque_comercial: "", cor_coluna: "", ordem_exibicao: 0,
+  parcelamento: "", formas_pagamento: "", formas_pagamento_detalhes: null,
+  destaque_comercial: "", cor_coluna: "", ordem_exibicao: 0,
 };
 
 const num = (s: string) => {
@@ -121,6 +123,9 @@ export default function PropostaAutoFormPage() {
         carro_reserva: c.carro_reserva || "",
         parcelamento: c.parcelamento || "",
         formas_pagamento: c.formas_pagamento || "",
+        formas_pagamento_detalhes: Array.isArray((c as any).formas_pagamento_detalhes)
+          ? (c as any).formas_pagamento_detalhes
+          : null,
         destaque_comercial: c.destaque_comercial || "",
         cor_coluna: (c as any).cor_coluna || "",
         ordem_exibicao: c.ordem_exibicao,
@@ -168,6 +173,11 @@ export default function PropostaAutoFormPage() {
         carro_reserva: c.carro_reserva || "",
         parcelamento: c.parcelamento || "",
         formas_pagamento: c.formas_pagamento || "",
+        formas_pagamento_detalhes: Array.isArray(c.formas_pagamento_detalhes)
+          ? c.formas_pagamento_detalhes
+              .filter((x: any) => x && (x.tipo || x.descricao))
+              .map((x: any) => ({ tipo: String(x.tipo || ""), descricao: String(x.descricao || "") }))
+          : null,
         destaque_comercial: "",
         ordem_exibicao: i + 1,
       }));
@@ -238,6 +248,9 @@ export default function PropostaAutoFormPage() {
           carro_reserva: c.carro_reserva || null,
           parcelamento: c.parcelamento || null,
           formas_pagamento: c.formas_pagamento || null,
+          formas_pagamento_detalhes: c.formas_pagamento_detalhes && c.formas_pagamento_detalhes.length > 0
+            ? c.formas_pagamento_detalhes
+            : null,
           destaque_comercial: c.destaque_comercial || null,
           cor_coluna: c.cor_coluna || null,
           ordem_exibicao: i + 1,
