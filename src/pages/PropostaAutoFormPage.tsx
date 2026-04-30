@@ -328,6 +328,46 @@ export default function PropostaAutoFormPage() {
               <Input value={form.veiculo_marca_modelo} onChange={(e) => setForm({ ...form, veiculo_marca_modelo: e.target.value })} placeholder="ex: BYD/Dolphin Mini" />
             </div>
             <div>
+              <Label>Tipo de cotação</Label>
+              <Select
+                value={form.tipo_cotacao || "novo"}
+                onValueChange={(v) => setForm({ ...form, tipo_cotacao: v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="novo">Seguro novo</SelectItem>
+                  <SelectItem value="renovacao_congenere">Renovação congênere</SelectItem>
+                  <SelectItem value="renovacao_mesma">Renovação mesma seguradora</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>CEP de pernoite</Label>
+              <Input
+                value={form.cep_pernoite}
+                onChange={(e) => setForm({ ...form, cep_pernoite: e.target.value })}
+                placeholder="00000-000"
+              />
+            </div>
+            <div>
+              <Label>Início de vigência</Label>
+              <Input type="date" value={form.vigencia_inicio} onChange={(e) => setForm({ ...form, vigencia_inicio: e.target.value })} />
+            </div>
+            <div>
+              <Label>Fim de vigência</Label>
+              <Input type="date" value={form.vigencia_fim} onChange={(e) => setForm({ ...form, vigencia_fim: e.target.value })} />
+            </div>
+            <div className="sm:col-span-2 flex items-center justify-between rounded-md border px-3 py-2">
+              <div>
+                <Label className="cursor-pointer">Condutor entre 18 e 26 anos</Label>
+                <p className="text-xs text-muted-foreground">Marque se há condutor jovem no perfil.</p>
+              </div>
+              <Switch
+                checked={form.condutor_18_26}
+                onCheckedChange={(v) => setForm({ ...form, condutor_18_26: v })}
+              />
+            </div>
+            <div>
               <Label>Validade</Label>
               <Input type="date" value={form.validade_proposta} onChange={(e) => setForm({ ...form, validade_proposta: e.target.value })} />
             </div>
