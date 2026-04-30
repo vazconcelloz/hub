@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Save, ArrowLeft, Plus, Trash2, Upload, Loader2 } from "lucide-react";
@@ -78,6 +79,8 @@ export default function PropostaAutoFormPage() {
     nome_cliente: "", telefone_cliente: "", veiculo_marca_modelo: "",
     consultora_nome: "", consultora_telefone: "", consultora_foto_url: "",
     validade_proposta: "", observacoes_gerais: "", status: "pendente",
+    tipo_cotacao: "", vigencia_inicio: "", vigencia_fim: "",
+    cep_pernoite: "", condutor_18_26: false,
   });
   const [cards, setCards] = useState<AutoCardForm[]>(modoManual ? [{ ...empty, ordem_exibicao: 1 }] : []);
 
@@ -98,6 +101,11 @@ export default function PropostaAutoFormPage() {
       validade_proposta: p.validade_proposta || "",
       observacoes_gerais: p.observacoes_gerais || "",
       status: p.status,
+      tipo_cotacao: (p as any).tipo_cotacao || "",
+      vigencia_inicio: (p as any).vigencia_inicio || "",
+      vigencia_fim: (p as any).vigencia_fim || "",
+      cep_pernoite: (p as any).cep_pernoite || "",
+      condutor_18_26: !!(p as any).condutor_18_26,
     });
     const { data: cs } = await supabase
       .from("proposta_auto_seguradoras")
@@ -153,6 +161,11 @@ export default function PropostaAutoFormPage() {
         ...f,
         nome_cliente: f.nome_cliente || ext.cliente_nome || "",
         veiculo_marca_modelo: f.veiculo_marca_modelo || ext.veiculo_marca_modelo || "",
+        tipo_cotacao: f.tipo_cotacao || ext.tipo_cotacao || "",
+        vigencia_inicio: f.vigencia_inicio || ext.vigencia_inicio || "",
+        vigencia_fim: f.vigencia_fim || ext.vigencia_fim || "",
+        cep_pernoite: f.cep_pernoite || ext.cep_pernoite || "",
+        condutor_18_26: f.condutor_18_26 || !!ext.condutor_18_26,
       }));
 
       const novos: AutoCardForm[] = (ext.cotacoes || []).map((c: any, i: number) => ({
@@ -209,6 +222,8 @@ export default function PropostaAutoFormPage() {
       const payload = {
         ...form,
         validade_proposta: form.validade_proposta || null,
+        vigencia_inicio: form.vigencia_inicio || null,
+        vigencia_fim: form.vigencia_fim || null,
         user_id: user?.id,
       };
 
@@ -316,6 +331,46 @@ export default function PropostaAutoFormPage() {
             <div className="sm:col-span-2">
               <Label>Veículo (marca/modelo)</Label>
               <Input value={form.veiculo_marca_modelo} onChange={(e) => setForm({ ...form, veiculo_marca_modelo: e.target.value })} placeholder="ex: BYD/Dolphin Mini" />
+            </div>
+            <div>
+              <Label>Tipo de cotação</Label>
+              <Select
+                value={form.tipo_cotacao || "novo"}
+                onValueChange={(v) => setForm({ ...form, tipo_cotacao: v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="novo">Seguro novo</SelectItem>
+                  <SelectItem value="renovacao_congenere">Renovação congênere</SelectItem>
+                  <SelectItem value="renovacao_mesma">Renovação mesma seguradora</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>CEP de pernoite</Label>
+              <Input
+                value={form.cep_pernoite}
+                onChange={(e) => setForm({ ...form, cep_pernoite: e.target.value })}
+                placeholder="00000-000"
+              />
+            </div>
+            <div>
+              <Label>Início de vigência</Label>
+              <Input type="date" value={form.vigencia_inicio} onChange={(e) => setForm({ ...form, vigencia_inicio: e.target.value })} />
+            </div>
+            <div>
+              <Label>Fim de vigência</Label>
+              <Input type="date" value={form.vigencia_fim} onChange={(e) => setForm({ ...form, vigencia_fim: e.target.value })} />
+            </div>
+            <div className="sm:col-span-2 flex items-center justify-between rounded-md border px-3 py-2">
+              <div>
+                <Label className="cursor-pointer">Condutor entre 18 e 26 anos</Label>
+                <p className="text-xs text-muted-foreground">Marque se há condutor jovem no perfil.</p>
+              </div>
+              <Switch
+                checked={form.condutor_18_26}
+                onCheckedChange={(v) => setForm({ ...form, condutor_18_26: v })}
+              />
             </div>
             <div>
               <Label>Validade</Label>

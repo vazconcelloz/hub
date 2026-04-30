@@ -47,6 +47,9 @@ import {
   Loader2,
   CreditCard,
   ChevronDown,
+  MapPin,
+  RefreshCw,
+  UserCheck,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -531,15 +534,48 @@ export default function PublicPropostaAutoPage() {
             Olá, <span className="font-semibold">{proposta.nome_cliente}</span>!
             Confira lado a lado as melhores opções para o seu veículo.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-4 text-sm opacity-80 pt-2">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm opacity-90 pt-2">
             {proposta.veiculo_marca_modelo && (
               <span className="flex items-center gap-1">
                 <Car className="w-4 h-4" /> {proposta.veiculo_marca_modelo}
               </span>
             )}
-            {proposta.validade_proposta && (
+            {(proposta as any).tipo_cotacao && (
               <span className="flex items-center gap-1">
-                <Calendar className="w-4 h-4" /> Válida até{" "}
+                <RefreshCw className="w-4 h-4" />
+                {{
+                  novo: "Seguro novo",
+                  renovacao_congenere: "Renovação congênere",
+                  renovacao_mesma: "Renovação mesma seguradora",
+                }[(proposta as any).tipo_cotacao as string] || (proposta as any).tipo_cotacao}
+              </span>
+            )}
+            {((proposta as any).vigencia_inicio || (proposta as any).vigencia_fim) && (
+              <span className="flex items-center gap-1">
+                <Calendar className="w-4 h-4" />
+                Vigência{" "}
+                {(proposta as any).vigencia_inicio
+                  ? format(new Date((proposta as any).vigencia_inicio), "dd/MM/yyyy", { locale: ptBR })
+                  : "—"}
+                {" → "}
+                {(proposta as any).vigencia_fim
+                  ? format(new Date((proposta as any).vigencia_fim), "dd/MM/yyyy", { locale: ptBR })
+                  : "—"}
+              </span>
+            )}
+            {(proposta as any).cep_pernoite && (
+              <span className="flex items-center gap-1">
+                <MapPin className="w-4 h-4" /> CEP pernoite {(proposta as any).cep_pernoite}
+              </span>
+            )}
+            {(proposta as any).condutor_18_26 && (
+              <span className="flex items-center gap-1">
+                <UserCheck className="w-4 h-4" /> Condutor 18–26 anos
+              </span>
+            )}
+            {proposta.validade_proposta && (
+              <span className="flex items-center gap-1 opacity-80">
+                <FileText className="w-4 h-4" /> Válida até{" "}
                 {format(new Date(proposta.validade_proposta), "dd/MM/yyyy", {
                   locale: ptBR,
                 })}
