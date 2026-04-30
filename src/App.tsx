@@ -16,6 +16,7 @@ import InicioPage from "./pages/InicioPage";
 import TreinamentosPage from "./pages/TreinamentosPage";
 import ManuaisPage from "./pages/ManuaisPage";
 import SegmentacoesPage from "./pages/SegmentacoesPage";
+import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="/app/cotacoes/proposta/:id" element={<PropostaFormPage />} />
               <Route path="/app/cotacoes/catalogo" element={<CatalogoPage />} />
               <Route path="/app/cotacoes/cotacao/:slug" element={<PublicPropostaPage />} />
+              <Route path="/app/configuracoes" element={<ConfiguracoesPage />} />
             </Route>
 
             {/* Redirects de compatibilidade */}

@@ -1,4 +1,4 @@
-import { Home, GraduationCap, BookOpen, Target, FileSpreadsheet } from "lucide-react";
+import { Home, GraduationCap, BookOpen, Target, FileSpreadsheet, Settings } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -19,6 +19,7 @@ const items = [
   { title: "Manuais", url: "/app/manuais", icon: BookOpen },
   { title: "Segmentações", url: "/app/segmentacoes", icon: Target },
   { title: "Cotações", url: "/app/cotacoes", icon: FileSpreadsheet },
+  { title: "Configurações", url: "/app/configuracoes", icon: Settings },
 ];
 
 export function AppSidebar() {
