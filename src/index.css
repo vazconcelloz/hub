@@ -24,8 +24,8 @@
     --muted: 220 16% 93%;
     --muted-foreground: 220 10% 46%;
 
-    --accent: 40 90% 51%;
-    --accent-foreground: 222 60% 12%;
+    --accent: 215 80% 45%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
@@ -44,17 +44,17 @@
 
     --badge-economico: 152 60% 40%;
     --badge-completo: 222 60% 45%;
-    --badge-recomendado: 40 90% 51%;
+    --badge-recomendado: 215 80% 45%;
     --badge-custo-beneficio: 280 60% 50%;
 
     --sidebar-background: 222 60% 16%;
     --sidebar-foreground: 220 20% 90%;
-    --sidebar-primary: 40 90% 51%;
-    --sidebar-primary-foreground: 222 60% 12%;
+    --sidebar-primary: 215 80% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 222 50% 22%;
     --sidebar-accent-foreground: 220 20% 90%;
     --sidebar-border: 222 40% 24%;
-    --sidebar-ring: 40 90% 51%;
+    --sidebar-ring: 215 80% 55%;
 
     /* Hub Grupo FBN — paleta clara corporativa */
     --hub-bg: 220 25% 98%;
@@ -132,7 +132,7 @@
   }
 
   .gradient-accent {
-    background: linear-gradient(135deg, hsl(40 90% 51%), hsl(35 95% 55%));
+    background: linear-gradient(135deg, hsl(215 80% 45%), hsl(210 85% 55%));
   }
 
   .gradient-hero {
