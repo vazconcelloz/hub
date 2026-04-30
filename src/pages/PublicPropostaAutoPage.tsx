@@ -91,8 +91,13 @@ function parseFormasPagamento(raw: any): FormaPagamento[] {
   return [];
 }
 
+const NAO_INCLUSO = "Não incluso";
+const isNaoInclusoNum = (v: number | null | undefined) => v === -1;
+const isNaoInclusoTxt = (v: string | null | undefined) =>
+  !!v && v.trim().toLowerCase() === "não incluso";
+
 const fmt = (v: number | null | undefined) =>
-  v == null ? "—" : formatCurrency(v);
+  isNaoInclusoNum(v) ? NAO_INCLUSO : v == null ? "—" : formatCurrency(v);
 const txt = (v: string | null | undefined) =>
   v && v.trim() ? v : "—";
 
@@ -787,7 +792,9 @@ export default function PublicPropostaAutoPage() {
                       <td
                         className={cn(
                           "px-4 py-3 font-medium",
-                          rotuloCol ? rotuloCol.header : "text-foreground"
+                          rotuloCol
+                            ? cn(rotuloCol.header, "border-b border-white/25")
+                            : "text-foreground"
                         )}
                       >
                         {crit.label}
@@ -807,7 +814,9 @@ export default function PublicPropostaAutoPage() {
                       <td
                         className={cn(
                           "px-4 py-3 font-medium align-top",
-                          rotuloCol ? rotuloCol.header : "text-foreground"
+                          rotuloCol
+                            ? cn(rotuloCol.header, "border-b border-white/25")
+                            : "text-foreground"
                         )}
                       >
                         {editMode ? (

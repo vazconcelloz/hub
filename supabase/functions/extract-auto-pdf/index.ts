@@ -42,8 +42,12 @@ function normalizeCurrencyValue(value: unknown) {
   if (value === null || value === undefined || value === "") return undefined;
 
   if (typeof value === "string") {
-    const cleaned = value.trim().replace(/[^\d,.-]/g, "");
+    const trimmed = value.trim();
+    // Sentinela textual de "Não incluso" também vira -1
+    if (/^(não\s*incluso|n[aã]o\s*contemplado|n\/c|—|x|✗|✘)$/i.test(trimmed)) return -1;
+    const cleaned = trimmed.replace(/[^\d,.-]/g, "");
     if (!cleaned) return undefined;
+    if (cleaned === "-1") return -1;
     const normalized = cleaned.includes(",")
       ? cleaned.replace(/\./g, "").replace(",", ".")
       : /^\d{1,3}(\.\d{3})+$/.test(cleaned)
@@ -55,6 +59,9 @@ function normalizeCurrencyValue(value: unknown) {
 
   if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
 
+  // Sentinela "Não incluso"
+  if (value === -1) return -1;
+
   // Gemini às vezes lê "285,12" como 28512. Para campos de prêmio/franquia,
   // inteiros altos normalmente são centavos colados, não milhares reais.
   if (Number.isInteger(value) && value >= 10000 && value <= 999999) return value / 100;
@@ -63,14 +70,39 @@ function normalizeCurrencyValue(value: unknown) {
 }
 
 function normalizeExtractedData(data: any) {
+  const NUM_FIELDS = [
+    "premio_total",
+    "franquia_valor",
+    "danos_materiais",
+    "danos_corporais",
+    "danos_morais",
+    "app_morte_invalidez",
+  ];
+  const TXT_FIELDS = [
+    "cobertura_resumo",
+    "franquia_tipo",
+    "percentual_fipe",
+    "assistencia_24h",
+    "vidros",
+    "carro_reserva",
+  ];
+  const isNegMark = (s: string) =>
+    /^(x|—|✗|✘|não|nao|n\/c|não\s*contemplado|nao\s*contemplado)$/i.test(s.trim());
+
   return {
     ...data,
     cotacoes: Array.isArray(data?.cotacoes)
-      ? data.cotacoes.map((cotacao: any) => ({
-          ...cotacao,
-          premio_total: normalizeCurrencyValue(cotacao.premio_total),
-          franquia_valor: normalizeCurrencyValue(cotacao.franquia_valor),
-        }))
+      ? data.cotacoes.map((cotacao: any) => {
+          const out: any = { ...cotacao };
+          for (const f of NUM_FIELDS) {
+            if (f in out) out[f] = normalizeCurrencyValue(out[f]);
+          }
+          for (const f of TXT_FIELDS) {
+            const v = out[f];
+            if (typeof v === "string" && isNegMark(v)) out[f] = "Não incluso";
+          }
+          return out;
+        })
       : [],
   };
 }
@@ -144,12 +176,15 @@ Exemplos:
 Se o PDF não tem nenhuma opção explícita, OMITA 'formas_pagamento_detalhes'.
 
 ═══════════════════════════════════════
-REGRA #5 — MARCADORES "X" / NEGAÇÃO (IMPORTANTE)
+REGRA #5 — MARCADORES "X" / NEGAÇÃO (CRÍTICO)
 ═══════════════════════════════════════
-Em tabelas comparativas é comum que uma célula tenha "X", "—", "✗", "Não" ou esteja em branco indicando que aquela cobertura NÃO está incluída naquele produto. Trate assim:
-- Para campos de TEXTO ('vidros', 'carro_reserva', 'assistencia_24h'): se for "X" / "Não" / vazio / "—" / "✗", envie EXATAMENTE a string "Não incluso". Se houver descrição (ex: "Reboque 500 km"), envie a descrição.
-- Para campos NUMÉRICOS: se a célula tiver "X" / "Não" / vazio, OMITA o campo (NÃO envie 0).
-- NUNCA escreva "Não contemplado" — sempre "Não incluso".
+Em tabelas comparativas é MUITO comum que uma célula contenha "X", "—", "✗", "✘", "Não", "N/C", "Não contratado", "Não incluso", "Não contemplado" ou esteja em branco indicando que aquela cobertura/benefício NÃO está incluída naquele produto. Esses marcadores aparecem em QUALQUER campo (texto OU numérico — inclusive franquia, danos materiais, danos corporais, danos morais, APP, vidros, carro reserva, assistência, cobertura, etc.).
+
+REGRAS DE PREENCHIMENTO:
+- Para campos de TEXTO (cobertura_resumo, franquia_tipo, percentual_fipe, assistencia_24h, vidros, carro_reserva): envie EXATAMENTE a string "Não incluso".
+- Para campos NUMÉRICOS (premio_total, franquia_valor, danos_materiais, danos_corporais, danos_morais, app_morte_invalidez): envie o número especial -1 para indicar "Não incluso". NUNCA envie 0 (zero é um valor real). NUNCA omita o campo nesse caso — use -1.
+- Só omita o campo quando ele genuinamente NÃO existe na tabela / não há linha para ele naquela seguradora.
+- NUNCA escreva "Não contemplado", "N/C", "—" — sempre "Não incluso" (texto) ou -1 (numérico).
 
 ═══════════════════════════════════════
 REGRA #6 — HONESTIDADE
