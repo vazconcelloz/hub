@@ -809,6 +809,16 @@ export default function PublicPropostaAutoPage() {
                       ))}
                     </tr>
                   ))}
+                  <tr className={CRITERIOS.length % 2 ? "bg-muted/20" : ""}>
+                    <td className="px-4 py-3 font-medium text-foreground">
+                      Formas de pagamento
+                    </td>
+                    {view.map((c) => (
+                      <td key={c.id} className="px-4 py-3 text-center align-top">
+                        <FormasPagamentoCell c={c} />
+                      </td>
+                    ))}
+                  </tr>
                 </tbody>
               </table>
             </div>
