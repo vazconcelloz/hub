@@ -44,12 +44,11 @@ function parseToolArguments(raw: string) {
   return JSON.parse(cleaned);
 }
 
-function normalizeCurrencyValue(value: unknown) {
+function normalizeCurrencyValue(value: unknown, opts: { allowCentsHeuristic?: boolean } = {}) {
   if (value === null || value === undefined || value === "") return undefined;
 
   if (typeof value === "string") {
     const trimmed = value.trim();
-    // Sentinela textual de "Não incluso" também vira -1
     if (/^(não\s*incluso|n[aã]o\s*contemplado|n\/c|—|x|✗|✘)$/i.test(trimmed)) return -1;
     const cleaned = trimmed.replace(/[^\d,.-]/g, "");
     if (!cleaned) return undefined;
@@ -64,18 +63,21 @@ function normalizeCurrencyValue(value: unknown) {
   }
 
   if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
-
-  // Sentinela "Não incluso"
   if (value === -1) return -1;
 
-  // Gemini às vezes lê "285,12" como 28512. Para campos de prêmio/franquia,
-  // inteiros altos normalmente são centavos colados, não milhares reais.
-  if (Number.isInteger(value) && value >= 10000 && value <= 999999) return value / 100;
+  // Heurística de centavos colados (ex: 28512 -> 285.12) — APENAS para prêmio/franquia,
+  // onde valores como R$ 50.000 são impossíveis. NUNCA aplicar em coberturas (danos, APP),
+  // que legitimamente são 50000, 100000, 200000 etc.
+  if (opts.allowCentsHeuristic && Number.isInteger(value) && value >= 10000 && value <= 999999) {
+    return value / 100;
+  }
 
   return value;
 }
 
 function normalizeExtractedData(data: any) {
+  // Apenas estes podem ter "centavos colados" (ex: 28512 -> 285.12).
+  const CENTS_HEURISTIC_FIELDS = new Set(["premio_total", "franquia_valor"]);
   const NUM_FIELDS = [
     "premio_total",
     "franquia_valor",
@@ -101,7 +103,7 @@ function normalizeExtractedData(data: any) {
       ? data.cotacoes.map((cotacao: any) => {
           const out: any = { ...cotacao };
           for (const f of NUM_FIELDS) {
-            if (f in out) out[f] = normalizeCurrencyValue(out[f]);
+            if (f in out) out[f] = normalizeCurrencyValue(out[f], { allowCentsHeuristic: CENTS_HEURISTIC_FIELDS.has(f) });
           }
           for (const f of TXT_FIELDS) {
             const v = out[f];
