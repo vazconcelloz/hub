@@ -78,6 +78,8 @@ export default function PropostaAutoFormPage() {
     nome_cliente: "", telefone_cliente: "", veiculo_marca_modelo: "",
     consultora_nome: "", consultora_telefone: "", consultora_foto_url: "",
     validade_proposta: "", observacoes_gerais: "", status: "pendente",
+    tipo_cotacao: "", vigencia_inicio: "", vigencia_fim: "",
+    cep_pernoite: "", condutor_18_26: false,
   });
   const [cards, setCards] = useState<AutoCardForm[]>(modoManual ? [{ ...empty, ordem_exibicao: 1 }] : []);
 
