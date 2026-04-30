@@ -486,6 +486,7 @@ export type Database = {
           consultora_foto_url: string | null
           consultora_nome: string | null
           consultora_telefone: string | null
+          cor_rotulos: string | null
           cores_rotulos: Json | null
           created_at: string
           id: string
@@ -504,6 +505,7 @@ export type Database = {
           consultora_foto_url?: string | null
           consultora_nome?: string | null
           consultora_telefone?: string | null
+          cor_rotulos?: string | null
           cores_rotulos?: Json | null
           created_at?: string
           id?: string
@@ -522,6 +524,7 @@ export type Database = {
           consultora_foto_url?: string | null
           consultora_nome?: string | null
           consultora_telefone?: string | null
+          cor_rotulos?: string | null
           cores_rotulos?: Json | null
           created_at?: string
           id?: string
