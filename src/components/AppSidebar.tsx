@@ -105,6 +105,20 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-[hsl(var(--hub-border))] bg-[hsl(var(--hub-surface))] p-2 gap-1">
+        {/* Recolher / expandir sidebar */}
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={toggleSidebar}
+              tooltip={collapsed ? "Expandir menu" : "Recolher menu"}
+              className="text-[hsl(var(--hub-text))] hover:bg-[hsl(var(--hub-surface-muted))]"
+            >
+              {collapsed ? <PanelLeftOpen className="h-4 w-4 shrink-0" /> : <PanelLeftClose className="h-4 w-4 shrink-0" />}
+              {!collapsed && <span>Recolher menu</span>}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+
         {/* Toggle de tema */}
         <SidebarMenu>
           <SidebarMenuItem>
