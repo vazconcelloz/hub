@@ -249,8 +249,15 @@ export default function PublicPropostaAutoPage() {
     if (!proposta) return;
     setSaving(true);
     try {
+      // Salva preferências da proposta (cor da coluna de rótulos)
+      const { error: propErr } = await supabase
+        .from("propostas_auto")
+        .update({ cor_rotulos: draftCorRotulos } as any)
+        .eq("id", proposta.id);
+      if (propErr) throw propErr;
+
       // Estratégia simples e consistente com o form admin:
-      // deleta todas as cota��es e re-insere a partir do draft.
+      // deleta todas as cotações e re-insere a partir do draft.
       const { error: delErr } = await supabase
         .from("proposta_auto_seguradoras")
         .delete()
