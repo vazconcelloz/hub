@@ -30,11 +30,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import {
   Shield,
@@ -180,11 +175,13 @@ export default function PublicPropostaAutoPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  // Modo de edi��o (apenas admin logado)
+  // Modo de edição (apenas admin logado)
   const [isAdmin, setIsAdmin] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [draft, setDraft] = useState<AutoCotacao[]>([]);
+  const [draftCorRotulos, setDraftCorRotulos] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [pagamentoOpen, setPagamentoOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -221,10 +218,12 @@ export default function PublicPropostaAutoPage() {
 
   const enterEdit = () => {
     setDraft(cotacoes.map((c) => ({ ...c })));
+    setDraftCorRotulos(((proposta as any)?.cor_rotulos as string | null) ?? null);
     setEditMode(true);
   };
   const cancelEdit = () => {
     setDraft([]);
+    setDraftCorRotulos(null);
     setEditMode(false);
   };
 
@@ -245,8 +244,15 @@ export default function PublicPropostaAutoPage() {
     if (!proposta) return;
     setSaving(true);
     try {
+      // Salva preferências da proposta (cor da coluna de rótulos)
+      const { error: propErr } = await supabase
+        .from("propostas_auto")
+        .update({ cor_rotulos: draftCorRotulos } as any)
+        .eq("id", proposta.id);
+      if (propErr) throw propErr;
+
       // Estratégia simples e consistente com o form admin:
-      // deleta todas as cota��es e re-insere a partir do draft.
+      // deleta todas as cotações e re-insere a partir do draft.
       const { error: delErr } = await supabase
         .from("proposta_auto_seguradoras")
         .delete()
@@ -287,6 +293,7 @@ export default function PublicPropostaAutoPage() {
         setCotacoes([]);
       }
 
+      setProposta((p) => (p ? ({ ...p, cor_rotulos: draftCorRotulos } as any) : p));
       setEditMode(false);
       setDraft([]);
       toast({ title: "Alterações salvas!" });
@@ -369,8 +376,15 @@ export default function PublicPropostaAutoPage() {
       )}`
     : "#";
 
-  // Lista visualizada: draft em edi��o, cota��es publicadas no modo leitura.
+  // Lista visualizada: draft em edição, cotações publicadas no modo leitura.
   const view = editMode ? draft : cotacoes;
+  const corRotulosAtiva = editMode
+    ? draftCorRotulos
+    : ((proposta as any).cor_rotulos as string | null) ?? null;
+  const rotuloCol = getColunaColor(corRotulosAtiva);
+  const algumaTemPagamento = view.some(
+    (c) => parseFormasPagamento((c as any).formas_pagamento_detalhes).length > 0
+  );
 
   // Render de uma c�lula edit�vel para um crit�rio + cota��o
   const renderEditableCell = (c: AutoCotacao, crit: Criterio) => {
@@ -396,111 +410,97 @@ export default function PublicPropostaAutoPage() {
     );
   };
 
-  // ============== Célula "Formas de pagamento" (gaveta) ==============
-  const FormasPagamentoCell = ({ c }: { c: AutoCotacao }) => {
+  // ============== Editor de formas de pagamento (modo edit) ==============
+  const FormasPagamentoEditor = ({ c }: { c: AutoCotacao }) => {
     const lista = parseFormasPagamento((c as any).formas_pagamento_detalhes);
-
-    if (editMode) {
-      const atual = lista.length > 0 ? lista : FORMA_PADRAO;
-      const update = (next: FormaPagamento[]) => {
-        const limpos = next.filter((d) => d.tipo.trim() || d.descricao.trim());
-        updateDraft(
-          c.id,
-          "formas_pagamento_detalhes" as any,
-          limpos.length > 0 ? (limpos as any) : null
-        );
-      };
-      return (
-        <div className="rounded-md border border-border/60 bg-background/60 p-2 space-y-1.5">
-          <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide text-left">
-            Opções de pagamento
-          </div>
-          {atual.map((d, i) => (
-            <div key={i} className="flex items-center gap-1.5">
-              <Select
-                value={d.tipo || ""}
-                onValueChange={(v) => {
-                  const next = [...atual];
-                  next[i] = { ...next[i], tipo: v };
-                  update(next);
-                }}
-              >
-                <SelectTrigger className="h-7 text-xs w-36">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {FORMA_TIPOS.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input
-                value={d.descricao}
-                onChange={(e) => {
-                  const next = [...atual];
-                  next[i] = { ...next[i], descricao: e.target.value };
-                  update(next);
-                }}
-                placeholder="Ex.: até 10x sem juros"
-                className="h-7 text-xs flex-1"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  const next = atual.filter((_, idx) => idx !== i);
-                  update(next);
-                }}
-                className="text-muted-foreground hover:text-destructive p-1"
-                title="Remover"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ))}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-7 text-[11px] w-full"
-            onClick={() => update([...atual, { tipo: "", descricao: "" }])}
-          >
-            <Plus className="w-3 h-3 mr-1" /> Adicionar opção
-          </Button>
-        </div>
+    const atual = lista.length > 0 ? lista : FORMA_PADRAO;
+    const update = (next: FormaPagamento[]) => {
+      const limpos = next.filter((d) => d.tipo.trim() || d.descricao.trim());
+      updateDraft(
+        c.id,
+        "formas_pagamento_detalhes" as any,
+        limpos.length > 0 ? (limpos as any) : null
       );
-    }
+    };
+    return (
+      <div className="rounded-md border border-border/60 bg-background/60 p-2 space-y-1.5">
+        <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide text-left">
+          Opções de pagamento
+        </div>
+        {atual.map((d, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <Select
+              value={d.tipo || ""}
+              onValueChange={(v) => {
+                const next = [...atual];
+                next[i] = { ...next[i], tipo: v };
+                update(next);
+              }}
+            >
+              <SelectTrigger className="h-7 text-xs w-36">
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                {FORMA_TIPOS.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              value={d.descricao}
+              onChange={(e) => {
+                const next = [...atual];
+                next[i] = { ...next[i], descricao: e.target.value };
+                update(next);
+              }}
+              placeholder="Ex.: até 10x sem juros"
+              className="h-7 text-xs flex-1"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const next = atual.filter((_, idx) => idx !== i);
+                update(next);
+              }}
+              className="text-muted-foreground hover:text-destructive p-1"
+              title="Remover"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ))}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-7 text-[11px] w-full"
+          onClick={() => update([...atual, { tipo: "", descricao: "" }])}
+        >
+          <Plus className="w-3 h-3 mr-1" /> Adicionar opção
+        </Button>
+      </div>
+    );
+  };
 
-    // Modo leitura: gaveta colapsável
+  // Lista visual (read-only) das formas de pagamento de UMA seguradora
+  const FormasPagamentoList = ({ c }: { c: AutoCotacao }) => {
+    const lista = parseFormasPagamento((c as any).formas_pagamento_detalhes);
     if (lista.length === 0) {
       return <span className="text-muted-foreground text-xs">—</span>;
     }
     return (
-      <Collapsible>
-        <CollapsibleTrigger asChild>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-          >
-            <CreditCard className="w-3.5 h-3.5" />
-            {lista.length} {lista.length === 1 ? "opção" : "opções"}
-            <ChevronDown className="w-3 h-3 transition-transform data-[state=open]:rotate-180" />
-          </button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="mt-2">
-          <ul className="text-xs text-left space-y-1 bg-muted/40 rounded-md p-2 border border-border/60">
-            {lista.map((d, i) => (
-              <li key={i} className="flex flex-col">
-                <span className="font-semibold text-foreground">{d.tipo || "—"}</span>
-                {d.descricao && (
-                  <span className="text-muted-foreground">{d.descricao}</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </CollapsibleContent>
-      </Collapsible>
+      <ul className="text-xs text-left space-y-1 bg-muted/40 rounded-md p-2 border border-border/60">
+        {lista.map((d, i) => (
+          <li key={i} className="flex flex-col">
+            <span className="font-semibold text-foreground">{d.tipo || "—"}</span>
+            {d.descricao && (
+              <span className="text-muted-foreground">{d.descricao}</span>
+            )}
+          </li>
+        ))}
+      </ul>
     );
   };
 
@@ -601,11 +601,41 @@ export default function PublicPropostaAutoPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-muted/50">
-                    <th className="text-left px-4 py-3 font-semibold text-foreground w-48">
-                      Critério
+                    <th
+                      className={cn(
+                        "text-left px-4 py-3 font-semibold w-48",
+                        rotuloCol ? rotuloCol.header : "text-foreground"
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span>Critério</span>
+                        {editMode && (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-[11px] gap-1 text-foreground"
+                                title="Cor da coluna de critérios"
+                              >
+                                <Palette className="w-3 h-3" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-64 p-3">
+                              <p className="text-xs font-medium mb-2">
+                                Cor da coluna de critérios
+                              </p>
+                              <ColorPalette
+                                current={draftCorRotulos}
+                                onPick={(k) => setDraftCorRotulos(k)}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        )}
+                      </div>
                     </th>
                     {view.map((c) => {
-                      const col = getColunaColor(c.cor_coluna);
                       const destKey = c.destaque_comercial || "";
                       const destLabel =
                         DESTAQUE_LABELS[destKey] ||
@@ -616,38 +646,11 @@ export default function PublicPropostaAutoPage() {
                       return (
                         <th
                           key={c.id}
-                          className={cn(
-                            "px-4 py-4 text-center align-bottom min-w-[220px]",
-                            col ? col.header : ""
-                          )}
+                          className="px-4 py-4 text-center align-bottom min-w-[220px] bg-muted/30"
                         >
                           {editMode ? (
                             <div className="space-y-2">
                               <div className="flex items-center justify-end gap-1">
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-7 text-[11px] gap-1 text-foreground"
-                                    >
-                                      <Palette className="w-3 h-3" />
-                                      Cor
-                                    </Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-64 p-3">
-                                    <p className="text-xs font-medium mb-2">
-                                      Cor da coluna
-                                    </p>
-                                    <ColorPalette
-                                      current={c.cor_coluna}
-                                      onPick={(k) =>
-                                        updateDraft(c.id, "cor_coluna", k)
-                                      }
-                                    />
-                                  </PopoverContent>
-                                </Popover>
                                 <Button
                                   type="button"
                                   variant="ghost"
@@ -662,11 +665,7 @@ export default function PublicPropostaAutoPage() {
                               <Input
                                 value={c.seguradora_nome ?? ""}
                                 onChange={(e) =>
-                                  updateDraft(
-                                    c.id,
-                                    "seguradora_nome",
-                                    e.target.value
-                                  )
+                                  updateDraft(c.id, "seguradora_nome", e.target.value)
                                 }
                                 placeholder="Seguradora"
                                 className="h-8 text-sm font-semibold text-foreground"
@@ -674,11 +673,7 @@ export default function PublicPropostaAutoPage() {
                               <Input
                                 value={c.produto_nome ?? ""}
                                 onChange={(e) =>
-                                  updateDraft(
-                                    c.id,
-                                    "produto_nome",
-                                    e.target.value || null
-                                  )
+                                  updateDraft(c.id, "produto_nome", e.target.value || null)
                                 }
                                 placeholder="Produto / Plano"
                                 className="h-7 text-xs text-foreground"
@@ -698,32 +693,20 @@ export default function PublicPropostaAutoPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="none">Sem destaque</SelectItem>
-                                  {Object.entries(DESTAQUE_LABELS).map(
-                                    ([k, v]) => (
-                                      <SelectItem key={k} value={k}>
-                                        {v}
-                                      </SelectItem>
-                                    )
-                                  )}
+                                  {Object.entries(DESTAQUE_LABELS).map(([k, v]) => (
+                                    <SelectItem key={k} value={k}>
+                                      {v}
+                                    </SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                             </div>
                           ) : (
                             <div className="space-y-1">
-                              <p
-                                className={cn(
-                                  "text-xs uppercase tracking-wider",
-                                  col ? "text-white/80" : "text-muted-foreground"
-                                )}
-                              >
+                              <p className="text-xs uppercase tracking-wider text-muted-foreground">
                                 {c.seguradora_nome}
                               </p>
-                              <p
-                                className={cn(
-                                  "font-bold",
-                                  col ? "text-white" : "text-foreground"
-                                )}
-                              >
+                              <p className="font-bold text-foreground">
                                 {txt(c.produto_nome)}
                               </p>
                               {destLabel && (
@@ -796,7 +779,12 @@ export default function PublicPropostaAutoPage() {
                       key={crit.label}
                       className={i % 2 ? "bg-muted/20" : ""}
                     >
-                      <td className="px-4 py-3 font-medium text-foreground">
+                      <td
+                        className={cn(
+                          "px-4 py-3 font-medium",
+                          rotuloCol ? rotuloCol.cell : "text-foreground"
+                        )}
+                      >
                         {crit.label}
                       </td>
                       {view.map((c) => (
@@ -809,16 +797,49 @@ export default function PublicPropostaAutoPage() {
                       ))}
                     </tr>
                   ))}
-                  <tr className={CRITERIOS.length % 2 ? "bg-muted/20" : ""}>
-                    <td className="px-4 py-3 font-medium text-foreground">
-                      Formas de pagamento
-                    </td>
-                    {view.map((c) => (
-                      <td key={c.id} className="px-4 py-3 text-center align-top">
-                        <FormasPagamentoCell c={c} />
+                  {(editMode || algumaTemPagamento) && (
+                    <tr className={CRITERIOS.length % 2 ? "bg-muted/20" : ""}>
+                      <td
+                        className={cn(
+                          "px-4 py-3 font-medium align-top",
+                          rotuloCol ? rotuloCol.cell : "text-foreground"
+                        )}
+                      >
+                        {editMode ? (
+                          "Formas de pagamento"
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setPagamentoOpen((v) => !v)}
+                            className="inline-flex items-center gap-1.5 hover:underline"
+                          >
+                            <CreditCard className="w-3.5 h-3.5" />
+                            <span>Formas de pagamento</span>
+                            <ChevronDown
+                              className={cn(
+                                "w-3.5 h-3.5 transition-transform",
+                                pagamentoOpen && "rotate-180"
+                              )}
+                            />
+                          </button>
+                        )}
                       </td>
-                    ))}
-                  </tr>
+                      {view.map((c) => (
+                        <td key={c.id} className="px-4 py-3 text-center align-top">
+                          {editMode ? (
+                            <FormasPagamentoEditor c={c} />
+                          ) : pagamentoOpen ? (
+                            <FormasPagamentoList c={c} />
+                          ) : (
+                            <span className="text-muted-foreground/60 text-xs">
+                              {parseFormasPagamento((c as any).formas_pagamento_detalhes).length || "—"}
+                              {parseFormasPagamento((c as any).formas_pagamento_detalhes).length > 0 && " opções"}
+                            </span>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -827,7 +848,6 @@ export default function PublicPropostaAutoPage() {
           {/* Cards (mobile) */}
           <section className="container py-6 md:hidden space-y-4">
             {view.map((c) => {
-              const col = getColunaColor(c.cor_coluna);
               const destKey = c.destaque_comercial || "";
               const destLabel =
                 DESTAQUE_LABELS[destKey] ||
@@ -836,37 +856,11 @@ export default function PublicPropostaAutoPage() {
                 DESTAQUE_COLORS[destKey] ||
                 "bg-primary text-primary-foreground";
               return (
-                <Card
-                  key={c.id}
-                  className={cn(
-                    "overflow-hidden p-0",
-                    col && `border-t-4 ${col.border}`
-                  )}
-                >
-                  <div className={cn("p-4", col ? col.header : "bg-muted/30")}>
+                <Card key={c.id} className="overflow-hidden p-0 border-t-4 border-primary">
+                  <div className="p-4 bg-muted/30">
                     {editMode ? (
                       <div className="space-y-2">
                         <div className="flex items-center justify-end gap-1">
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-7 text-[11px] gap-1 text-foreground"
-                              >
-                                <Palette className="w-3 h-3" /> Cor
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-64 p-3">
-                              <ColorPalette
-                                current={c.cor_coluna}
-                                onPick={(k) =>
-                                  updateDraft(c.id, "cor_coluna", k)
-                                }
-                              />
-                            </PopoverContent>
-                          </Popover>
                           <Button
                             type="button"
                             variant="ghost"
@@ -880,11 +874,7 @@ export default function PublicPropostaAutoPage() {
                         <Input
                           value={c.seguradora_nome ?? ""}
                           onChange={(e) =>
-                            updateDraft(
-                              c.id,
-                              "seguradora_nome",
-                              e.target.value
-                            )
+                            updateDraft(c.id, "seguradora_nome", e.target.value)
                           }
                           placeholder="Seguradora"
                           className="h-8 text-foreground"
@@ -892,11 +882,7 @@ export default function PublicPropostaAutoPage() {
                         <Input
                           value={c.produto_nome ?? ""}
                           onChange={(e) =>
-                            updateDraft(
-                              c.id,
-                              "produto_nome",
-                              e.target.value || null
-                            )
+                            updateDraft(c.id, "produto_nome", e.target.value || null)
                           }
                           placeholder="Produto"
                           className="h-7 text-xs text-foreground"
@@ -927,20 +913,10 @@ export default function PublicPropostaAutoPage() {
                     ) : (
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <p
-                            className={cn(
-                              "text-xs uppercase tracking-wider",
-                              col ? "text-white/80" : "text-muted-foreground"
-                            )}
-                          >
+                          <p className="text-xs uppercase tracking-wider text-muted-foreground">
                             {c.seguradora_nome}
                           </p>
-                          <h3
-                            className={cn(
-                              "font-bold",
-                              col ? "text-white" : "text-foreground"
-                            )}
-                          >
+                          <h3 className="font-bold text-foreground">
                             {txt(c.produto_nome)}
                           </h3>
                         </div>
@@ -1017,7 +993,11 @@ export default function PublicPropostaAutoPage() {
                         <p className="text-muted-foreground text-xs uppercase tracking-wide mb-1">
                           Formas de pagamento
                         </p>
-                        <FormasPagamentoCell c={c} />
+                        {editMode ? (
+                          <FormasPagamentoEditor c={c} />
+                        ) : (
+                          <FormasPagamentoList c={c} />
+                        )}
                       </div>
                     </dl>
                   </div>
