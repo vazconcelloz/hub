@@ -792,7 +792,9 @@ export default function PublicPropostaAutoPage() {
                       <td
                         className={cn(
                           "px-4 py-3 font-medium",
-                          rotuloCol ? rotuloCol.header : "text-foreground"
+                          rotuloCol
+                            ? cn(rotuloCol.header, "border-b border-white/25")
+                            : "text-foreground"
                         )}
                       >
                         {crit.label}
@@ -812,7 +814,9 @@ export default function PublicPropostaAutoPage() {
                       <td
                         className={cn(
                           "px-4 py-3 font-medium align-top",
-                          rotuloCol ? rotuloCol.header : "text-foreground"
+                          rotuloCol
+                            ? cn(rotuloCol.header, "border-b border-white/25")
+                            : "text-foreground"
                         )}
                       >
                         {editMode ? (
