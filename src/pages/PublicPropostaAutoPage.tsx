@@ -6,6 +6,12 @@ import {
   AutoCotacao,
   formatCurrency,
 } from "@/lib/proposal-auto-utils";
+import {
+  DESTAQUE_LABELS,
+  DESTAQUE_COLORS,
+  getColunaColor,
+} from "@/lib/proposal-utils";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -175,26 +181,38 @@ export default function PublicPropostaAutoPage() {
                     <th className="text-left px-4 py-3 font-semibold text-foreground w-48">
                       Critério
                     </th>
-                    {cotacoes.map((c) => (
-                      <th
-                        key={c.id}
-                        className="px-4 py-4 text-center align-bottom min-w-[200px]"
-                      >
-                        <div className="space-y-1">
-                          <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                            {c.seguradora_nome}
-                          </p>
-                          <p className="font-bold text-foreground">
-                            {txt(c.produto_nome)}
-                          </p>
-                          {c.destaque_comercial && (
-                            <Badge className="bg-primary text-primary-foreground mt-1">
-                              {c.destaque_comercial}
-                            </Badge>
+                    {cotacoes.map((c) => {
+                      const col = getColunaColor((c as any).cor_coluna);
+                      const destKey = c.destaque_comercial || "";
+                      const destLabel = DESTAQUE_LABELS[destKey] || (destKey && !DESTAQUE_LABELS[destKey] ? destKey : null);
+                      const destClass = DESTAQUE_COLORS[destKey] || "bg-primary text-primary-foreground";
+                      return (
+                        <th
+                          key={c.id}
+                          className={cn(
+                            "px-4 py-4 text-center align-bottom min-w-[200px]",
+                            col ? col.header : ""
                           )}
-                        </div>
-                      </th>
-                    ))}
+                        >
+                          <div className="space-y-1">
+                            <p className={cn(
+                              "text-xs uppercase tracking-wider",
+                              col ? "text-white/80" : "text-muted-foreground"
+                            )}>
+                              {c.seguradora_nome}
+                            </p>
+                            <p className={cn("font-bold", col ? "text-white" : "text-foreground")}>
+                              {txt(c.produto_nome)}
+                            </p>
+                            {destLabel && (
+                              <Badge className={cn("mt-1", destClass)}>
+                                {destLabel}
+                              </Badge>
+                            )}
+                          </div>
+                        </th>
+                      );
+                    })}
                   </tr>
                   <tr className="bg-primary/5">
                     <th className="text-left px-4 py-3 font-semibold text-foreground">
@@ -255,51 +273,62 @@ export default function PublicPropostaAutoPage() {
 
           {/* Cards (mobile) */}
           <section className="container py-6 md:hidden space-y-4">
-            {cotacoes.map((c) => (
-              <Card key={c.id} className="p-4">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                      {c.seguradora_nome}
-                    </p>
-                    <h3 className="font-bold text-foreground">
-                      {txt(c.produto_nome)}
-                    </h3>
-                  </div>
-                  {c.destaque_comercial && (
-                    <Badge className="bg-primary text-primary-foreground">
-                      {c.destaque_comercial}
-                    </Badge>
-                  )}
-                </div>
-                <div className="bg-primary/5 rounded-lg p-3 text-center mb-4">
-                  <p className="text-xs uppercase text-muted-foreground">
-                    Prêmio total
-                  </p>
-                  <p className="text-2xl font-bold text-primary">
-                    {fmt(c.premio_total)}
-                  </p>
-                  {c.parcelamento && (
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {c.parcelamento}
-                    </p>
-                  )}
-                </div>
-                <dl className="space-y-2 text-sm">
-                  {CRITERIOS.map((crit) => (
-                    <div
-                      key={crit.label}
-                      className="flex justify-between gap-3 border-b border-border/60 pb-1.5 last:border-0"
-                    >
-                      <dt className="text-muted-foreground">{crit.label}</dt>
-                      <dd className="text-right text-foreground font-medium">
-                        {crit.render(c)}
-                      </dd>
+            {cotacoes.map((c) => {
+              const col = getColunaColor((c as any).cor_coluna);
+              const destKey = c.destaque_comercial || "";
+              const destLabel = DESTAQUE_LABELS[destKey] || (destKey && !DESTAQUE_LABELS[destKey] ? destKey : null);
+              const destClass = DESTAQUE_COLORS[destKey] || "bg-primary text-primary-foreground";
+              return (
+                <Card key={c.id} className={cn("overflow-hidden p-0", col && `border-t-4 ${col.border}`)}>
+                  <div className={cn("p-4", col ? col.header : "bg-muted/30")}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className={cn(
+                          "text-xs uppercase tracking-wider",
+                          col ? "text-white/80" : "text-muted-foreground"
+                        )}>
+                          {c.seguradora_nome}
+                        </p>
+                        <h3 className={cn("font-bold", col ? "text-white" : "text-foreground")}>
+                          {txt(c.produto_nome)}
+                        </h3>
+                      </div>
+                      {destLabel && (
+                        <Badge className={destClass}>{destLabel}</Badge>
+                      )}
                     </div>
-                  ))}
-                </dl>
-              </Card>
-            ))}
+                  </div>
+                  <div className="p-4">
+                    <div className="bg-primary/5 rounded-lg p-3 text-center mb-4">
+                      <p className="text-xs uppercase text-muted-foreground">
+                        Prêmio total
+                      </p>
+                      <p className="text-2xl font-bold text-primary">
+                        {fmt(c.premio_total)}
+                      </p>
+                      {c.parcelamento && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {c.parcelamento}
+                        </p>
+                      )}
+                    </div>
+                    <dl className="space-y-2 text-sm">
+                      {CRITERIOS.map((crit) => (
+                        <div
+                          key={crit.label}
+                          className="flex justify-between gap-3 border-b border-border/60 pb-1.5 last:border-0"
+                        >
+                          <dt className="text-muted-foreground">{crit.label}</dt>
+                          <dd className="text-right text-foreground font-medium">
+                            {crit.render(c)}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                </Card>
+              );
+            })}
           </section>
         </>
       )}
