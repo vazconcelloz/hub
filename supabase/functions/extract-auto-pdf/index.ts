@@ -226,6 +226,15 @@ NUNCA invente. Se não aparece no PDF, omita (numérico) ou deixe vazio (texto).
               properties: {
                 cliente_nome: { type: "string", description: "Nome do segurado conforme aparece no PDF" },
                 veiculo_marca_modelo: { type: "string", description: "Marca e modelo do veículo (ex: 'BYD/Dolphin Mini (Elétrico)', 'VW/Polo Highline')" },
+                tipo_cotacao: {
+                  type: "string",
+                  enum: ["novo", "renovacao_congenere", "renovacao_mesma"],
+                  description: "Tipo da cotação: novo, renovação congênere ou renovação na mesma seguradora",
+                },
+                vigencia_inicio: { type: "string", description: "Início de vigência (YYYY-MM-DD)" },
+                vigencia_fim: { type: "string", description: "Fim de vigência (YYYY-MM-DD)" },
+                cep_pernoite: { type: "string", description: "CEP do local de pernoite do veículo" },
+                condutor_18_26: { type: "boolean", description: "True se houver condutor entre 18 e 26 anos" },
                 cotacoes: {
                   type: "array",
                   description: "Array com TODAS as cotações/seguradoras encontradas no PDF (cada coluna da tabela comparativa).",
