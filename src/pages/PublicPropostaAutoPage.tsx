@@ -784,7 +784,12 @@ export default function PublicPropostaAutoPage() {
                       key={crit.label}
                       className={i % 2 ? "bg-muted/20" : ""}
                     >
-                      <td className="px-4 py-3 font-medium text-foreground">
+                      <td
+                        className={cn(
+                          "px-4 py-3 font-medium",
+                          rotuloCol ? rotuloCol.cell : "text-foreground"
+                        )}
+                      >
                         {crit.label}
                       </td>
                       {view.map((c) => (
@@ -797,16 +802,49 @@ export default function PublicPropostaAutoPage() {
                       ))}
                     </tr>
                   ))}
-                  <tr className={CRITERIOS.length % 2 ? "bg-muted/20" : ""}>
-                    <td className="px-4 py-3 font-medium text-foreground">
-                      Formas de pagamento
-                    </td>
-                    {view.map((c) => (
-                      <td key={c.id} className="px-4 py-3 text-center align-top">
-                        <FormasPagamentoCell c={c} />
+                  {(editMode || algumaTemPagamento) && (
+                    <tr className={CRITERIOS.length % 2 ? "bg-muted/20" : ""}>
+                      <td
+                        className={cn(
+                          "px-4 py-3 font-medium align-top",
+                          rotuloCol ? rotuloCol.cell : "text-foreground"
+                        )}
+                      >
+                        {editMode ? (
+                          "Formas de pagamento"
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setPagamentoOpen((v) => !v)}
+                            className="inline-flex items-center gap-1.5 hover:underline"
+                          >
+                            <CreditCard className="w-3.5 h-3.5" />
+                            <span>Formas de pagamento</span>
+                            <ChevronDown
+                              className={cn(
+                                "w-3.5 h-3.5 transition-transform",
+                                pagamentoOpen && "rotate-180"
+                              )}
+                            />
+                          </button>
+                        )}
                       </td>
-                    ))}
-                  </tr>
+                      {view.map((c) => (
+                        <td key={c.id} className="px-4 py-3 text-center align-top">
+                          {editMode ? (
+                            <FormasPagamentoEditor c={c} />
+                          ) : pagamentoOpen ? (
+                            <FormasPagamentoList c={c} />
+                          ) : (
+                            <span className="text-muted-foreground/60 text-xs">
+                              {parseFormasPagamento((c as any).formas_pagamento_detalhes).length || "—"}
+                              {parseFormasPagamento((c as any).formas_pagamento_detalhes).length > 0 && " opções"}
+                            </span>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
