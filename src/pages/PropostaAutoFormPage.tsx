@@ -43,8 +43,17 @@ const empty: AutoCardForm = {
 };
 
 const num = (s: string) => {
-  const v = parseFloat((s || "").replace(/\./g, "").replace(",", "."));
-  return isNaN(v) ? null : v;
+  const raw = (s || "").trim().replace(/[^\d,.-]/g, "");
+  if (!raw) return null;
+
+  const normalized = raw.includes(",")
+    ? raw.replace(/\./g, "").replace(",", ".")
+    : /^\d{1,3}(\.\d{3})+$/.test(raw)
+      ? raw.replace(/\./g, "")
+      : raw;
+
+  const v = Number(normalized);
+  return Number.isFinite(v) ? v : null;
 };
 
 export default function PropostaAutoFormPage() {

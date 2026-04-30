@@ -38,6 +38,43 @@ function parseToolArguments(raw: string) {
   return JSON.parse(cleaned);
 }
 
+function normalizeCurrencyValue(value: unknown) {
+  if (value === null || value === undefined || value === "") return undefined;
+
+  if (typeof value === "string") {
+    const cleaned = value.trim().replace(/[^\d,.-]/g, "");
+    if (!cleaned) return undefined;
+    const normalized = cleaned.includes(",")
+      ? cleaned.replace(/\./g, "").replace(",", ".")
+      : /^\d{1,3}(\.\d{3})+$/.test(cleaned)
+        ? cleaned.replace(/\./g, "")
+        : cleaned;
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+
+  // Gemini às vezes lê "285,12" como 28512. Para campos de prêmio/franquia,
+  // inteiros altos normalmente são centavos colados, não milhares reais.
+  if (Number.isInteger(value) && value >= 10000 && value <= 999999) return value / 100;
+
+  return value;
+}
+
+function normalizeExtractedData(data: any) {
+  return {
+    ...data,
+    cotacoes: Array.isArray(data?.cotacoes)
+      ? data.cotacoes.map((cotacao: any) => ({
+          ...cotacao,
+          premio_total: normalizeCurrencyValue(cotacao.premio_total),
+          franquia_valor: normalizeCurrencyValue(cotacao.franquia_valor),
+        }))
+      : [],
+  };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -169,7 +206,7 @@ NUNCA invente. Se não aparece no PDF, omita (numérico) ou deixe vazio (texto).
       throw new Error("A IA não retornou dados estruturados.");
     }
 
-    const data = parseToolArguments(toolCall.function.arguments);
+    const data = normalizeExtractedData(parseToolArguments(toolCall.function.arguments));
     return new Response(JSON.stringify({ data }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
