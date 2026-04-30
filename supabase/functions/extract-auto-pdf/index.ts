@@ -202,7 +202,26 @@ NUNCA invente. Se não aparece no PDF, omita (numérico) ou deixe vazio (texto).
                       vidros: { type: "string", description: "Cobertura de vidros (Sim/Não contemplado/descrição)" },
                       carro_reserva: { type: "string", description: "Carro reserva (Sim/Não contemplado/descrição)" },
                       parcelamento: { type: "string", description: "Parcelamento (ex: '10x de R$ 415,39')" },
-                      formas_pagamento: { type: "string", description: "Resumo das formas de pagamento" },
+                      formas_pagamento: { type: "string", description: "Resumo em texto livre das formas de pagamento" },
+                      formas_pagamento_detalhes: {
+                        type: "array",
+                        description: "Lista estruturada das opções de pagamento aceitas. Cada item = { tipo, descricao }.",
+                        items: {
+                          type: "object",
+                          properties: {
+                            tipo: {
+                              type: "string",
+                              enum: ["Cartão de crédito", "Cartão de débito", "Boleto", "Débito em conta", "PIX", "Dinheiro", "Transferência"],
+                              description: "Tipo da forma de pagamento (canônico)",
+                            },
+                            descricao: {
+                              type: "string",
+                              description: "Condição/parcelamento (ex.: 'até 10x sem juros', '1+9', 'à vista')",
+                            },
+                          },
+                          required: ["tipo"],
+                        },
+                      },
                     },
                     required: ["seguradora_nome"],
                   },
