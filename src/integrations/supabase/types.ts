@@ -483,6 +483,8 @@ export type Database = {
       }
       propostas_auto: {
         Row: {
+          cep_pernoite: string | null
+          condutor_18_26: boolean | null
           consultora_foto_url: string | null
           consultora_nome: string | null
           consultora_telefone: string | null
@@ -496,12 +498,17 @@ export type Database = {
           slug: string
           status: string
           telefone_cliente: string | null
+          tipo_cotacao: string | null
           updated_at: string
           user_id: string | null
           validade_proposta: string | null
           veiculo_marca_modelo: string | null
+          vigencia_fim: string | null
+          vigencia_inicio: string | null
         }
         Insert: {
+          cep_pernoite?: string | null
+          condutor_18_26?: boolean | null
           consultora_foto_url?: string | null
           consultora_nome?: string | null
           consultora_telefone?: string | null
@@ -515,12 +522,17 @@ export type Database = {
           slug: string
           status?: string
           telefone_cliente?: string | null
+          tipo_cotacao?: string | null
           updated_at?: string
           user_id?: string | null
           validade_proposta?: string | null
           veiculo_marca_modelo?: string | null
+          vigencia_fim?: string | null
+          vigencia_inicio?: string | null
         }
         Update: {
+          cep_pernoite?: string | null
+          condutor_18_26?: boolean | null
           consultora_foto_url?: string | null
           consultora_nome?: string | null
           consultora_telefone?: string | null
@@ -534,10 +546,13 @@ export type Database = {
           slug?: string
           status?: string
           telefone_cliente?: string | null
+          tipo_cotacao?: string | null
           updated_at?: string
           user_id?: string | null
           validade_proposta?: string | null
           veiculo_marca_modelo?: string | null
+          vigencia_fim?: string | null
+          vigencia_inicio?: string | null
         }
         Relationships: []
       }
