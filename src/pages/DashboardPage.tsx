@@ -237,7 +237,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 flex-wrap">
-                    <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/proposta/${p.id}`)} title="Editar">
+                    <Button variant="ghost" size="icon" onClick={() => navigate(`/app/cotacoes/proposta/${p.id}`)} title="Editar">
                       <Pencil className="w-4 h-4" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => navigate(`/app/cotacoes/cotacao/${p.slug}`)} title="Visualizar">
