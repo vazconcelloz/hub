@@ -6,7 +6,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const GEMINI_MODELS = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"];
+// Apenas modelos PRO para tabelas comparativas — modelos flash/lite embaralham colunas.
+const GEMINI_MODELS = ["gemini-2.5-pro"];
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function callGeminiWithFallback(apiKey: string, body: Record<string, unknown>) {
