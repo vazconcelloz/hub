@@ -162,6 +162,7 @@ const emptyCotacao = (proposta_id: string, ordem: number): AutoCotacao => ({
   carro_reserva: null,
   parcelamento: null,
   formas_pagamento: null,
+  formas_pagamento_detalhes: null,
   destaque_comercial: null,
   cor_coluna: null,
   cores_celulas: null,
