@@ -6,6 +6,12 @@ import {
   AutoCotacao,
   formatCurrency,
 } from "@/lib/proposal-auto-utils";
+import {
+  DESTAQUE_LABELS,
+  DESTAQUE_COLORS,
+  getColunaColor,
+} from "@/lib/proposal-utils";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
