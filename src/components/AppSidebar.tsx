@@ -50,11 +50,15 @@ export function AppSidebar() {
   const isActive = (url: string, exact?: boolean) =>
     exact ? pathname === url : pathname === url || pathname.startsWith(url + "/");
 
-  const visibleItems = items.filter((it) => {
-    if (it.adminOnly) return isAdmin;
-    if (it.permission) return isAdmin || has(it.permission);
-    return true;
-  });
+  // Enquanto as permissões carregam, mostramos apenas itens sem restrição
+  // para evitar "flash" de menu vazio. Depois aplicamos o filtro real.
+  const visibleItems = permLoading
+    ? items.filter((it) => !it.adminOnly && !it.permission)
+    : items.filter((it) => {
+        if (it.adminOnly) return isAdmin;
+        if (it.permission) return isAdmin || has(it.permission);
+        return true;
+      });
 
   // Na home (/app) a sidebar fica fixa, sem botão de recolher.
   // Em qualquer outra seção, o botão de recolher aparece.
