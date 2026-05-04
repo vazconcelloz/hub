@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Plus, Trash2, Copy } from "lucide-react";
+import { Mail, Plus, Trash2, Copy, Send } from "lucide-react";
 import { format } from "date-fns";
 
 interface Convite {
@@ -39,17 +39,55 @@ export default function ConvitesTab() {
       return;
     }
     const { data: u } = await supabase.auth.getUser();
-    const { error } = await supabase.from("convites").insert({
-      email: novo.email,
-      role: novo.role,
-      setor_id: novo.setor_id || null,
-      convidado_por: u.user?.id,
-    });
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else {
-      setNovo({ email: "", role: "user", setor_id: "" });
-      toast({ title: "Convite criado" });
-      load();
+    const { data: created, error } = await supabase
+      .from("convites")
+      .insert({
+        email: novo.email,
+        role: novo.role,
+        setor_id: novo.setor_id || null,
+        convidado_por: u.user?.id,
+      })
+      .select("id")
+      .single();
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
+    }
+    setNovo({ email: "", role: "user", setor_id: "" });
+    await enviarEmail(created.id, { silent: true });
+    load();
+  };
+
+  const enviarEmail = async (convite_id: string, opts: { silent?: boolean } = {}) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("send-convite-email", {
+        body: { convite_id },
+      });
+      if (error) throw error;
+      if (data?.sent) {
+        toast({ title: "Convite enviado por e-mail" });
+      } else if (data?.reason === "email_not_configured") {
+        if (!opts.silent) {
+          toast({
+            title: "Convite criado",
+            description: "Envio por e-mail ainda não configurado. Copie o link e envie manualmente.",
+          });
+        } else {
+          toast({ title: "Convite criado", description: "Copie o link para enviar manualmente." });
+        }
+      } else {
+        toast({
+          title: "Convite criado",
+          description: "Não foi possível enviar o e-mail. Copie o link manualmente.",
+          variant: "destructive",
+        });
+      }
+    } catch (e: any) {
+      toast({
+        title: opts.silent ? "Convite criado" : "Falha ao reenviar",
+        description: e?.message || "Copie o link manualmente.",
+        variant: opts.silent ? "default" : "destructive",
+      });
     }
   };
 
@@ -114,6 +152,9 @@ export default function ConvitesTab() {
               <div className="flex gap-1">
                 {c.status === "pendente" && (
                   <>
+                    <Button variant="outline" size="sm" onClick={() => enviarEmail(c.id)}>
+                      <Send className="w-4 h-4 mr-1" /> Reenviar e-mail
+                    </Button>
                     <Button variant="outline" size="sm" onClick={() => copiarLink(c.token)}>
                       <Copy className="w-4 h-4 mr-1" /> Copiar link
                     </Button>
