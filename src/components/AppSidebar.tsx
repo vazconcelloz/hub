@@ -1,4 +1,4 @@
-import { Home, GraduationCap, BookOpen, Target, FileSpreadsheet, Settings, LogOut, Moon, Sun, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Home, GraduationCap, BookOpen, Target, FileSpreadsheet, Settings, LogOut, Moon, Sun, PanelLeftClose, PanelLeftOpen, UserCog } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -15,16 +15,27 @@ import {
 } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/contexts/ThemeContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import logoHorizontal from "@/assets/logo-fbn-horizontal.png";
 import logoIcon from "@/assets/favicon-fbn.png";
 
-const items = [
+interface MenuItem {
+  title: string;
+  url: string;
+  icon: any;
+  exact?: boolean;
+  permission?: string;
+  adminOnly?: boolean;
+}
+
+const items: MenuItem[] = [
   { title: "Início", url: "/app", icon: Home, exact: true },
-  { title: "Treinamentos", url: "/app/treinamentos", icon: GraduationCap },
-  { title: "Manuais", url: "/app/manuais", icon: BookOpen },
-  { title: "Segmentações", url: "/app/segmentacoes", icon: Target },
-  { title: "Cotações", url: "/app/cotacoes", icon: FileSpreadsheet },
-  { title: "Configurações", url: "/app/configuracoes", icon: Settings },
+  { title: "Treinamentos", url: "/app/treinamentos", icon: GraduationCap, permission: "treinamentos.ver" },
+  { title: "Manuais", url: "/app/manuais", icon: BookOpen, permission: "manuais.ver" },
+  { title: "Segmentações", url: "/app/segmentacoes", icon: Target, permission: "segmentacoes.ver" },
+  { title: "Cotações", url: "/app/cotacoes", icon: FileSpreadsheet, permission: "cotacoes.ver" },
+  { title: "Usuários", url: "/app/usuarios", icon: UserCog, adminOnly: true },
+  { title: "Configurações", url: "/app/configuracoes", icon: Settings, permission: "configuracoes.ver" },
 ];
 
 export function AppSidebar() {
@@ -34,8 +45,16 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
 
+  const { has, isAdmin, loading: permLoading } = usePermissions();
+
   const isActive = (url: string, exact?: boolean) =>
     exact ? pathname === url : pathname === url || pathname.startsWith(url + "/");
+
+  const visibleItems = items.filter((it) => {
+    if (it.adminOnly) return isAdmin;
+    if (it.permission) return isAdmin || has(it.permission);
+    return true;
+  });
 
   // Na home (/app) a sidebar fica fixa, sem botão de recolher.
   // Em qualquer outra seção, o botão de recolher aparece.
@@ -69,7 +88,7 @@ export function AppSidebar() {
           {!collapsed && <SidebarGroupLabel className="text-[hsl(var(--hub-text-muted))]">Navegação</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => {
+              {visibleItems.map((item) => {
                 const active = isActive(item.url, item.exact);
                 return (
                   <SidebarMenuItem key={item.title}>

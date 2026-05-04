@@ -16,11 +16,13 @@ import PublicPropostaAutoPage from "./pages/PublicPropostaAutoPage";
 import LoginPage from "./pages/LoginPage";
 import HubLayout from "./components/HubLayout";
 import RequireAuth from "./components/RequireAuth";
+import RequirePermission from "./components/RequirePermission";
 import InicioPage from "./pages/InicioPage";
 import TreinamentosPage from "./pages/TreinamentosPage";
 import ManuaisPage from "./pages/ManuaisPage";
 import SegmentacoesPage from "./pages/SegmentacoesPage";
 import ConfiguracoesPage from "./pages/ConfiguracoesPage";
+import UsuariosPage from "./pages/UsuariosPage";
 
 const queryClient = new QueryClient();
 
@@ -46,23 +48,101 @@ const App = () => (
               }
             >
               <Route path="/app" element={<InicioPage />} />
-              <Route path="/app/treinamentos" element={<TreinamentosPage />} />
-              <Route path="/app/manuais" element={<ManuaisPage />} />
-              <Route path="/app/segmentacoes" element={<SegmentacoesPage />} />
-              <Route path="/app/cotacoes" element={<CotacoesIndexPage />} />
-              <Route path="/app/cotacoes/saude" element={<DashboardPage />} />
-              <Route path="/app/cotacoes/saude/proposta/:id" element={<PropostaFormPage />} />
-              <Route path="/app/cotacoes/saude/catalogo" element={<CatalogoPage />} />
+              <Route
+                path="/app/treinamentos"
+                element={
+                  <RequirePermission permission="treinamentos.ver">
+                    <TreinamentosPage />
+                  </RequirePermission>
+                }
+              />
+              <Route
+                path="/app/manuais"
+                element={
+                  <RequirePermission permission="manuais.ver">
+                    <ManuaisPage />
+                  </RequirePermission>
+                }
+              />
+              <Route
+                path="/app/segmentacoes"
+                element={
+                  <RequirePermission permission="segmentacoes.ver">
+                    <SegmentacoesPage />
+                  </RequirePermission>
+                }
+              />
+              <Route
+                path="/app/cotacoes"
+                element={
+                  <RequirePermission permission="cotacoes.ver">
+                    <CotacoesIndexPage />
+                  </RequirePermission>
+                }
+              />
+              <Route
+                path="/app/cotacoes/saude"
+                element={
+                  <RequirePermission permission="cotacoes.ver">
+                    <DashboardPage />
+                  </RequirePermission>
+                }
+              />
+              <Route
+                path="/app/cotacoes/saude/proposta/:id"
+                element={
+                  <RequirePermission permission="cotacoes.ver">
+                    <PropostaFormPage />
+                  </RequirePermission>
+                }
+              />
+              <Route
+                path="/app/cotacoes/saude/catalogo"
+                element={
+                  <RequirePermission permission="catalogo.ver">
+                    <CatalogoPage />
+                  </RequirePermission>
+                }
+              />
               <Route path="/app/cotacoes/saude/cotacao/:slug" element={<PublicPropostaPage />} />
               {/* Automóvel */}
-              <Route path="/app/cotacoes/automovel" element={<DashboardAutoPage />} />
-              <Route path="/app/cotacoes/automovel/proposta/:id" element={<PropostaAutoFormPage />} />
+              <Route
+                path="/app/cotacoes/automovel"
+                element={
+                  <RequirePermission permission="cotacoes.ver">
+                    <DashboardAutoPage />
+                  </RequirePermission>
+                }
+              />
+              <Route
+                path="/app/cotacoes/automovel/proposta/:id"
+                element={
+                  <RequirePermission permission="cotacoes.ver">
+                    <PropostaAutoFormPage />
+                  </RequirePermission>
+                }
+              />
               <Route path="/app/cotacoes/automovel/cotacao/:slug" element={<PublicPropostaAutoPage />} />
               {/* Compat: rotas antigas sem /saude */}
               <Route path="/app/cotacoes/proposta/:id" element={<RedirectPropostaLegacy />} />
               <Route path="/app/cotacoes/catalogo" element={<Navigate to="/app/cotacoes/saude/catalogo" replace />} />
               <Route path="/app/cotacoes/cotacao/:slug" element={<RedirectCotacaoSaudeLegacy />} />
-              <Route path="/app/configuracoes" element={<ConfiguracoesPage />} />
+              <Route
+                path="/app/usuarios"
+                element={
+                  <RequirePermission adminOnly>
+                    <UsuariosPage />
+                  </RequirePermission>
+                }
+              />
+              <Route
+                path="/app/configuracoes"
+                element={
+                  <RequirePermission permission="configuracoes.ver">
+                    <ConfiguracoesPage />
+                  </RequirePermission>
+                }
+              />
             </Route>
 
             {/* Redirects de compatibilidade */}
