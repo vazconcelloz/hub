@@ -88,7 +88,7 @@ export function AppSidebar() {
           {!collapsed && <SidebarGroupLabel className="text-[hsl(var(--hub-text-muted))]">Navegação</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => {
+              {visibleItems.map((item) => {
                 const active = isActive(item.url, item.exact);
                 return (
                   <SidebarMenuItem key={item.title}>
