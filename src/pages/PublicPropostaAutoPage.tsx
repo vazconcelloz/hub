@@ -226,7 +226,7 @@ export default function PublicPropostaAutoPage() {
 
   const enterEdit = () => {
     setDraft(cotacoes.map((c) => ({ ...c })));
-    setDraftCorRotulos(((proposta as any)?.cor_rotulos as string | null) ?? null);
+    setDraftCorRotulos(proposta?.cor_rotulos ?? null);
     setEditMode(true);
   };
   const cancelEdit = () => {
@@ -255,7 +255,7 @@ export default function PublicPropostaAutoPage() {
       // Salva preferências da proposta (cor da coluna de rótulos)
       const { error: propErr } = await supabase
         .from("propostas_auto")
-        .update({ cor_rotulos: draftCorRotulos } as any)
+        .update({ cor_rotulos: draftCorRotulos })
         .eq("id", proposta.id);
       if (propErr) throw propErr;
 
@@ -301,7 +301,7 @@ export default function PublicPropostaAutoPage() {
         setCotacoes([]);
       }
 
-      setProposta((p) => (p ? ({ ...p, cor_rotulos: draftCorRotulos } as any) : p));
+      setProposta((p) => (p ? { ...p, cor_rotulos: draftCorRotulos } : p));
       setEditMode(false);
       setDraft([]);
       toast({ title: "Alterações salvas!" });
@@ -388,10 +388,10 @@ export default function PublicPropostaAutoPage() {
   const view = editMode ? draft : cotacoes;
   const corRotulosAtiva = editMode
     ? draftCorRotulos
-    : ((proposta as any).cor_rotulos as string | null) ?? null;
+    : proposta.cor_rotulos ?? null;
   const rotuloCol = getColunaColor(corRotulosAtiva);
   const algumaTemPagamento = view.some(
-    (c) => parseFormasPagamento((c as any).formas_pagamento_detalhes).length > 0
+    (c) => parseFormasPagamento(c.formas_pagamento_detalhes).length > 0
   );
 
   // Render de uma c�lula edit�vel para um crit�rio + cota��o
@@ -420,14 +420,14 @@ export default function PublicPropostaAutoPage() {
 
   // ============== Editor de formas de pagamento (modo edit) ==============
   const FormasPagamentoEditor = ({ c }: { c: AutoCotacao }) => {
-    const lista = parseFormasPagamento((c as any).formas_pagamento_detalhes);
+    const lista = parseFormasPagamento(c.formas_pagamento_detalhes);
     const atual = lista.length > 0 ? lista : FORMA_PADRAO;
     const update = (next: FormaPagamento[]) => {
       const limpos = next.filter((d) => d.tipo.trim() || d.descricao.trim());
       updateDraft(
         c.id,
-        "formas_pagamento_detalhes" as any,
-        limpos.length > 0 ? (limpos as any) : null
+        "formas_pagamento_detalhes",
+        limpos.length > 0 ? limpos : null
       );
     };
     return (
@@ -494,7 +494,7 @@ export default function PublicPropostaAutoPage() {
 
   // Lista visual (read-only) das formas de pagamento de UMA seguradora
   const FormasPagamentoList = ({ c }: { c: AutoCotacao }) => {
-    const lista = parseFormasPagamento((c as any).formas_pagamento_detalhes);
+    const lista = parseFormasPagamento(c.formas_pagamento_detalhes);
     if (lista.length === 0) {
       return <span className="text-muted-foreground text-xs">—</span>;
     }
@@ -540,35 +540,35 @@ export default function PublicPropostaAutoPage() {
                 <Car className="w-4 h-4" /> {proposta.veiculo_marca_modelo}
               </span>
             )}
-            {(proposta as any).tipo_cotacao && (
+            {proposta.tipo_cotacao && (
               <span className="flex items-center gap-1">
                 <RefreshCw className="w-4 h-4" />
                 {{
                   novo: "Seguro novo",
                   renovacao_congenere: "Renovação congênere",
                   renovacao_mesma: "Renovação mesma seguradora",
-                }[(proposta as any).tipo_cotacao as string] || (proposta as any).tipo_cotacao}
+                }[proposta.tipo_cotacao as string] || proposta.tipo_cotacao}
               </span>
             )}
-            {((proposta as any).vigencia_inicio || (proposta as any).vigencia_fim) && (
+            {(proposta.vigencia_inicio || proposta.vigencia_fim) && (
               <span className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
                 Vigência{" "}
-                {(proposta as any).vigencia_inicio
-                  ? format(new Date((proposta as any).vigencia_inicio), "dd/MM/yyyy", { locale: ptBR })
+                {proposta.vigencia_inicio
+                  ? format(new Date(proposta.vigencia_inicio), "dd/MM/yyyy", { locale: ptBR })
                   : "—"}
                 {" → "}
-                {(proposta as any).vigencia_fim
-                  ? format(new Date((proposta as any).vigencia_fim), "dd/MM/yyyy", { locale: ptBR })
+                {proposta.vigencia_fim
+                  ? format(new Date(proposta.vigencia_fim), "dd/MM/yyyy", { locale: ptBR })
                   : "—"}
               </span>
             )}
-            {(proposta as any).cep_pernoite && (
+            {proposta.cep_pernoite && (
               <span className="flex items-center gap-1">
-                <MapPin className="w-4 h-4" /> CEP pernoite {(proposta as any).cep_pernoite}
+                <MapPin className="w-4 h-4" /> CEP pernoite {proposta.cep_pernoite}
               </span>
             )}
-            {(proposta as any).condutor_18_26 && (
+            {proposta.condutor_18_26 && (
               <span className="flex items-center gap-1">
                 <UserCheck className="w-4 h-4" /> Condutor 18–26 anos
               </span>
@@ -842,8 +842,8 @@ export default function PublicPropostaAutoPage() {
                             <FormasPagamentoList c={c} />
                           ) : (
                             <span className="text-muted-foreground/60 text-xs">
-                              {parseFormasPagamento((c as any).formas_pagamento_detalhes).length || "—"}
-                              {parseFormasPagamento((c as any).formas_pagamento_detalhes).length > 0 && " opções"}
+                              {parseFormasPagamento(c.formas_pagamento_detalhes).length || "—"}
+                              {parseFormasPagamento(c.formas_pagamento_detalhes).length > 0 && " opções"}
                             </span>
                           )}
                         </td>

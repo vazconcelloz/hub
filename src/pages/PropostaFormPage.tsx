@@ -92,7 +92,7 @@ export default function PropostaFormPage() {
       validade_proposta: proposta.validade_proposta || "",
       observacoes_gerais: proposta.observacoes_gerais || "",
       status: proposta.status,
-      idades_beneficiarios: (proposta as any).idades_beneficiarios || "",
+      idades_beneficiarios: proposta.idades_beneficiarios || "",
     });
 
     const { data: ops } = await supabase
@@ -116,10 +116,10 @@ export default function PropostaFormPage() {
         destaque_comercial: op.destaque_comercial || "",
         ordem_exibicao: op.ordem_exibicao,
         pdf_url: op.pdf_url || "",
-        faixas_etarias: (op as any).faixas_etarias || "",
-        previsao_reajuste_faixa: (op as any).previsao_reajuste_faixa || "",
-        cor_coluna: (op as any).cor_coluna || "",
-        grupo_soma: (op as any).grupo_soma || "",
+        faixas_etarias: op.faixas_etarias || "",
+        previsao_reajuste_faixa: op.previsao_reajuste_faixa || "",
+        cor_coluna: op.cor_coluna || "",
+        grupo_soma: op.grupo_soma || "",
       })));
     }
   };
@@ -148,7 +148,7 @@ export default function PropostaFormPage() {
 
   const updateOperadora = (index: number, field: string, value: string | number) => {
     const updated = [...operadoras];
-    (updated[index] as any)[field] = value;
+    (updated[index] as Record<string, string | number | File | undefined>)[field] = value;
     
     // Recalculate if faixas_etarias changed
     if (field === "faixas_etarias" && form.idades_beneficiarios) {
@@ -377,7 +377,7 @@ export default function PropostaFormPage() {
           previsao_reajuste_faixa: op.previsao_reajuste_faixa || null,
           cor_coluna: op.cor_coluna || null,
           grupo_soma: op.grupo_soma?.trim() || null,
-        } as any);
+        });
       }
 
       toast({ title: isEdit ? "Proposta atualizada!" : "Proposta criada!" });

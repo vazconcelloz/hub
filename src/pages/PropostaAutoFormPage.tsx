@@ -101,11 +101,11 @@ export default function PropostaAutoFormPage() {
       validade_proposta: p.validade_proposta || "",
       observacoes_gerais: p.observacoes_gerais || "",
       status: p.status,
-      tipo_cotacao: (p as any).tipo_cotacao || "",
-      vigencia_inicio: (p as any).vigencia_inicio || "",
-      vigencia_fim: (p as any).vigencia_fim || "",
-      cep_pernoite: (p as any).cep_pernoite || "",
-      condutor_18_26: !!(p as any).condutor_18_26,
+      tipo_cotacao: p.tipo_cotacao || "",
+      vigencia_inicio: p.vigencia_inicio || "",
+      vigencia_fim: p.vigencia_fim || "",
+      cep_pernoite: p.cep_pernoite || "",
+      condutor_18_26: !!p.condutor_18_26,
     });
     const { data: cs } = await supabase
       .from("proposta_auto_seguradoras")
@@ -131,11 +131,11 @@ export default function PropostaAutoFormPage() {
         carro_reserva: c.carro_reserva || "",
         parcelamento: c.parcelamento || "",
         formas_pagamento: c.formas_pagamento || "",
-        formas_pagamento_detalhes: Array.isArray((c as any).formas_pagamento_detalhes)
-          ? (c as any).formas_pagamento_detalhes
+        formas_pagamento_detalhes: Array.isArray(c.formas_pagamento_detalhes)
+          ? c.formas_pagamento_detalhes as { tipo: string; descricao: string }[]
           : null,
         destaque_comercial: c.destaque_comercial || "",
-        cor_coluna: (c as any).cor_coluna || "",
+        cor_coluna: c.cor_coluna || "",
         ordem_exibicao: c.ordem_exibicao,
       })));
     }
