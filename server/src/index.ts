@@ -35,12 +35,23 @@ app.use('/api/functions', functionsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/setores', setoresRouter);
 
+// Serve the React frontend static files
+app.use(express.static(path.join(__dirname, '../../dist')));
+
 // Swagger Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// React Router fallback
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ error: 'Endpoint não encontrado' });
+  }
+  res.sendFile(path.join(__dirname, '../../dist/index.html'));
 });
 
 // Importante: O Error Handler DEVE ser o último middleware a ser usado!
