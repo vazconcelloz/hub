@@ -55,7 +55,7 @@ app.get('/health', (req, res) => {
 });
 
 // React Router fallback
-app.get('(.*)', (req, res) => {
+app.get('*all', (req, res) => {
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ error: 'Endpoint não encontrado' });
   }
