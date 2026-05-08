@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { db } from "@/lib/db";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Settings2 } from "lucide-react";
+import { Search, Settings2, Loader2 } from "lucide-react";
+import { useUsuarios } from "@/hooks/useUsuarios";
 
 interface UserRow {
   user_id: string;
@@ -19,91 +20,73 @@ interface UserRow {
   setor_ids: string[];
 }
 
-interface Setor { id: string; nome: string; }
-interface Permissao { chave: string; nome: string; modulo: string; }
-
 export default function UsuariosTab() {
   const { toast } = useToast();
-  const [users, setUsers] = useState<UserRow[]>([]);
-  const [setores, setSetores] = useState<Setor[]>([]);
-  const [permissoes, setPermissoes] = useState<Permissao[]>([]);
+  const { data, isLoading, changeRole, toggleSetor, saveOverride } = useUsuarios();
+  
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<UserRow | null>(null);
   const [overrides, setOverrides] = useState<Record<string, boolean | null>>({});
 
-  const load = async () => {
-    const [{ data: profs }, { data: roles }, { data: us }, { data: sts }, { data: perms }] = await Promise.all([
-      supabase.from("profiles").select("user_id, email, display_name"),
-      supabase.from("user_roles").select("user_id, role"),
-      supabase.from("user_setores").select("user_id, setor_id"),
-      supabase.from("setores").select("id, nome").order("nome"),
-      supabase.from("permissoes").select("chave, nome, modulo").order("modulo"),
-    ]);
-
-    const rows: UserRow[] = (profs ?? []).map((p) => ({
-      user_id: p.user_id,
-      email: p.email ?? "",
-      display_name: p.display_name ?? "",
-      role: ((roles ?? []).find((r) => r.user_id === p.user_id)?.role as any) ?? "user",
-      setor_ids: (us ?? []).filter((u) => u.user_id === p.user_id).map((u) => u.setor_id),
-    }));
-    setUsers(rows);
-    setSetores(sts ?? []);
-    setPermissoes(perms ?? []);
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const changeRole = async (user_id: string, role: "admin" | "user") => {
-    await supabase.from("user_roles").delete().eq("user_id", user_id);
-    const { error } = await supabase.from("user_roles").insert({ user_id, role });
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else { toast({ title: "Role atualizada" }); load(); }
-  };
-
-  const toggleSetor = async (user_id: string, setor_id: string, checked: boolean) => {
-    if (checked) {
-      await supabase.from("user_setores").insert({ user_id, setor_id });
-    } else {
-      await supabase.from("user_setores").delete().eq("user_id", user_id).eq("setor_id", setor_id);
+  const handleRoleChange = async (user_id: string, role: "admin" | "user") => {
+    try {
+      await changeRole({ userId: user_id, role });
+      toast({ title: "Role atualizada" });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
     }
-    load();
+  };
+
+  const handleToggleSetor = async (user_id: string, setor_id: string, checked: boolean) => {
+    try {
+      await toggleSetor({ userId: user_id, setorId: setor_id, checked });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    }
   };
 
   const openOverrides = async (u: UserRow) => {
     setEditing(u);
-    const { data } = await supabase
+    const { data } = await db
       .from("user_permissoes")
       .select("permissao_chave, concedida")
       .eq("user_id", u.user_id);
     const map: Record<string, boolean | null> = {};
-    data?.forEach((d) => { map[d.permissao_chave] = d.concedida; });
+    data?.forEach((d: any) => { map[d.permissao_chave] = d.concedida; });
     setOverrides(map);
   };
 
-  const saveOverride = async (chave: string, value: boolean | null) => {
+  const handleSaveOverride = async (chave: string, value: boolean | null) => {
     if (!editing) return;
-    if (value === null) {
-      await supabase.from("user_permissoes").delete()
-        .eq("user_id", editing.user_id).eq("permissao_chave", chave);
-    } else {
-      await supabase.from("user_permissoes").upsert(
-        { user_id: editing.user_id, permissao_chave: chave, concedida: value },
-        { onConflict: "user_id,permissao_chave" }
-      );
+    try {
+      await saveOverride({ userId: editing.user_id, chave, value });
+      setOverrides({ ...overrides, [chave]: value });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
     }
-    setOverrides({ ...overrides, [chave]: value });
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center p-8">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const users = data?.rows || [];
+  const setores = data?.setores || [];
+  const permissoes = data?.permissoes || [];
 
   const filtered = users.filter((u) =>
     !search || u.email.toLowerCase().includes(search.toLowerCase()) ||
     u.display_name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const permsByModulo = permissoes.reduce((acc, p) => {
+  const permsByModulo = permissoes.reduce((acc: any, p: any) => {
     (acc[p.modulo] = acc[p.modulo] || []).push(p);
     return acc;
-  }, {} as Record<string, Permissao[]>);
+  }, {} as Record<string, any[]>);
 
   return (
     <div className="space-y-4">
@@ -132,7 +115,7 @@ export default function UsuariosTab() {
                 {u.setor_ids.length > 0 && (
                   <div className="flex gap-1 flex-wrap mt-1">
                     {u.setor_ids.map((sid) => {
-                      const s = setores.find((x) => x.id === sid);
+                      const s = setores.find((x: any) => x.id === sid);
                       return s ? <Badge key={sid} variant="outline" className="text-xs">{s.nome}</Badge> : null;
                     })}
                   </div>
@@ -140,7 +123,7 @@ export default function UsuariosTab() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <Select value={u.role} onValueChange={(v) => changeRole(u.user_id, v as any)}>
+                <Select value={u.role} onValueChange={(v) => handleRoleChange(u.user_id, v as any)}>
                   <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="user">Usuário</SelectItem>
@@ -162,13 +145,13 @@ export default function UsuariosTab() {
                       <div>
                         <Label className="text-sm font-semibold mb-2 block">Setores</Label>
                         <div className="grid grid-cols-2 gap-2">
-                          {setores.map((s) => (
+                          {setores.map((s: any) => (
                             <label key={s.id} className="flex items-center gap-2 text-sm">
                               <Checkbox
                                 checked={editing?.setor_ids.includes(s.id)}
                                 onCheckedChange={(c) => {
                                   if (!editing) return;
-                                  toggleSetor(editing.user_id, s.id, !!c);
+                                  handleToggleSetor(editing.user_id, s.id, !!c);
                                   setEditing({
                                     ...editing,
                                     setor_ids: c
@@ -196,7 +179,7 @@ export default function UsuariosTab() {
                           <div key={modulo} className="mb-3">
                             <p className="text-xs font-medium uppercase text-muted-foreground mb-1">{modulo}</p>
                             <div className="space-y-1">
-                              {perms.map((p) => {
+                              {perms.map((p: any) => {
                                 const v = overrides[p.chave];
                                 return (
                                   <div key={p.chave} className="flex items-center justify-between text-sm border rounded px-2 py-1">
@@ -204,8 +187,8 @@ export default function UsuariosTab() {
                                     <Select
                                       value={v === undefined ? "herdado" : v ? "conceder" : "revogar"}
                                       onValueChange={(val) => {
-                                        if (val === "herdado") saveOverride(p.chave, null);
-                                        else saveOverride(p.chave, val === "conceder");
+                                        if (val === "herdado") handleSaveOverride(p.chave, null);
+                                        else handleSaveOverride(p.chave, val === "conceder");
                                       }}
                                     >
                                       <SelectTrigger className="w-32 h-7 text-xs"><SelectValue /></SelectTrigger>
@@ -236,3 +219,4 @@ export default function UsuariosTab() {
     </div>
   );
 }
+

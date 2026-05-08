@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -89,7 +89,7 @@ export default function PropostaAutoFormPage() {
   }, [id]);
 
   const load = async () => {
-    const { data: p } = await supabase.from("propostas_auto").select("*").eq("id", id!).single();
+    const { data: p } = await db.from("propostas_auto").select("*").eq("id", id!).single();
     if (!p) { navigate("/app/cotacoes/automovel"); return; }
     setForm({
       nome_cliente: p.nome_cliente || "",
@@ -107,7 +107,7 @@ export default function PropostaAutoFormPage() {
       cep_pernoite: p.cep_pernoite || "",
       condutor_18_26: !!p.condutor_18_26,
     });
-    const { data: cs } = await supabase
+    const { data: cs } = await db
       .from("proposta_auto_seguradoras")
       .select("*")
       .eq("proposta_id", id!)
@@ -150,7 +150,7 @@ export default function PropostaAutoFormPage() {
         r.onerror = reject;
         r.readAsDataURL(file);
       });
-      const { data, error } = await supabase.functions.invoke("extract-auto-pdf", {
+      const { data, error } = await db.functions.invoke("extract-auto-pdf", {
         body: { pdf_base64: base64 },
       });
       if (error) throw error;
@@ -218,7 +218,7 @@ export default function PropostaAutoFormPage() {
     }
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await db.auth.getUser();
       const payload = {
         ...form,
         validade_proposta: form.validade_proposta || null,
@@ -229,10 +229,10 @@ export default function PropostaAutoFormPage() {
 
       let propostaId = id;
       if (isEdit) {
-        const { error } = await supabase.from("propostas_auto").update(payload).eq("id", id!);
+        const { error } = await db.from("propostas_auto").update(payload).eq("id", id!);
         if (error) throw error;
       } else {
-        const { data: nova, error } = await supabase
+        const { data: nova, error } = await db
           .from("propostas_auto")
           .insert({ ...payload, slug: generateSlug() })
           .select()
@@ -242,7 +242,7 @@ export default function PropostaAutoFormPage() {
       }
 
       // sync cards: deleta existentes e re-insere
-      if (isEdit) await supabase.from("proposta_auto_seguradoras").delete().eq("proposta_id", propostaId!);
+      if (isEdit) await db.from("proposta_auto_seguradoras").delete().eq("proposta_id", propostaId!);
 
       if (cards.length) {
         const rows = cards.map((c, i) => ({
@@ -270,7 +270,7 @@ export default function PropostaAutoFormPage() {
           cor_coluna: c.cor_coluna || null,
           ordem_exibicao: i + 1,
         }));
-        const { error } = await supabase.from("proposta_auto_seguradoras").insert(rows);
+        const { error } = await db.from("proposta_auto_seguradoras").insert(rows);
         if (error) throw error;
       }
 

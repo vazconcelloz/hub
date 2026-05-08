@@ -1,4 +1,4 @@
-import { Tables, TablesInsert } from "@/integrations/supabase/types";
+import { Tables, TablesInsert } from "@/types/database";
 import { generateSlug, formatCurrency, STATUS_LABELS, STATUS_COLORS } from "@/lib/proposal-utils";
 
 export type PropostaAuto = Tables<"propostas_auto">;

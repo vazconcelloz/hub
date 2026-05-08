@@ -1,1 +1,0 @@
-ALTER TABLE public.propostas ADD COLUMN IF NOT EXISTS cores_rotulos jsonb;

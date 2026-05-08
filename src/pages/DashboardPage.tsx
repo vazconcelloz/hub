@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { Proposta, STATUS_LABELS, STATUS_COLORS } from "@/lib/proposal-utils";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,7 @@ export default function DashboardPage() {
   }, []);
 
   const fetchPropostas = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("propostas")
       .select("*")
       .order("created_at", { ascending: false });
@@ -48,7 +48,7 @@ export default function DashboardPage() {
   const duplicarProposta = async (proposta: Proposta) => {
     const { generateSlug } = await import("@/lib/proposal-utils");
     const newSlug = generateSlug();
-    const { data: newProposta, error } = await supabase
+    const { data: newProposta, error } = await db
       .from("propostas")
       .insert({
         nome_cliente: proposta.nome_cliente + " (cópia)",
@@ -74,13 +74,13 @@ export default function DashboardPage() {
     }
 
     // Copy operadoras
-    const { data: ops } = await supabase
+    const { data: ops } = await db
       .from("proposta_operadoras")
       .select("*")
       .eq("proposta_id", proposta.id);
 
     if (ops && ops.length > 0 && newProposta) {
-      await supabase.from("proposta_operadoras").insert(
+      await db.from("proposta_operadoras").insert(
         ops.map((op) => ({
           proposta_id: newProposta.id,
           operadora_nome: op.operadora_nome,
@@ -105,7 +105,7 @@ export default function DashboardPage() {
 
   const deleteProposta = async (id: string) => {
     if (!confirm("Tem certeza que deseja excluir esta proposta?")) return;
-    const { error } = await supabase.from("propostas").delete().eq("id", id);
+    const { error } = await db.from("propostas").delete().eq("id", id);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
@@ -115,7 +115,7 @@ export default function DashboardPage() {
   };
 
   const markAsViewed = async (id: string) => {
-    await supabase.from("propostas").update({ status: "visualizada" }).eq("id", id);
+    await db.from("propostas").update({ status: "visualizada" }).eq("id", id);
     toast({ title: "Status atualizado" });
     fetchPropostas();
   };

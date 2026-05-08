@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
+import logoHorizontal from "@/assets/logo-fbn-horizontal.png";
 
 const ALLOWED_DOMAIN = "@grupofbn.com.br";
 
@@ -27,16 +27,33 @@ const credentialsSchema = z.object({
 export default function LoginPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [tab, setTab] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    db.auth.getSession().then(({ data }) => {
       if (data.session) navigate("/app", { replace: true });
     });
   }, [navigate]);
+
+  useEffect(() => {
+    // Força o modo claro exclusivamente na tela de login
+    const root = document.documentElement;
+    const isDark = root.classList.contains("dark");
+    
+    if (isDark) {
+      root.classList.remove("dark");
+    }
+    
+    // Restaura o modo escuro ao sair da tela de login (caso o usuário usasse)
+    return () => {
+      if (isDark) {
+        root.classList.add("dark");
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,20 +64,9 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
-      if (tab === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email: parsed.data.email, password: parsed.data.password });
-        if (error) throw error;
-        navigate("/app", { replace: true });
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email: parsed.data.email,
-          password: parsed.data.password,
-          options: { emailRedirectTo: `${window.location.origin}/app` },
-        });
-        if (error) throw error;
-        toast({ title: "Conta criada!", description: "Você já pode entrar." });
-        setTab("login");
-      }
+      const { error } = await db.auth.signInWithPassword({ email: parsed.data.email, password: parsed.data.password });
+      if (error) throw error;
+      navigate("/app", { replace: true });
     } catch (err: any) {
       const msg = err?.message || "Erro ao autenticar";
       const friendly = msg.includes("grupofbn.com.br") ? `Apenas e-mails ${ALLOWED_DOMAIN} são permitidos.` : msg;
@@ -70,92 +76,81 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogle = async () => {
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/app` },
-    });
-    if (error) {
-      toast({ title: "Falha no Google", description: error.message, variant: "destructive" });
-      setLoading(false);
-    }
-  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--hub-bg))] px-4">
-      <Card className="w-full max-w-md p-8 bg-[hsl(var(--hub-surface))] border-[hsl(var(--hub-border))] shadow-lg">
-        <div className="flex flex-col items-center mb-6">
-          <div className="w-14 h-14 rounded-xl bg-[hsl(var(--hub-primary))] text-[hsl(var(--hub-primary-foreground))] flex items-center justify-center font-bold text-lg mb-3">
-            FBN
+    <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--hub-background))] relative overflow-hidden px-4">
+      {/* Premium Background Effects */}
+      <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-[hsl(var(--hub-primary))] opacity-[0.15] blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-blue-600 opacity-10 blur-[100px] pointer-events-none" />
+
+      <div className="w-full max-w-[420px] relative z-10 animate-in fade-in zoom-in-95 duration-700">
+        <Card className="p-8 sm:p-10 bg-[hsl(var(--hub-surface))]/90 backdrop-blur-xl border-[hsl(var(--hub-border))]/50 shadow-2xl rounded-3xl">
+          <div className="flex flex-col items-center mb-8">
+            <img 
+              src={logoHorizontal} 
+              alt="Grupo FBN" 
+              className="h-20 sm:h-24 w-auto object-contain mb-6 drop-shadow-md transition-transform duration-500 hover:scale-105" 
+            />
+            <div className="flex items-center gap-3">
+              <span className="h-px w-8 bg-gradient-to-r from-transparent to-[hsl(var(--hub-border))]" />
+              <p className="text-[11px] font-bold text-[hsl(var(--hub-text-muted))] uppercase tracking-[0.2em]">
+                Acesso Corporativo
+              </p>
+              <span className="h-px w-8 bg-gradient-to-l from-transparent to-[hsl(var(--hub-border))]" />
+            </div>
           </div>
-          <h1 className="text-xl font-semibold text-[hsl(var(--hub-text))]">Hub Grupo FBN</h1>
-          <p className="text-sm text-[hsl(var(--hub-text-muted))]">Acesso restrito a colaboradores</p>
-        </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
-          <TabsList className="grid grid-cols-2 w-full mb-4">
-            <TabsTrigger value="login">Entrar</TabsTrigger>
-            <TabsTrigger value="signup">Criar conta</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value={tab}>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="email">E-mail corporativo</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder={`voce${ALLOWED_DOMAIN}`}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">Senha</Label>
+          <form onSubmit={handleSubmit} className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-xs font-semibold text-[hsl(var(--hub-text-muted))] uppercase tracking-wider ml-1">
+                E-mail corporativo
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder={`voce${ALLOWED_DOMAIN}`}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                className="h-12 bg-[hsl(var(--hub-background))]/50 border-[hsl(var(--hub-border))] focus-visible:ring-[hsl(var(--hub-primary))] rounded-xl px-4 transition-all"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-xs font-semibold text-[hsl(var(--hub-text-muted))] uppercase tracking-wider ml-1">
+                Senha
+              </Label>
+              <div className="relative">
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  autoComplete={tab === "login" ? "current-password" : "new-password"}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  className="h-12 bg-[hsl(var(--hub-background))]/50 border-[hsl(var(--hub-border))] focus-visible:ring-[hsl(var(--hub-primary))] rounded-xl px-4 pr-12 transition-all tracking-widest placeholder:tracking-normal"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[hsl(var(--hub-text-muted))] hover:text-[hsl(var(--hub-text))] transition-colors p-1"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-[hsl(var(--hub-primary))] hover:bg-[hsl(var(--hub-primary-hover))] text-[hsl(var(--hub-primary-foreground))]"
-              >
-                {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {tab === "login" ? "Entrar" : "Criar conta"}
-              </Button>
-            </form>
-
-            <div className="my-4 flex items-center gap-2">
-              <div className="flex-1 h-px bg-[hsl(var(--hub-border))]" />
-              <span className="text-xs text-[hsl(var(--hub-text-muted))]">ou</span>
-              <div className="flex-1 h-px bg-[hsl(var(--hub-border))]" />
             </div>
-
             <Button
-              type="button"
-              variant="outline"
-              className="w-full border-[hsl(var(--hub-border))]"
-              onClick={handleGoogle}
+              type="submit"
               disabled={loading}
+              className="w-full h-12 mt-2 bg-gradient-to-r from-[hsl(var(--hub-primary))] to-blue-600 hover:from-[hsl(var(--hub-primary-hover))] hover:to-blue-700 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
             >
-              Continuar com Google
+              {loading && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
+              Acessar Plataforma
             </Button>
-
-            <p className="text-xs text-center text-[hsl(var(--hub-text-muted))] mt-4">
-              Apenas e-mails <strong>{ALLOWED_DOMAIN}</strong> são permitidos.
-            </p>
-          </TabsContent>
-        </Tabs>
-      </Card>
+          </form>
+        </Card>
+      </div>
     </div>
   );
 }

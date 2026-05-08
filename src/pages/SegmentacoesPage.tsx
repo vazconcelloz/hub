@@ -1,124 +1,162 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Target, Send, Download, Bot, User, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Target, Trash2, Pencil } from "lucide-react";
 
-type Segmentacao = {
+type Message = {
   id: string;
-  nome: string;
-  descricao: string | null;
-  criterios: any;
-  total_contatos: number;
-  criado_por: string | null;
-  updated_at: string;
+  role: "user" | "bot";
+  content: string;
+  fileUrl?: string;
+  fileName?: string;
 };
 
 export default function SegmentacoesPage() {
   const { toast } = useToast();
-  const [items, setItems] = useState<Segmentacao[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<Segmentacao | null>(null);
-  const [form, setForm] = useState({ nome: "", descricao: "", criterios: "{}", total_contatos: 0 });
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "welcome",
+      role: "bot",
+      content: "Olá! Descreva qual segmento de clientes você deseja exportar. (Ex: 'Clientes que tem consorcio')"
+    }
+  ]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const endRef = useRef<HTMLDivElement>(null);
 
-  const load = async () => {
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const sendMessage = async () => {
+    if (!input.trim()) return;
+    
+    const userMsg: Message = { id: Date.now().toString(), role: "user", content: input.trim() };
+    setMessages(prev => [...prev, userMsg]);
+    setInput("");
     setLoading(true);
-    const { data } = await supabase.from("segmentacoes").select("*").order("updated_at", { ascending: false });
-    setItems((data as Segmentacao[]) || []);
-    setLoading(false);
-  };
-  useEffect(() => { load(); }, []);
 
-  const openNew = () => { setEditing(null); setForm({ nome: "", descricao: "", criterios: "{}", total_contatos: 0 }); setOpen(true); };
-  const openEdit = (s: Segmentacao) => {
-    setEditing(s);
-    setForm({ nome: s.nome, descricao: s.descricao ?? "", criterios: JSON.stringify(s.criterios ?? {}, null, 2), total_contatos: s.total_contatos });
-    setOpen(true);
-  };
+    try {
+      const token = localStorage.getItem('hub_token');
+      const response = await fetch('http://localhost:3001/api/segment/export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ question: userMsg.content })
+      });
 
-  const save = async () => {
-    if (!form.nome.trim()) { toast({ title: "Nome obrigatório", variant: "destructive" }); return; }
-    let criterios: any = {};
-    try { criterios = JSON.parse(form.criterios || "{}"); } catch { toast({ title: "Critérios inválidos (JSON)", variant: "destructive" }); return; }
-    const { data: userData } = await supabase.auth.getUser();
-    const payload: any = { nome: form.nome.trim(), descricao: form.descricao || null, criterios, total_contatos: form.total_contatos };
-    if (!editing) payload.criado_por = userData.user?.id;
-    const { error } = editing
-      ? await supabase.from("segmentacoes").update(payload).eq("id", editing.id)
-      : await supabase.from("segmentacoes").insert(payload);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: editing ? "Atualizado" : "Criado" });
-    setOpen(false);
-    load();
-  };
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || "Erro ao gerar segmentação na API externa.");
+      }
 
-  const remove = async (id: string) => {
-    if (!confirm("Excluir segmentação?")) return;
-    await supabase.from("segmentacoes").delete().eq("id", id);
-    load();
+      const json = await response.json();
+      const url = json.downloadUrl;
+      const fileName = json.fileName;
+      
+      console.log("Baixando pela nova rota oficial Express:", url);
+
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        role: "bot",
+        content: "Sua planilha de segmentação está pronta! O download deve iniciar automaticamente, ou clique abaixo:",
+        fileUrl: url,
+        fileName
+      }]);
+      
+      // Abre a rota oficial de download no próprio navegador, garantindo compatibilidade 100%
+      window.location.href = url;
+      
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        role: "bot",
+        content: "Houve um erro ao tentar gerar a planilha. Por favor, tente novamente."
+      }]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-7xl mx-auto">
-      <header className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-[hsl(var(--hub-text))]">Segmentações</h1>
-          <p className="text-sm text-[hsl(var(--hub-text-muted))]">Listas e campanhas segmentadas de contatos.</p>
-        </div>
-        <Button onClick={openNew} className="bg-[hsl(var(--hub-primary))] hover:bg-[hsl(var(--hub-primary-hover))] text-[hsl(var(--hub-primary-foreground))]">
-          <Plus className="w-4 h-4 mr-1" /> Nova segmentação
-        </Button>
+    <div className="flex flex-col h-[calc(100vh-64px)] max-w-5xl mx-auto p-4 md:p-6">
+      <header className="mb-4">
+        <h1 className="text-2xl font-semibold text-[hsl(var(--hub-text))] flex items-center gap-2">
+          <Target className="w-6 h-6 text-[hsl(var(--hub-primary))]" />
+          Assistente de Segmentação
+        </h1>
+        <p className="text-sm text-[hsl(var(--hub-text-muted))]">
+          Solicite planilhas segmentadas via chat e baixe em Excel instantaneamente.
+        </p>
       </header>
 
-      {loading ? (
-        <p className="text-[hsl(var(--hub-text-muted))]">Carregando…</p>
-      ) : items.length === 0 ? (
-        <Card className="p-12 text-center border-dashed border-[hsl(var(--hub-border))] bg-[hsl(var(--hub-surface))]">
-          <Target className="w-10 h-10 mx-auto text-[hsl(var(--hub-text-muted))] mb-3" />
-          <p className="text-[hsl(var(--hub-text))] font-medium">Nenhuma segmentação ainda</p>
-          <p className="text-sm text-[hsl(var(--hub-text-muted))] mb-4">Crie a primeira lista segmentada.</p>
-          <Button onClick={openNew} variant="outline">Adicionar segmentação</Button>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {items.map((s) => (
-            <Card key={s.id} className="p-5 border-[hsl(var(--hub-border))] bg-[hsl(var(--hub-surface))]">
-              <h3 className="font-semibold text-[hsl(var(--hub-text))]">{s.nome}</h3>
-              {s.descricao && <p className="text-sm text-[hsl(var(--hub-text-muted))] mt-1 line-clamp-2">{s.descricao}</p>}
-              <p className="text-xs text-[hsl(var(--hub-text-muted))] mt-3">{s.total_contatos} contatos</p>
-              <div className="flex gap-2 mt-4">
-                <Button size="sm" variant="outline" onClick={() => openEdit(s)}><Pencil className="w-3 h-3 mr-1" /> Editar</Button>
-                <Button size="sm" variant="ghost" onClick={() => remove(s.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+      <div className="flex-1 overflow-y-auto bg-[hsl(var(--hub-surface))] border border-[hsl(var(--hub-border))] rounded-t-xl p-4 md:p-6 space-y-6">
+        {messages.map(msg => (
+          <div key={msg.id} className={`flex gap-4 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+              msg.role === "user" ? "bg-[hsl(var(--hub-primary))] text-white" : "bg-[hsl(var(--hub-surface-muted))] text-[hsl(var(--hub-text))]"
+            }`}>
+              {msg.role === "user" ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
+            </div>
+            
+            <div className={`flex flex-col gap-2 max-w-[80%] ${msg.role === "user" ? "items-end" : "items-start"}`}>
+              <div className={`p-4 rounded-2xl ${
+                msg.role === "user" 
+                  ? "bg-[hsl(var(--hub-primary))] text-white rounded-tr-sm" 
+                  : "bg-[hsl(var(--hub-background))] border border-[hsl(var(--hub-border))] text-[hsl(var(--hub-text))] rounded-tl-sm"
+              }`}>
+                {msg.content}
               </div>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{editing ? "Editar" : "Nova"} segmentação</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div><Label>Nome *</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
-            <div><Label>Descrição</Label><Textarea value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} rows={2} /></div>
-            <div><Label>Total de contatos</Label><Input type="number" value={form.total_contatos} onChange={(e) => setForm({ ...form, total_contatos: Number(e.target.value) })} /></div>
-            <div>
-              <Label>Critérios (JSON)</Label>
-              <Textarea value={form.criterios} onChange={(e) => setForm({ ...form, criterios: e.target.value })} rows={5} className="font-mono text-xs" />
+              
+              {msg.fileUrl && (
+                <a 
+                  href={msg.fileUrl} 
+                  download={msg.fileName}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  {msg.fileName}
+                </a>
+              )}
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={save} className="bg-[hsl(var(--hub-primary))] text-[hsl(var(--hub-primary-foreground))]">Salvar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        ))}
+        {loading && (
+          <div className="flex gap-4 flex-row">
+            <div className="w-10 h-10 rounded-full bg-[hsl(var(--hub-surface-muted))] text-[hsl(var(--hub-text))] flex items-center justify-center shrink-0">
+              <Bot className="w-5 h-5" />
+            </div>
+            <div className="p-4 rounded-2xl bg-[hsl(var(--hub-background))] border border-[hsl(var(--hub-border))] rounded-tl-sm flex items-center gap-2 text-[hsl(var(--hub-text-muted))]">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Gerando planilha (pode levar alguns segundos)...
+            </div>
+          </div>
+        )}
+        <div ref={endRef} />
+      </div>
+
+      <div className="bg-[hsl(var(--hub-surface))] border-x border-b border-[hsl(var(--hub-border))] p-4 rounded-b-xl flex gap-2">
+        <Input 
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          placeholder="Ex: Clientes que tem consorcio..."
+          className="flex-1 bg-[hsl(var(--hub-background))]"
+          onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+          disabled={loading}
+        />
+        <Button 
+          onClick={sendMessage} 
+          disabled={!input.trim() || loading}
+          className="bg-[hsl(var(--hub-primary))] text-white hover:bg-[hsl(var(--hub-primary-hover))]"
+        >
+          <Send className="w-4 h-4 mr-2" />
+          Gerar Planilha
+        </Button>
+      </div>
     </div>
   );
 }

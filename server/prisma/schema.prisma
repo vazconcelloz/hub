@@ -1,0 +1,422 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------
+// AUTH & USERS (Substitui auth.users do Supabase)
+// ---------------------------------------------------------
+model User {
+  id            String    @id @default(uuid()) @db.Uuid
+  email         String    @unique
+  password_hash String
+  created_at    DateTime  @default(now()) @db.Timestamptz
+  updated_at    DateTime  @default(now()) @updatedAt @db.Timestamptz
+
+  profile           Profile?
+  roles             UserRole[]
+  setores           UserSetor[]
+  permissoes_extras UserPermissao[]
+  propostas         Proposta[]
+  propostas_auto    PropostaAuto[]
+  convites_enviados Convite[]       @relation("ConvidadoPor")
+  audit_logs        AuditLog[]
+
+  @@map("users")
+}
+
+model Profile {
+  id           String   @id @default(uuid()) @db.Uuid
+  user_id      String   @unique @db.Uuid
+  email        String?
+  display_name String?
+  telefone     String?
+  avatar_url   String?
+  created_at   DateTime @default(now()) @db.Timestamptz
+  updated_at   DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model UserRole {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String   @db.Uuid
+  role       String   // 'admin' ou 'user'
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, role])
+  @@map("user_roles")
+}
+
+model Setor {
+  id         String   @id @default(uuid()) @db.Uuid
+  nome       String   @unique
+  descricao  String?
+  cor        String?
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  usuarios     UserSetor[]
+  permissoes   SetorPermissao[]
+  convites     Convite[]
+  treinamentos TreinamentoSetor[]
+  manuais      ManualSetor[]
+
+  @@map("setores")
+}
+
+model Permissao {
+  id         String   @id @default(uuid()) @db.Uuid
+  chave      String   @unique
+  nome       String
+  descricao  String?
+  modulo     String
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  setores  SetorPermissao[]
+  usuarios UserPermissao[]
+
+  @@map("permissoes")
+}
+
+model SetorPermissao {
+  id              String   @id @default(uuid()) @db.Uuid
+  setor_id        String   @db.Uuid
+  permissao_chave String
+  created_at      DateTime @default(now()) @db.Timestamptz
+
+  setor     Setor     @relation(fields: [setor_id], references: [id], onDelete: Cascade)
+  permissao Permissao @relation(fields: [permissao_chave], references: [chave], onDelete: Cascade)
+
+  @@unique([setor_id, permissao_chave])
+  @@map("setor_permissoes")
+}
+
+model UserSetor {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String   @db.Uuid
+  setor_id   String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  setor Setor @relation(fields: [setor_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, setor_id])
+  @@map("user_setores")
+}
+
+model UserPermissao {
+  id              String   @id @default(uuid()) @db.Uuid
+  user_id         String   @db.Uuid
+  permissao_chave String
+  concedida       Boolean  @default(true)
+  created_at      DateTime @default(now()) @db.Timestamptz
+
+  user      User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  permissao Permissao @relation(fields: [permissao_chave], references: [chave], onDelete: Cascade)
+
+  @@unique([user_id, permissao_chave])
+  @@map("user_permissoes")
+}
+
+model Convite {
+  id            String    @id @default(uuid()) @db.Uuid
+  email         String
+  role          String    @default("user")
+  setor_id      String?   @db.Uuid
+  convidado_por String?   @db.Uuid
+  status        String    @default("pendente")
+  token         String    @unique @default(uuid())
+  expira_em     DateTime  @db.Timestamptz
+  aceito_em     DateTime? @db.Timestamptz
+  created_at    DateTime  @default(now()) @db.Timestamptz
+
+  setor     Setor? @relation(fields: [setor_id], references: [id], onDelete: SetNull)
+  convidado User?  @relation("ConvidadoPor", fields: [convidado_por], references: [id], onDelete: SetNull)
+
+  @@map("convites")
+}
+
+// ---------------------------------------------------------
+// CATÁLOGO
+// ---------------------------------------------------------
+model OperadoraCatalogo {
+  id          String   @id @default(uuid()) @db.Uuid
+  nome        String
+  slug        String   @unique
+  logo_url    String?
+  ativo       Boolean  @default(true)
+  observacoes String?
+  created_at  DateTime @default(now()) @db.Timestamptz
+  updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  rede           RedeCredenciadaCatalogo[]
+  coparticipacao CoparticipacaoCatalogo[]
+
+  @@map("operadoras_catalogo")
+}
+
+model RedeCredenciadaCatalogo {
+  id                   String   @id @default(uuid()) @db.Uuid
+  operadora_id         String   @db.Uuid
+  nome                 String
+  tipo                 String
+  especialidades       String[]
+  cep                  String?
+  endereco             String?
+  bairro               String?
+  cidade               String
+  estado               String
+  latitude             Float?
+  longitude            Float?
+  telefone             String?
+  planos_aplicaveis    String[]
+  destaque             Boolean  @default(false)
+  ativo                Boolean  @default(true)
+  coberturas_por_plano Json?    @default("{}")
+  created_at           DateTime @default(now()) @db.Timestamptz
+  updated_at           DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  operadora OperadoraCatalogo @relation(fields: [operadora_id], references: [id], onDelete: Cascade)
+
+  @@map("rede_credenciada_catalogo")
+}
+
+model CoparticipacaoCatalogo {
+  id           String   @id @default(uuid()) @db.Uuid
+  operadora_id String   @db.Uuid
+  plano_nome   String?
+  modalidade   String   @default("padrao")
+  itens        Json     @default("[]")
+  observacoes  String?
+  ativo        Boolean  @default(true)
+  created_at   DateTime @default(now()) @db.Timestamptz
+  updated_at   DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  operadora OperadoraCatalogo @relation(fields: [operadora_id], references: [id], onDelete: Cascade)
+
+  @@map("coparticipacao_catalogo")
+}
+
+// ---------------------------------------------------------
+// PROPOSTAS SAÚDE
+// ---------------------------------------------------------
+model Proposta {
+  id                     String   @id @default(uuid()) @db.Uuid
+  user_id                String?  @db.Uuid
+  slug                   String   @unique
+  status                 String   @default("pendente")
+  nome_cliente           String
+  telefone_cliente       String?
+  cidade                 String?
+  estado                 String?
+  tipo_produto           String?
+  faixa_etaria_ou_perfil String?
+  idades_beneficiarios   String?
+  consultora_nome        String?
+  consultora_telefone    String?
+  consultora_foto_url    String?
+  validade_proposta      DateTime? @db.Date
+  observacoes_gerais     String?
+  linhas_ocultas         String[]
+  cores_rotulos          Json?
+  created_at             DateTime @default(now()) @db.Timestamptz
+  updated_at             DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  user       User?                @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  operadoras PropostaOperadora[]
+
+  @@map("propostas")
+}
+
+model PropostaOperadora {
+  id                      String   @id @default(uuid()) @db.Uuid
+  proposta_id             String   @db.Uuid
+  operadora_nome          String
+  plano_nome              String?
+  valor_mensal            Decimal? @db.Decimal(10, 2)
+  coparticipacao          String?
+  coparticipacao_detalhes Json?
+  acomodacao              String?
+  abrangencia             String?
+  reembolso               String?
+  resumo_cobertura        String?
+  rede_credenciada_resumo String?
+  faixas_etarias          String?
+  grupo_soma              String?
+  previsao_reajuste_faixa String?
+  destaque_comercial      String?
+  ordem_exibicao          Int      @default(0)
+  cor_coluna              String?
+  cores_celulas           Json?
+  pdf_url                 String?
+  created_at              DateTime @default(now()) @db.Timestamptz
+  updated_at              DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  proposta Proposta @relation(fields: [proposta_id], references: [id], onDelete: Cascade)
+
+  @@map("proposta_operadoras")
+}
+
+// ---------------------------------------------------------
+// PROPOSTAS AUTO
+// ---------------------------------------------------------
+model PropostaAuto {
+  id                   String   @id @default(uuid()) @db.Uuid
+  user_id              String?  @db.Uuid
+  slug                 String   @unique
+  status               String   @default("pendente")
+  nome_cliente         String
+  telefone_cliente     String?
+  veiculo_marca_modelo String?
+  tipo_cotacao         String?
+  vigencia_inicio      DateTime? @db.Date
+  vigencia_fim         DateTime? @db.Date
+  cep_pernoite         String?
+  condutor_18_26       Boolean?
+  consultora_nome      String?
+  consultora_telefone  String?
+  consultora_foto_url  String?
+  validade_proposta    DateTime? @db.Date
+  observacoes_gerais   String?
+  linhas_ocultas       String[]
+  cores_rotulos        Json?
+  cor_rotulos          String?
+  created_at           DateTime @default(now()) @db.Timestamptz
+  updated_at           DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  user        User?                   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  seguradoras PropostaAutoSeguradora[]
+
+  @@map("propostas_auto")
+}
+
+model PropostaAutoSeguradora {
+  id                        String   @id @default(uuid()) @db.Uuid
+  proposta_id               String   @db.Uuid
+  seguradora_nome           String
+  produto_nome              String?
+  premio_total              Decimal? @db.Decimal(10, 2)
+  cobertura_resumo          String?
+  franquia_valor            Decimal? @db.Decimal(10, 2)
+  franquia_tipo             String?
+  percentual_fipe           String?
+  danos_materiais           Decimal? @db.Decimal(10, 2)
+  danos_corporais           Decimal? @db.Decimal(10, 2)
+  danos_morais              Decimal? @db.Decimal(10, 2)
+  app_morte_invalidez       Decimal? @db.Decimal(10, 2)
+  assistencia_24h           String?
+  vidros                    String?
+  carro_reserva             String?
+  parcelamento              String?
+  formas_pagamento          String?
+  formas_pagamento_detalhes Json?
+  destaque_comercial        String?
+  ordem_exibicao            Int      @default(0)
+  cor_coluna                String?
+  cores_celulas             Json?
+  pdf_url                   String?
+  created_at                DateTime @default(now()) @db.Timestamptz
+  updated_at                DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  proposta PropostaAuto @relation(fields: [proposta_id], references: [id], onDelete: Cascade)
+
+  @@map("proposta_auto_seguradoras")
+}
+
+// ---------------------------------------------------------
+// CONTEÚDO (Módulos adicionais)
+// ---------------------------------------------------------
+model Treinamento {
+  id            String   @id @default(uuid()) @db.Uuid
+  titulo        String
+  descricao     String?
+  categoria     String?
+  video_url     String?
+  thumbnail_url String?
+  conteudo      String?
+  ordem         Int      @default(0)
+  ativo         Boolean  @default(true)
+  created_at    DateTime @default(now()) @db.Timestamptz
+  updated_at    DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  setores       TreinamentoSetor[]
+
+  @@map("treinamentos")
+}
+
+model TreinamentoSetor {
+  treinamento_id String @db.Uuid
+  setor_id       String @db.Uuid
+
+  treinamento Treinamento @relation(fields: [treinamento_id], references: [id], onDelete: Cascade)
+  setor       Setor       @relation(fields: [setor_id], references: [id], onDelete: Cascade)
+
+  @@id([treinamento_id, setor_id])
+  @@map("treinamento_setores")
+}
+
+model Manual {
+  id            String   @id @default(uuid()) @db.Uuid
+  titulo        String
+  descricao     String?
+  categoria     String?
+  arquivo_nome  String?
+  arquivo_url   String
+  tamanho_bytes Int?
+  created_at    DateTime @default(now()) @db.Timestamptz
+  updated_at    DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  setores       ManualSetor[]
+
+  @@map("manuais")
+}
+
+model ManualSetor {
+  manual_id String @db.Uuid
+  setor_id  String @db.Uuid
+
+  manual Manual @relation(fields: [manual_id], references: [id], onDelete: Cascade)
+  setor  Setor  @relation(fields: [setor_id], references: [id], onDelete: Cascade)
+
+  @@id([manual_id, setor_id])
+  @@map("manual_setores")
+}
+
+model Segmentacao {
+  id             String   @id @default(uuid()) @db.Uuid
+  nome           String
+  descricao      String?
+  criterios      Json     @default("{}")
+  total_contatos Int      @default(0)
+  criado_por     String?  @db.Uuid
+  created_at     DateTime @default(now()) @db.Timestamptz
+  updated_at     DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  @@map("segmentacoes")
+}
+
+// ---------------------------------------------------------
+// AUDITORIA (Logs de Sistema)
+// ---------------------------------------------------------
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String?  @db.Uuid
+  action     String   // Ex: 'CREATE_PROPOSAL', 'DELETE_USER'
+  entity     String   // Ex: 'Proposta', 'User'
+  entity_id  String?  // ID do recurso afetado
+  details    Json?    // Objeto com antes/depois
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}

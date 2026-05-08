@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useLocation, useParams, useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { toast } from "sonner";
 
 import type { Proposta, Operadora } from "@/lib/proposal-utils";
@@ -89,7 +89,7 @@ export function usePropostaData() {
       setLoading(false);
       return;
     }
-    const { data: prop } = await supabase.from("propostas").select("*").eq("slug", slug).single();
+    const { data: prop } = await db.from("propostas").select("*").eq("slug", slug).single();
     if (!prop) {
       setNotFound(true);
       setLoading(false);
@@ -97,7 +97,7 @@ export function usePropostaData() {
     }
     setProposta(prop);
 
-    const { data: ops } = await supabase
+    const { data: ops } = await db
       .from("proposta_operadoras")
       .select("*")
       .eq("proposta_id", prop.id)
@@ -190,7 +190,7 @@ export function usePropostaData() {
     if (!draftProposta || !proposta) return;
     setSaving(true);
     try {
-      const { error: e1 } = await supabase
+      const { error: e1 } = await db
         .from("propostas")
         .update({
           nome_cliente: draftProposta.nome_cliente,
@@ -207,7 +207,7 @@ export function usePropostaData() {
       // 1) Insert new columns
       const novas = draftOperadoras.filter((d) => String(d.id).startsWith("new-"));
       if (novas.length > 0) {
-        const { error: eIns } = await supabase
+        const { error: eIns } = await db
           .from("proposta_operadoras")
           .insert(novas.map((d) => ({
             proposta_id: proposta.id,
@@ -236,7 +236,7 @@ export function usePropostaData() {
       const draftIds = new Set(draftOperadoras.map((d) => d.id));
       const removidas = operadoras.filter((o) => !draftIds.has(o.id));
       if (removidas.length > 0) {
-        const { error: eDel } = await supabase
+        const { error: eDel } = await db
           .from("proposta_operadoras")
           .delete()
           .in("id", removidas.map((o) => o.id));
@@ -261,7 +261,7 @@ export function usePropostaData() {
         });
         if (!changed) continue;
 
-        const { error: e2 } = await supabase
+        const { error: e2 } = await db
           .from("proposta_operadoras")
           .update({
             operadora_nome: draft.operadora_nome,

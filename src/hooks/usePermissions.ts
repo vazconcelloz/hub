@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 
 export type AppRole = "admin" | "user";
 
@@ -10,7 +10,7 @@ interface PermissionsState {
   role: AppRole | null;
   permissions: Set<string>;
   isAdmin: boolean;
-  has: (chave: string) => boolean;
+  has: (chave: string | string[]) => boolean;
   refresh: () => Promise<void>;
 }
 
@@ -31,7 +31,7 @@ export function usePermissions(): PermissionsState {
 
   const load = async () => {
     setState((s) => ({ ...s, loading: true }));
-    const { data: userData } = await supabase.auth.getUser();
+    const { data: userData } = await db.auth.getUser();
     const user = userData.user;
     if (!user) {
       setState({ loading: false, userId: null, email: null, role: null, permissions: new Set() });
@@ -39,10 +39,12 @@ export function usePermissions(): PermissionsState {
     }
 
     const [{ data: roleRows }, { data: setores }, { data: overrides }] = await Promise.all([
-      supabase.from("user_roles").select("role").eq("user_id", user.id),
-      supabase.from("user_setores").select("setor_id").eq("user_id", user.id),
-      supabase.from("user_permissoes").select("permissao_chave, concedida").eq("user_id", user.id),
+      db.from("user_roles").select("role").eq("user_id", user.id),
+      db.from("user_setores").select("setor_id").eq("user_id", user.id),
+      db.from("user_permissoes").select("permissao_chave, concedida").eq("user_id", user.id),
     ]);
+
+    console.log("DB Resp:", { roleRows, setores, overrides });
 
     const isAdmin = (roleRows ?? []).some((r) => r.role === "admin");
     const role: AppRole = isAdmin ? "admin" : "user";
@@ -50,12 +52,12 @@ export function usePermissions(): PermissionsState {
     const perms = new Set<string>();
 
     if (isAdmin) {
-      const { data: all } = await supabase.from("permissoes").select("chave");
+      const { data: all } = await db.from("permissoes").select("chave");
       all?.forEach((p) => perms.add(p.chave));
     } else {
       const setorIds = (setores ?? []).map((s) => s.setor_id);
       if (setorIds.length > 0) {
-        const { data: sp } = await supabase
+        const { data: sp } = await db
           .from("setor_permissoes")
           .select("permissao_chave")
           .in("setor_id", setorIds);
@@ -78,14 +80,18 @@ export function usePermissions(): PermissionsState {
 
   useEffect(() => {
     load();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => load());
+    const { data: sub } = db.auth.onAuthStateChange(() => load());
     return () => sub.subscription.unsubscribe();
   }, []);
 
   return {
     ...state,
     isAdmin: state.role === "admin",
-    has: (chave: string) => state.role === "admin" || state.permissions.has(chave),
+    has: (chave: string | string[]) => {
+      if (state.role === "admin") return true;
+      if (Array.isArray(chave)) return chave.some(c => state.permissions.has(c));
+      return state.permissions.has(chave);
+    },
     refresh: load,
   };
 }

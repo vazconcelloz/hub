@@ -1,1 +1,0 @@
-ALTER TABLE public.propostas_auto ADD COLUMN IF NOT EXISTS cor_rotulos text;

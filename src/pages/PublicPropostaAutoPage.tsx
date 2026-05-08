@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import {
   PropostaAuto,
   AutoCotacao,
@@ -198,7 +198,7 @@ export default function PublicPropostaAutoPage() {
         setLoading(false);
         return;
       }
-      const { data: p } = await supabase
+      const { data: p } = await db
         .from("propostas_auto")
         .select("*")
         .eq("slug", slug)
@@ -209,7 +209,7 @@ export default function PublicPropostaAutoPage() {
         return;
       }
       setProposta(p);
-      const { data: cs } = await supabase
+      const { data: cs } = await db
         .from("proposta_auto_seguradoras")
         .select("*")
         .eq("proposta_id", p.id)
@@ -217,7 +217,7 @@ export default function PublicPropostaAutoPage() {
       setCotacoes(cs || []);
 
       // detecta admin (qualquer usuário autenticado pode editar — RLS valida)
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await db.auth.getUser();
       setIsAdmin(!!user);
 
       setLoading(false);
@@ -253,7 +253,7 @@ export default function PublicPropostaAutoPage() {
     setSaving(true);
     try {
       // Salva preferências da proposta (cor da coluna de rótulos)
-      const { error: propErr } = await supabase
+      const { error: propErr } = await db
         .from("propostas_auto")
         .update({ cor_rotulos: draftCorRotulos })
         .eq("id", proposta.id);
@@ -261,7 +261,7 @@ export default function PublicPropostaAutoPage() {
 
       // Estratégia simples e consistente com o form admin:
       // deleta todas as cotações e re-insere a partir do draft.
-      const { error: delErr } = await supabase
+      const { error: delErr } = await db
         .from("proposta_auto_seguradoras")
         .delete()
         .eq("proposta_id", proposta.id);
@@ -291,7 +291,7 @@ export default function PublicPropostaAutoPage() {
           cor_coluna: c.cor_coluna,
           ordem_exibicao: i + 1,
         }));
-        const { data: inserted, error: insErr } = await supabase
+        const { data: inserted, error: insErr } = await db
           .from("proposta_auto_seguradoras")
           .insert(rows)
           .select();

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +33,7 @@ export default function TreinamentosPage() {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase.from("treinamentos").select("*").order("ordem", { ascending: true }).order("created_at", { ascending: false });
+    const { data } = await db.from("treinamentos").select("*").order("ordem", { ascending: true }).order("created_at", { ascending: false });
     setItems((data as Treinamento[]) || []);
     setLoading(false);
   };
@@ -50,8 +50,8 @@ export default function TreinamentosPage() {
     if (!form.titulo.trim()) { toast({ title: "Título obrigatório", variant: "destructive" }); return; }
     const payload = { ...form, titulo: form.titulo.trim() };
     const { error } = editing
-      ? await supabase.from("treinamentos").update(payload).eq("id", editing.id)
-      : await supabase.from("treinamentos").insert(payload);
+      ? await db.from("treinamentos").update(payload).eq("id", editing.id)
+      : await db.from("treinamentos").insert(payload);
     if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
     toast({ title: editing ? "Atualizado" : "Criado" });
     setOpen(false);
@@ -60,7 +60,7 @@ export default function TreinamentosPage() {
 
   const remove = async (id: string) => {
     if (!confirm("Excluir treinamento?")) return;
-    await supabase.from("treinamentos").delete().eq("id", id);
+    await db.from("treinamentos").delete().eq("id", id);
     load();
   };
 

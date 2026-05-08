@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,9 +61,9 @@ export default function CatalogoPage() {
   const loadAll = async () => {
     setLoading(true);
     const [op, rd, co] = await Promise.all([
-      supabase.from("operadoras_catalogo").select("*").order("nome"),
-      supabase.from("rede_credenciada_catalogo").select("*").order("nome"),
-      supabase.from("coparticipacao_catalogo").select("*").order("created_at", { ascending: false }),
+      db.from("operadoras_catalogo").select("*").order("nome"),
+      db.from("rede_credenciada_catalogo").select("*").order("nome"),
+      db.from("coparticipacao_catalogo").select("*").order("created_at", { ascending: false }),
     ]);
     if (op.data) setOperadoras(op.data as Operadora[]);
     if (rd.data) setRede(rd.data as RedeItem[]);
@@ -80,15 +80,15 @@ export default function CatalogoPage() {
     const slug = (o.slug || o.nome || "").toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
     const payload = { nome: o.nome, slug, logo_url: o.logo_url || null, ativo: o.ativo ?? true, observacoes: o.observacoes || null };
     const { error } = opNew
-      ? await supabase.from("operadoras_catalogo").insert(payload as any)
-      : await supabase.from("operadoras_catalogo").update(payload).eq("id", o.id!);
+      ? await db.from("operadoras_catalogo").insert(payload as any)
+      : await db.from("operadoras_catalogo").update(payload).eq("id", o.id!);
     if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
     toast({ title: opNew ? "Operadora criada" : "Operadora atualizada" });
     setOpDialog(null); setOpNew(false); loadAll();
   };
   const delOperadora = async (id: string) => {
     if (!confirm("Excluir esta operadora? Itens vinculados podem quebrar.")) return;
-    const { error } = await supabase.from("operadoras_catalogo").delete().eq("id", id);
+    const { error } = await db.from("operadoras_catalogo").delete().eq("id", id);
     if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
     loadAll();
   };
@@ -103,15 +103,15 @@ export default function CatalogoPage() {
       ativo: r.ativo ?? true, destaque: r.destaque ?? false,
     };
     const { error } = redeNew
-      ? await supabase.from("rede_credenciada_catalogo").insert(payload as any)
-      : await supabase.from("rede_credenciada_catalogo").update(payload).eq("id", r.id!);
+      ? await db.from("rede_credenciada_catalogo").insert(payload as any)
+      : await db.from("rede_credenciada_catalogo").update(payload).eq("id", r.id!);
     if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
     toast({ title: redeNew ? "Item criado" : "Item atualizado" });
     setRedeDialog(null); setRedeNew(false); loadAll();
   };
   const delRede = async (id: string) => {
     if (!confirm("Excluir este item da rede?")) return;
-    await supabase.from("rede_credenciada_catalogo").delete().eq("id", id);
+    await db.from("rede_credenciada_catalogo").delete().eq("id", id);
     loadAll();
   };
 
@@ -123,15 +123,15 @@ export default function CatalogoPage() {
       observacoes: c.observacoes || null, ativo: c.ativo ?? true,
     };
     const { error } = coNew
-      ? await supabase.from("coparticipacao_catalogo").insert(payload as any)
-      : await supabase.from("coparticipacao_catalogo").update(payload).eq("id", c.id!);
+      ? await db.from("coparticipacao_catalogo").insert(payload as any)
+      : await db.from("coparticipacao_catalogo").update(payload).eq("id", c.id!);
     if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
     toast({ title: coNew ? "Tabela criada" : "Tabela atualizada" });
     setCoDialog(null); setCoNew(false); loadAll();
   };
   const delCopart = async (id: string) => {
     if (!confirm("Excluir esta tabela?")) return;
-    await supabase.from("coparticipacao_catalogo").delete().eq("id", id);
+    await db.from("coparticipacao_catalogo").delete().eq("id", id);
     loadAll();
   };
 
@@ -145,11 +145,11 @@ export default function CatalogoPage() {
     setImportResult(null);
     try {
       const path = `${importOperadoraId}/${Date.now()}-${importFile.name}`;
-      const { error: upErr } = await supabase.storage.from("rede-credenciada-pdfs").upload(path, importFile, { upsert: true });
+      const { error: upErr } = await db.storage.from("rede-credenciada-pdfs").upload(path, importFile, { upsert: true });
       if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("rede-credenciada-pdfs").getPublicUrl(path);
+      const { data: pub } = db.storage.from("rede-credenciada-pdfs").getPublicUrl(path);
 
-      const { data, error } = await supabase.functions.invoke("import-rede-credenciada", {
+      const { data, error } = await db.functions.invoke("import-rede-credenciada", {
         body: { operadora_id: importOperadoraId, file_url: pub.publicUrl, file_name: importFile.name },
       });
       if (error) throw error;

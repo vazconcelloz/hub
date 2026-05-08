@@ -54,7 +54,20 @@ function RedirectCotacaoSaudeLegacy() {
   return <Navigate to={`/app/cotacoes/saude/cotacao/${slug}`} replace />;
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Keep data fresh for 2 minutes — avoids redundant db calls
+      staleTime: 2 * 60 * 1000,
+      // Keep unused data in cache for 10 minutes
+      gcTime: 10 * 60 * 1000,
+      // Don't refetch on tab focus — user data doesn't change that fast
+      refetchOnWindowFocus: false,
+      // Retry once on failure, then give up
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <ErrorBoundary>

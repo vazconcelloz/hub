@@ -1,1 +1,0 @@
-ALTER TABLE public.propostas ADD COLUMN idades_beneficiarios text;

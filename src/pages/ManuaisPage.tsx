@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, BookOpen, Trash2, Download, Upload, Loader2 } from "lucide-react";
+import { Plus, BookOpen, Trash2, Download, Upload, Loader2, Eye, X } from "lucide-react";
+import { pdfjs, Document, Page } from 'react-pdf';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 type Manual = {
   id: string;
@@ -28,10 +33,15 @@ export default function ManuaisPage() {
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({ titulo: "", descricao: "", categoria: "" });
   const [file, setFile] = useState<File | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedUrl, setSelectedUrl] = useState("");
+  const [selectedTitle, setSelectedTitle] = useState("");
+  const [numPages, setNumPages] = useState<number>();
+
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase.from("manuais").select("*").order("updated_at", { ascending: false });
+    const { data } = await db.from("manuais").select("*").order("updated_at", { ascending: false });
     setItems((data as Manual[]) || []);
     setLoading(false);
   };
@@ -42,11 +52,11 @@ export default function ManuaisPage() {
     setUploading(true);
     try {
       const path = `${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
-      const { error: upErr } = await supabase.storage.from("manuais").upload(path, file);
+      const { error: upErr } = await db.storage.from("manuais").upload(path, file);
       if (upErr) throw upErr;
-      const { data: signed } = await supabase.storage.from("manuais").createSignedUrl(path, 60 * 60 * 24 * 365);
+      const { data: signed } = await db.storage.from("manuais").createSignedUrl(path, 60 * 60 * 24 * 365);
       const arquivo_url = signed?.signedUrl ?? path;
-      const { error } = await supabase.from("manuais").insert({
+      const { error } = await db.from("manuais").insert({
         titulo: form.titulo.trim(),
         descricao: form.descricao || null,
         categoria: form.categoria || null,
@@ -69,7 +79,7 @@ export default function ManuaisPage() {
 
   const remove = async (id: string) => {
     if (!confirm("Excluir manual?")) return;
-    await supabase.from("manuais").delete().eq("id", id);
+    await db.from("manuais").delete().eq("id", id);
     load();
   };
 
@@ -110,9 +120,19 @@ export default function ManuaisPage() {
               {m.descricao && <p className="text-sm text-[hsl(var(--hub-text-muted))] mt-1 line-clamp-2">{m.descricao}</p>}
               <p className="text-xs text-[hsl(var(--hub-text-muted))] mt-2">{m.arquivo_nome} · {formatBytes(m.tamanho_bytes)}</p>
               <div className="flex gap-2 mt-4">
-                <a href={m.arquivo_url} target="_blank" rel="noreferrer" className="flex-1">
-                  <Button size="sm" variant="outline" className="w-full"><Download className="w-3 h-3 mr-1" /> Abrir</Button>
-                </a>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => {
+                    setSelectedUrl(m.arquivo_url);
+                    setSelectedTitle(m.titulo);
+                    setViewerOpen(true);
+                  }}
+                >
+                  <Eye className="w-3 h-3 mr-1" /> Abrir
+                </Button>
+
                 <Button size="sm" variant="ghost" onClick={() => remove(m.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
               </div>
             </Card>
@@ -141,6 +161,68 @@ export default function ManuaisPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Visualizador de Manual */}
+      <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
+        <DialogContent className="max-w-5xl w-full h-[85vh] p-0 overflow-hidden flex flex-col bg-[hsl(var(--hub-surface))] border border-[hsl(var(--hub-border))] rounded-xl shadow-2xl [&>button]:hidden">
+          {/* Header customizado */}
+          <div className="flex items-center justify-between p-4 bg-[hsl(var(--hub-surface))] border-b border-[hsl(var(--hub-border))] shrink-0">
+            <DialogTitle className="text-lg font-semibold text-[hsl(var(--hub-text))] flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-[hsl(var(--hub-primary))]" />
+              {selectedTitle}
+            </DialogTitle>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => window.open(selectedUrl, '_blank')}
+                title="Baixar ou abrir em nova aba"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Baixar
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setViewerOpen(false)}
+                className="text-[hsl(var(--hub-text-muted))] hover:text-foreground"
+                title="Fechar"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+          
+          <div className="flex-1 w-full bg-muted/30 overflow-auto relative flex flex-col items-center py-8">
+            <Document 
+              file={selectedUrl} 
+              onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+              loading={
+                <div className="flex flex-col items-center justify-center text-[hsl(var(--hub-text-muted))] h-full">
+                  <Loader2 className="w-8 h-8 animate-spin mb-4 text-[hsl(var(--hub-primary))]" />
+                  <p>Carregando documento...</p>
+                </div>
+              }
+              error={
+                <div className="flex flex-col items-center justify-center text-destructive h-full">
+                  <p>Erro ao carregar o PDF.</p>
+                </div>
+              }
+            >
+              {Array.from(new Array(numPages), (el, index) => (
+                <Page 
+                  key={`page_${index + 1}`} 
+                  pageNumber={index + 1} 
+                  className="mb-8 shadow-xl"
+                  renderTextLayer={true}
+                  renderAnnotationLayer={true}
+                />
+              ))}
+            </Document>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }

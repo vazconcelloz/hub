@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { generateSlug, parseFaixasEtarias, parseIdades, calcularTotalPorFaixas, agruparPorOperadora } from "@/lib/proposal-utils";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -77,7 +77,7 @@ export default function PropostaFormPage() {
   }, [id]);
 
   const loadProposta = async () => {
-    const { data: proposta } = await supabase.from("propostas").select("*").eq("id", id!).single();
+    const { data: proposta } = await db.from("propostas").select("*").eq("id", id!).single();
     if (!proposta) { navigate("/app/cotacoes/saude"); return; }
     setForm({
       nome_cliente: proposta.nome_cliente || "",
@@ -95,7 +95,7 @@ export default function PropostaFormPage() {
       idades_beneficiarios: proposta.idades_beneficiarios || "",
     });
 
-    const { data: ops } = await supabase
+    const { data: ops } = await db
       .from("proposta_operadoras")
       .select("*")
       .eq("proposta_id", id!)
@@ -185,7 +185,7 @@ export default function PropostaFormPage() {
     setExtractingIndex(index);
     try {
       const base64 = await fileToBase64(file);
-      const response = await supabase.functions.invoke("extract-pdf-data", {
+      const response = await db.functions.invoke("extract-pdf-data", {
         body: { pdf_base64: base64, cidade: form.cidade, estado: form.estado },
       });
 
@@ -309,9 +309,9 @@ export default function PropostaFormPage() {
   const uploadFile = async (file: File, bucket: string, folder: string): Promise<string> => {
     const ext = file.name.split(".").pop();
     const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error } = await supabase.storage.from(bucket).upload(path, file);
+    const { error } = await db.storage.from(bucket).upload(path, file);
     if (error) throw error;
-    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+    const { data } = db.storage.from(bucket).getPublicUrl(path);
     return data.publicUrl;
   };
 
@@ -328,7 +328,7 @@ export default function PropostaFormPage() {
       let propostaId: string;
 
       if (isEdit) {
-        const { error } = await supabase.from("propostas").update({
+        const { error } = await db.from("propostas").update({
           ...form,
           consultora_foto_url: consultorPhotoUrl,
           validade_proposta: form.validade_proposta || null,
@@ -337,10 +337,10 @@ export default function PropostaFormPage() {
         propostaId = id!;
 
         // Delete existing operadoras and re-create
-        await supabase.from("proposta_operadoras").delete().eq("proposta_id", id!);
+        await db.from("proposta_operadoras").delete().eq("proposta_id", id!);
       } else {
         const slug = generateSlug();
-        const { data, error } = await supabase.from("propostas").insert({
+        const { data, error } = await db.from("propostas").insert({
           ...form,
           
           slug,
@@ -359,7 +359,7 @@ export default function PropostaFormPage() {
           pdfUrl = await uploadFile(op.pdf_file, "operadora-pdfs", propostaId);
         }
 
-        await supabase.from("proposta_operadoras").insert({
+        await db.from("proposta_operadoras").insert({
           proposta_id: propostaId,
           operadora_nome: op.operadora_nome,
           plano_nome: op.plano_nome || null,

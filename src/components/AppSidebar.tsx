@@ -1,5 +1,6 @@
 import { Home, GraduationCap, BookOpen, Target, FileSpreadsheet, Settings, LogOut, Moon, Sun, PanelLeftClose, PanelLeftOpen, UserCog } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useCallback } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,29 +14,42 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useTheme } from "@/contexts/ThemeContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import logoHorizontal from "@/assets/logo-fbn-horizontal.png";
 import logoIcon from "@/assets/favicon-fbn.png";
+
+// Prefetch map: URL → dynamic import function
+// When user hovers a sidebar link, we preload the page chunk in advance
+const PREFETCH_MAP: Record<string, () => Promise<unknown>> = {
+  "/app": () => import("@/pages/InicioPage"),
+  "/app/treinamentos": () => import("@/pages/TreinamentosPage"),
+  "/app/manuais": () => import("@/pages/ManuaisPage"),
+  "/app/segmentacoes": () => import("@/pages/SegmentacoesPage"),
+  "/app/cotacoes": () => import("@/pages/CotacoesIndexPage"),
+  "/app/usuarios": () => import("@/pages/UsuariosPage"),
+  "/app/configuracoes": () => import("@/pages/ConfiguracoesPage"),
+};
+const prefetched = new Set<string>();
 
 interface MenuItem {
   title: string;
   url: string;
   icon: any;
   exact?: boolean;
-  permission?: string;
+  permission?: string | string[];
   adminOnly?: boolean;
 }
 
 const items: MenuItem[] = [
-  { title: "Início", url: "/app", icon: Home, exact: true },
-  { title: "Treinamentos", url: "/app/treinamentos", icon: GraduationCap, permission: "treinamentos.ver" },
-  { title: "Manuais", url: "/app/manuais", icon: BookOpen, permission: "manuais.ver" },
-  { title: "Segmentações", url: "/app/segmentacoes", icon: Target, permission: "segmentacoes.ver" },
-  { title: "Cotações", url: "/app/cotacoes", icon: FileSpreadsheet, permission: "cotacoes.ver" },
+  { title: "Início", url: "/app", icon: Home, exact: true, permission: "app.padrao" },
+  { title: "Treinamentos", url: "/app/treinamentos", icon: GraduationCap, permission: "app.padrao" },
+  { title: "Manuais", url: "/app/manuais", icon: BookOpen, permission: "app.padrao" },
+  { title: "Segmentações", url: "/app/segmentacoes", icon: Target, permission: "app.segmentacoes" },
+  { title: "Cotações", url: "/app/cotacoes", icon: FileSpreadsheet, permission: ["cotacao.saude", "cotacao.auto", "cotacao.vida"] },
   { title: "Usuários", url: "/app/usuarios", icon: UserCog, adminOnly: true },
-  { title: "Configurações", url: "/app/configuracoes", icon: Settings, permission: "configuracoes.ver" },
+  { title: "Configurações", url: "/app/configuracoes", icon: Settings, adminOnly: true },
 ];
 
 export function AppSidebar() {
@@ -66,9 +80,19 @@ export function AppSidebar() {
   const showCollapseButton = !isHome;
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await db.auth.signOut();
     navigate("/login", { replace: true });
   };
+
+  // Prefetch route chunk on hover — only once per URL
+  const prefetchRoute = useCallback((url: string) => {
+    if (prefetched.has(url)) return;
+    const loader = PREFETCH_MAP[url];
+    if (loader) {
+      prefetched.add(url);
+      loader();
+    }
+  }, []);
 
   return (
     <Sidebar collapsible="icon" className="border-r border-[hsl(var(--hub-border))] bg-[hsl(var(--hub-surface))]">
@@ -100,6 +124,8 @@ export function AppSidebar() {
                       <NavLink
                         to={item.url}
                         end={item.exact}
+                        onMouseEnter={() => prefetchRoute(item.url)}
+                        onFocus={() => prefetchRoute(item.url)}
                         className={`flex items-center gap-2 rounded-md transition-colors ${
                           active
                             ? "!bg-[hsl(var(--hub-primary))] !text-[hsl(var(--hub-primary-foreground))]"

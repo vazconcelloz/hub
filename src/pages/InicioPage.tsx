@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 
 export default function InicioPage() {
   const [email, setEmail] = useState("");
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    db.auth.getUser().then(({ data }) => {
       const e = data.user?.email ?? "";
       setEmail(e.split("@")[0]);
     });

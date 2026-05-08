@@ -1,1 +1,0 @@
-ALTER TABLE public.proposta_operadoras ADD COLUMN IF NOT EXISTS cores_celulas jsonb;

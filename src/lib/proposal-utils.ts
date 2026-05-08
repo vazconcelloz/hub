@@ -1,4 +1,4 @@
-import { Tables, TablesInsert } from "@/integrations/supabase/types";
+import { Tables, TablesInsert } from "@/types/database";
 
 export type Proposta = Tables<"propostas">;
 export type PropostaInsert = TablesInsert<"propostas">;

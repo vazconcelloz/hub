@@ -1,1 +1,0 @@
-ALTER TABLE public.proposta_operadoras ADD COLUMN cor_coluna text;

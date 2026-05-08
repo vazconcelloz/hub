@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,7 +32,7 @@ export default function DashboardAutoPage() {
   }, []);
 
   const fetch = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("propostas_auto")
       .select("*")
       .order("created_at", { ascending: false });
@@ -48,7 +48,7 @@ export default function DashboardAutoPage() {
 
   const duplicar = async (p: PropostaAuto) => {
     const newSlug = generateSlug();
-    const { data: nova, error } = await supabase
+    const { data: nova, error } = await db
       .from("propostas_auto")
       .insert({
         nome_cliente: p.nome_cliente + " (cópia)",
@@ -68,12 +68,12 @@ export default function DashboardAutoPage() {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
       return;
     }
-    const { data: cards } = await supabase
+    const { data: cards } = await db
       .from("proposta_auto_seguradoras")
       .select("*")
       .eq("proposta_id", p.id);
     if (cards && cards.length && nova) {
-      await supabase.from("proposta_auto_seguradoras").insert(
+      await db.from("proposta_auto_seguradoras").insert(
         cards.map((c) => ({
           proposta_id: nova.id,
           seguradora_nome: c.seguradora_nome,
@@ -105,7 +105,7 @@ export default function DashboardAutoPage() {
 
   const excluir = async (id: string) => {
     if (!confirm("Excluir esta proposta?")) return;
-    const { error } = await supabase.from("propostas_auto").delete().eq("id", id);
+    const { error } = await db.from("propostas_auto").delete().eq("id", id);
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
     else {
       toast({ title: "Proposta excluída" });

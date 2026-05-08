@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { db } from "@/lib/db";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Plus, Trash2, Copy, Send } from "lucide-react";
 import { format } from "date-fns";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useConvites } from "@/hooks/useConvites";
 
 interface Convite {
   id: string; email: string; role: "admin" | "user"; setor_id: string | null;
@@ -18,49 +20,31 @@ interface Setor { id: string; nome: string; }
 
 export default function ConvitesTab() {
   const { toast } = useToast();
-  const [convites, setConvites] = useState<Convite[]>([]);
-  const [setores, setSetores] = useState<Setor[]>([]);
+  const { data, isLoading, criarConvite, cancelarConvite } = useConvites();
   const [novo, setNovo] = useState({ email: "", role: "user" as "admin" | "user", setor_id: "" });
 
-  const load = async () => {
-    const [{ data: c }, { data: s }] = await Promise.all([
-      supabase.from("convites").select("*").order("created_at", { ascending: false }),
-      supabase.from("setores").select("id, nome").order("nome"),
-    ]);
-    setConvites((c as any) ?? []);
-    setSetores(s ?? []);
-  };
-
-  useEffect(() => { load(); }, []);
+  const convites = data?.convites || [];
+  const setores = data?.setores || [];
 
   const criar = async () => {
     if (!novo.email.endsWith("@grupofbn.com.br")) {
       toast({ title: "E-mail inválido", description: "Use um e-mail @grupofbn.com.br", variant: "destructive" });
       return;
     }
-    const { data: u } = await supabase.auth.getUser();
-    const { data: created, error } = await supabase
-      .from("convites")
-      .insert({
-        email: novo.email,
-        role: novo.role,
-        setor_id: novo.setor_id || null,
-        convidado_por: u.user?.id,
-      })
-      .select("id")
-      .single();
-    if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-      return;
+    try {
+      const { data: u } = await db.auth.getUser() as { data: { user: { id: string } | null } };
+      const createdId = await criarConvite({ novo, userId: u?.user?.id as string });
+      
+      setNovo({ email: "", role: "user", setor_id: "" });
+      await enviarEmail(createdId.id, { silent: true });
+    } catch (error: unknown) {
+      toast({ title: "Erro", description: (error as Error).message, variant: "destructive" });
     }
-    setNovo({ email: "", role: "user", setor_id: "" });
-    await enviarEmail(created.id, { silent: true });
-    load();
   };
 
   const enviarEmail = async (convite_id: string, opts: { silent?: boolean } = {}) => {
     try {
-      const { data, error } = await supabase.functions.invoke("send-convite-email", {
+      const { data, error } = await db.functions.invoke("send-convite-email", {
         body: { convite_id },
       });
       if (error) throw error;
@@ -82,18 +66,22 @@ export default function ConvitesTab() {
           variant: "destructive",
         });
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast({
         title: opts.silent ? "Convite criado" : "Falha ao reenviar",
-        description: e?.message || "Copie o link manualmente.",
+        description: e instanceof Error ? e.message : "Copie o link manualmente.",
         variant: opts.silent ? "default" : "destructive",
       });
     }
   };
 
   const cancelar = async (id: string) => {
-    await supabase.from("convites").update({ status: "cancelado" }).eq("id", id);
-    load();
+    try {
+      await cancelarConvite(id);
+      toast({ title: "Convite cancelado" });
+    } catch (e: unknown) {
+      toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
+    }
   };
 
   const copiarLink = (token: string) => {
@@ -101,6 +89,18 @@ export default function ConvitesTab() {
     navigator.clipboard.writeText(link);
     toast({ title: "Link copiado", description: "Envie esse link ao convidado." });
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-[200px] w-full rounded-xl" />
+        <div className="space-y-2">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -115,7 +115,7 @@ export default function ConvitesTab() {
             onChange={(e) => setNovo({ ...novo, email: e.target.value })}
             className="md:col-span-2"
           />
-          <Select value={novo.role} onValueChange={(v) => setNovo({ ...novo, role: v as any })}>
+          <Select value={novo.role} onValueChange={(v) => setNovo({ ...novo, role: v as "admin" | "user" })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="user">Usuário</SelectItem>

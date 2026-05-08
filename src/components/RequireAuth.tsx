@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { Loader2 } from "lucide-react";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -8,10 +8,10 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   const location = useLocation();
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+    const { data: sub } = db.auth.onAuthStateChange((_evt, session) => {
       setStatus(session ? "authed" : "anon");
     });
-    supabase.auth.getSession().then(({ data }) => {
+    db.auth.getSession().then(({ data }) => {
       setStatus(data.session ? "authed" : "anon");
     });
     return () => sub.subscription.unsubscribe();
