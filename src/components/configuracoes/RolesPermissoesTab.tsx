@@ -48,10 +48,6 @@ export default function RolesPermissoesTab() {
     }
   };
 
-  const permsByModulo = permissoes.reduce((acc, p) => {
-    (acc[p.modulo] = acc[p.modulo] || []).push(p);
-    return acc;
-  }, {} as Record<string, any[]>);
 
   const permsByModulo = permissoes.reduce((acc, p) => {
     (acc[p.modulo] = acc[p.modulo] || []).push(p);
