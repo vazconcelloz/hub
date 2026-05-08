@@ -1,0 +1,19 @@
+# Forçar o sistema a usar apenas 1 processo (economiza memória e evita o limite de 40 no cPanel)
+PassengerMinInstances 1
+PassengerMaxInstances 1
+PassengerPoolIdleTimeout 60
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Forçar tipos de arquivo (MIME Types) para evitar erros de "application/octet-stream"
+  AddType application/javascript .js
+  AddType text/css .css
+
+  # Se o arquivo existir na pasta dist, entregue ele
+  RewriteCond %{DOCUMENT_ROOT}/dist%{REQUEST_URI} -f
+  RewriteRule ^(.*)$ /dist/$1 [L]
+
+  # Caso contrário, deixe o Node.js lidar com a rota (React Router)
+</IfModule>
