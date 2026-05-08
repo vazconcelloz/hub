@@ -7,13 +7,23 @@ PassengerPoolIdleTimeout 60
   RewriteEngine On
   RewriteBase /
 
-  # Forçar tipos de arquivo (MIME Types) para evitar erros de "application/octet-stream"
-  AddType application/javascript .js
-  AddType text/css .css
+  # 1. Ignorar chamadas da API (deixar o Node.js lidar)
+  RewriteRule ^api/ - [L]
 
-  # Se o arquivo existir na pasta dist, entregue ele
+  # 2. Se pedir a raiz (/), entregar o index.html da dist
+  RewriteRule ^$ dist/index.html [L]
+
+  # 3. Se o arquivo existir dentro de dist/, entregar ele (assets, etc)
   RewriteCond %{DOCUMENT_ROOT}/dist%{REQUEST_URI} -f
   RewriteRule ^(.*)$ /dist/$1 [L]
 
-  # Caso contrário, deixe o Node.js lidar com a rota (React Router)
+  # 4. Qualquer outra rota (React Router), entregar o index.html da dist
+  RewriteCond %{REQUEST_URI} !^/dist/
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /dist/index.html [L]
+
+  # Forçar tipos de arquivo (MIME Types)
+  AddType application/javascript .js
+  AddType text/css .css
 </IfModule>
