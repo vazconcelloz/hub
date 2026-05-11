@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { API_URL } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Target, Send, Download, Bot, User, Loader2 } from "lucide-react";

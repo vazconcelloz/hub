@@ -1,4 +1,4 @@
-import { api } from '@/lib/api';
+import { api, API_URL } from '@/lib/api';
 
 // Magic proxy that converts DB calls to our Express + Prisma backend
 export const db = {
