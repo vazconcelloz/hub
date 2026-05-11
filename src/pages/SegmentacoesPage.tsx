@@ -39,7 +39,7 @@ export default function SegmentacoesPage() {
 
     try {
       const token = localStorage.getItem('hub_token');
-      const response = await fetch('http://localhost:3001/api/segment/export', {
+      const response = await fetch(`${API_URL}/segment/export`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

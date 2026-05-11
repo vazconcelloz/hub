@@ -126,7 +126,7 @@ export const db = {
           formData.append('file', file);
           
           const token = localStorage.getItem('hub_token');
-          const res = await fetch(`http://localhost:3001/api/storage/upload/${bucket}`, {
+          const res = await fetch(`${API_URL}/storage/upload/${bucket}`, {
             method: 'POST',
             headers: token ? { 'Authorization': `Bearer ${token}` } : {},
             body: formData
@@ -142,8 +142,8 @@ export const db = {
           return { data: null, error: err };
         }
       },
-      getPublicUrl: (path: string) => ({ data: { publicUrl: `http://localhost:3001/uploads/${bucket}/${path}` } }),
-      createSignedUrl: async (path: string) => ({ data: { signedUrl: `http://localhost:3001/uploads/${bucket}/${path}` }, error: null })
+      getPublicUrl: (path: string) => ({ data: { publicUrl: `${API_URL.replace('/api', '')}/uploads/${bucket}/${path}` } }),
+      createSignedUrl: async (path: string) => ({ data: { signedUrl: `${API_URL.replace('/api', '')}/uploads/${bucket}/${path}` }, error: null })
     })
   },
   
@@ -151,7 +151,7 @@ export const db = {
     invoke: async (func: string, args: Record<string, unknown>) => {
       try {
         const token = localStorage.getItem('hub_token');
-        const res = await fetch(`http://localhost:3001/api/functions/invoke/${func}`, {
+        const res = await fetch(`${API_URL}/functions/invoke/${func}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
