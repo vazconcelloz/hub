@@ -1,6 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
 
-const isProd = import.meta.env.MODE === 'production';
+const isProd = import.meta.env.PROD;
 const API_URL = isProd ? '/api' : 'http://localhost:3001/api';
 
 export const queryClient = new QueryClient();
