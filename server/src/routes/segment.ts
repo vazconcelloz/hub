@@ -18,8 +18,8 @@ router.post('/export', authMiddleware, async (req, res) => {
       return res.status(500).json({ error: 'Token do webhook não configurado no servidor.' });
     }
 
-    // Faz a chamada para a API externa
-    const response = await fetch('http://webhook.grupofbn.com.br/agents/segment/export', {
+    // Faz a chamada para a API interna do Docker (api-python)
+    const response = await fetch('http://api-python:8000/agents/segment/export', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
