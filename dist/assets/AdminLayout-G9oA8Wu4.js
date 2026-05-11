@@ -1,1 +1,0 @@
-import{j as x}from"./vendor-query-DytMi2Bd.js";function s({children:m}){return x.jsx("div",{className:"min-h-full px-4 sm:px-6 md:px-10 py-6 md:py-8 max-w-7xl mx-auto w-full",children:m})}export{s as A};
