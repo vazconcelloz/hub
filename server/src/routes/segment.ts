@@ -60,7 +60,7 @@ router.post('/export', authMiddleware, async (req, res) => {
     fs.writeFileSync(filePath, buffer);
 
     // Retorna a URL pública usando a rota segura de download
-    return res.json({ downloadUrl: `http://localhost:3001/api/segment/download/${fileName}`, fileName });
+    return res.json({ downloadUrl: `/api/segment/download/${fileName}`, fileName });
 
   } catch (error: any) {
     console.error('Segment export error:', error);
