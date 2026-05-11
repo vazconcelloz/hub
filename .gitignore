@@ -7,6 +7,9 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+dist
+server/dist
+server/uploads/temp
 node_modules
 dist-ssr
 *.local
