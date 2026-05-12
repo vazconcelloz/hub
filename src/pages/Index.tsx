@@ -15,7 +15,7 @@ export default function Index() {
             Propostas de seguros que encantam seus clientes
           </h1>
           <p className="text-lg opacity-90 max-w-xl mx-auto">
-            Crie estudos comparativos em minutos. Envie links e feche mais contratos.
+            Crie propostas HUB FBN em minutos. Envie links e feche mais contratos.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
             <Link to="/admin">
@@ -60,7 +60,7 @@ export default function Index() {
       </section>
 
       <footer className="border-t py-6 text-center text-sm text-muted-foreground">
-        <p>FBN Digital — Sua plataforma de propostas inteligentes</p>
+        <p>HUB FBN — Sua plataforma de propostas inteligentes</p>
       </footer>
     </div>
   );

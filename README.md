@@ -1,3 +1,3 @@
-# Welcome to your Lovable project
+# HUB FBN
 
-TODO: Document your project here
+Sistema de cotações e gestão de benefícios do Grupo FBN.
