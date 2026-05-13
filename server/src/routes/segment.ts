@@ -7,7 +7,7 @@ const router = Router();
 
 router.post('/export', authMiddleware, async (req, res) => {
   try {
-    const { question, database = 'FBN', limit = 50, file_format = 'xlsx' } = req.body;
+    const { question, database = 'FBN', limit = 10000, file_format = 'xlsx' } = req.body;
 
     if (!question) {
       return res.status(400).json({ error: 'A pergunta (question) é obrigatória.' });
@@ -40,8 +40,8 @@ router.post('/export', authMiddleware, async (req, res) => {
       try {
         const json = JSON.parse(text);
         if (json.detail) errorMessage = json.detail;
-      } catch (e) {}
-      
+      } catch (e) { }
+
       return res.status(response.status).json({ error: errorMessage });
     }
 
@@ -54,7 +54,7 @@ router.post('/export', authMiddleware, async (req, res) => {
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });
     }
-    
+
     const fileName = `segmentacao_${Date.now()}.xlsx`;
     const filePath = path.join(tempDir, fileName);
     fs.writeFileSync(filePath, buffer);
@@ -72,7 +72,7 @@ router.post('/export', authMiddleware, async (req, res) => {
 router.get('/download/:fileName', (req, res) => {
   const { fileName } = req.params;
   const filePath = path.join(__dirname, '../../uploads/temp', fileName);
-  
+
   if (fs.existsSync(filePath)) {
     return res.download(filePath, fileName);
   } else {
