@@ -89,21 +89,24 @@ export function usePropostaData() {
       setLoading(false);
       return;
     }
-    const { data: prop } = await db.from("propostas").select("*").eq("slug", slug).single();
-    if (!prop) {
+    try {
+      const { api } = await import('@/lib/api');
+      const res = await api.fetch(`/propostas/full/${slug}`);
+      console.log("Proposal Response:", res);
+      
+      if (res.proposta) {
+        setProposta(res.proposta);
+        setOperadoras(res.operadoras || []);
+      } else {
+        console.warn("No proposal in response");
+        setNotFound(true);
+      }
+    } catch (err) {
+      console.error('Error loading proposal:', err);
       setNotFound(true);
+    } finally {
       setLoading(false);
-      return;
     }
-    setProposta(prop);
-
-    const { data: ops } = await db
-      .from("proposta_operadoras")
-      .select("*")
-      .eq("proposta_id", prop.id)
-      .order("ordem_exibicao");
-    setOperadoras(ops || []);
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -190,6 +193,16 @@ export function usePropostaData() {
     if (!draftProposta || !proposta) return;
     setSaving(true);
     try {
+      const toIso = (dateStr: string | null | undefined) => {
+        if (!dateStr) return null;
+        try {
+          const date = new Date(`${dateStr}T12:00:00Z`);
+          return isNaN(date.getTime()) ? null : date.toISOString();
+        } catch {
+          return null;
+        }
+      };
+
       const { error: e1 } = await db
         .from("propostas")
         .update({
@@ -197,7 +210,7 @@ export function usePropostaData() {
           cidade: draftProposta.cidade,
           estado: draftProposta.estado,
           tipo_produto: draftProposta.tipo_produto,
-          validade_proposta: draftProposta.validade_proposta,
+          validade_proposta: toIso(draftProposta.validade_proposta),
           linhas_ocultas: draftProposta.linhas_ocultas ?? [],
           cores_rotulos: draftProposta.cores_rotulos ?? null,
         })

@@ -28,6 +28,7 @@ const CatalogoPage = lazy(() => import("./pages/CatalogoPage"));
 const TreinamentosPage = lazy(() => import("./pages/TreinamentosPage"));
 const ManuaisPage = lazy(() => import("./pages/ManuaisPage"));
 const SegmentacoesPage = lazy(() => import("./pages/SegmentacoesPage"));
+const RDStationMappingPage = lazy(() => import("./pages/RDStationMappingPage"));
 const ConfiguracoesPage = lazy(() => import("./pages/ConfiguracoesPage"));
 const UsuariosPage = lazy(() => import("./pages/UsuariosPage"));
 
@@ -114,6 +115,14 @@ const App = () => (
                     element={
                       <RequirePermission permission="segmentacoes.ver">
                         <SegmentacoesPage />
+                      </RequirePermission>
+                    }
+                  />
+                  <Route
+                    path="/app/segmentacoes/rd-mapping"
+                    element={
+                      <RequirePermission permission="segmentacoes.ver">
+                        <RDStationMappingPage />
                       </RequirePermission>
                     }
                   />

@@ -325,13 +325,23 @@ export default function PropostaFormPage() {
         consultorPhotoUrl = await uploadFile(consultorPhoto, "consultora-fotos", "photos");
       }
 
+      const toIso = (dateStr: string | null | undefined) => {
+        if (!dateStr) return null;
+        try {
+          const date = new Date(`${dateStr}T12:00:00Z`);
+          return isNaN(date.getTime()) ? null : date.toISOString();
+        } catch {
+          return null;
+        }
+      };
+
       let propostaId: string;
 
       if (isEdit) {
         const { error } = await db.from("propostas").update({
           ...form,
           consultora_foto_url: consultorPhotoUrl,
-          validade_proposta: form.validade_proposta || null,
+          validade_proposta: toIso(form.validade_proposta),
         } as any).eq("id", id!);
         if (error) throw error;
         propostaId = id!;
@@ -342,10 +352,9 @@ export default function PropostaFormPage() {
         const slug = generateSlug();
         const { data, error } = await db.from("propostas").insert({
           ...form,
-          
           slug,
           consultora_foto_url: consultorPhotoUrl,
-          validade_proposta: form.validade_proposta || null,
+          validade_proposta: toIso(form.validade_proposta),
         } as any).select().single();
         if (error) throw error;
         propostaId = data.id;

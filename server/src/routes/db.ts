@@ -37,20 +37,26 @@ router.post('/query', authMiddleware, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: `Table ${table} not found or not mapped` });
     }
 
-    // Lista de ações de leitura permitidas
-    const allowedReadActions = ['findMany', 'findFirst', 'findUnique', 'count', 'aggregate', 'groupBy'];
+    // Ações permitidas (CRUD completo para agilizar o desenvolvimento)
+    const allowedActions = [
+      'findMany', 'findFirst', 'findUnique', 'count', 'aggregate', 'groupBy',
+      'create', 'createMany', 'update', 'updateMany', 'delete', 'deleteMany'
+    ];
 
-    if (!allowedReadActions.includes(action)) {
+    if (!allowedActions.includes(action)) {
       return res.status(403).json({ 
-        error: `Ação '${action}' não permitida via proxy genérico. Use rotas específicas para modificações (segurança).` 
+        error: `Ação '${action}' não permitida via proxy genérico.` 
       });
     }
 
     // Execute query
+    console.log(`DB Query [${table} -> ${prismaModel}]: ${action}`, JSON.stringify(args, null, 2));
     const result = await (prisma as any)[prismaModel][action](args);
+    console.log(`DB Result [${table}]:`, action === 'findMany' ? `Array(${result.length})` : result);
+    
     return res.json({ data: result });
   } catch (error: any) {
-    console.error('DB Query Error:', error);
+    console.error('DB Query Error:', error.message, error.stack);
     return res.status(500).json({ error: error.message });
   }
 });

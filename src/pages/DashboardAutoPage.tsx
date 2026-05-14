@@ -26,6 +26,7 @@ export default function DashboardAutoPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch();
@@ -104,12 +105,24 @@ export default function DashboardAutoPage() {
   };
 
   const excluir = async (id: string) => {
-    if (!confirm("Excluir esta proposta?")) return;
-    const { error } = await db.from("propostas_auto").delete().eq("id", id);
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else {
-      toast({ title: "Proposta excluída" });
+    try {
+      // 1. Primeiro excluímos as seguradoras vinculadas (cascata manual via proxy)
+      await db.from("proposta_auto_seguradoras").delete().eq("proposta_id", id);
+      
+      // 2. Depois excluímos a proposta
+      const { error } = await db.from("propostas_auto").delete().eq("id", id);
+      
+      if (error) throw error;
+      
+      toast({ title: "Proposta excluída com sucesso!" });
       fetch();
+    } catch (error: any) {
+      console.error("Erro ao excluir:", error);
+      toast({ 
+        title: "Erro ao excluir", 
+        description: error.message || "Não foi possível excluir a proposta.", 
+        variant: "destructive" 
+      });
     }
   };
 
@@ -230,9 +243,22 @@ export default function DashboardAutoPage() {
                     <Button variant="ghost" size="icon" onClick={() => duplicar(p)} title="Duplicar">
                       <FileText className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => excluir(p.id)} title="Excluir">
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
+                    
+                    {confirmDeleteId === p.id ? (
+                      <div className="flex items-center bg-destructive/10 rounded-md p-1 border border-destructive/20 ml-2">
+                        <span className="text-xs font-medium text-destructive px-2">Excluir?</span>
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground" onClick={() => excluir(p.id)}>
+                          Sim
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 ml-1 hover:bg-muted" onClick={() => setConfirmDeleteId(null)}>
+                          Não
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button variant="ghost" size="icon" onClick={() => setConfirmDeleteId(p.id)} title="Excluir">
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </Card>

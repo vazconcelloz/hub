@@ -43,11 +43,11 @@ interface MenuItem {
 }
 
 const items: MenuItem[] = [
-  { title: "Início", url: "/app", icon: Home, exact: true, permission: "app.padrao" },
-  { title: "Treinamentos", url: "/app/treinamentos", icon: GraduationCap, permission: "app.padrao" },
-  { title: "Manuais", url: "/app/manuais", icon: BookOpen, permission: "app.padrao" },
-  { title: "Segmentações", url: "/app/segmentacoes", icon: Target, permission: "app.segmentacoes" },
-  { title: "Cotações", url: "/app/cotacoes", icon: FileSpreadsheet, permission: ["cotacao.saude", "cotacao.auto", "cotacao.vida"] },
+  { title: "Início", url: "/app", icon: Home, exact: true }, // Sem restrição se logado
+  { title: "Treinamentos", url: "/app/treinamentos", icon: GraduationCap, permission: "treinamentos.ver" },
+  { title: "Manuais", url: "/app/manuais", icon: BookOpen, permission: "manuais.ver" },
+  { title: "Segmentações", url: "/app/segmentacoes", icon: Target, permission: "segmentacoes.ver" },
+  { title: "Cotações", url: "/app/cotacoes", icon: FileSpreadsheet, permission: "cotacoes.ver" },
   { title: "Usuários", url: "/app/usuarios", icon: UserCog, adminOnly: true },
   { title: "Configurações", url: "/app/configuracoes", icon: Settings, adminOnly: true },
 ];

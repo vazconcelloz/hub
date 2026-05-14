@@ -70,14 +70,45 @@ export const db = {
           return { data: null, error: err };
         }
       },
-      insert: async (data: unknown) => {
+      maybeSingle: async () => {
         try {
-          const action = Array.isArray(data) ? 'createMany' : 'create';
-          const res = await api.fetch('/db/query', { method: 'POST', body: JSON.stringify({ table, action, args: { data } }) });
-          return { data: res.data || data, error: null };
+          const res = await api.fetch('/db/query', { method: 'POST', body: JSON.stringify({ table, action: 'findFirst', args: queryArgs }) });
+          return { data: res.data || null, error: null };
         } catch (err) {
           return { data: null, error: err };
         }
+      },
+      insert: (data: unknown) => {
+        const insertBuilder = {
+          select: () => insertBuilder,
+          single: async () => {
+            try {
+              const isArray = Array.isArray(data);
+              const action = isArray ? 'createMany' : 'create';
+              const res = await api.fetch('/db/query', { 
+                method: 'POST', 
+                body: JSON.stringify({ table, action, args: isArray ? { data, skipDuplicates: true } : { data } }) 
+              });
+              
+              // Se for array (createMany), o Prisma retorna { count: N }. 
+              // Para não quebrar o frontend que espera os registros, retornamos o próprio dado enviado 
+              // se o resultado não contiver os registros (o que é o caso do createMany).
+              let returnData = res.data;
+              if (isArray && res.data && typeof res.data.count === 'number') {
+                returnData = data;
+              }
+              
+              return { data: returnData || data, error: null };
+            } catch (err) {
+              console.error(`Insert error on ${table}:`, err);
+              return { data: null, error: err };
+            }
+          },
+          then: (resolve: (v: any) => void) => {
+            insertBuilder.single().then(resolve);
+          }
+        };
+        return insertBuilder;
       },
       update: (data: unknown) => {
         queryArgs.data = data;
@@ -85,7 +116,12 @@ export const db = {
           eq: async (field: string, val: unknown) => {
             try {
               (queryArgs.where as Record<string, unknown>)[field] = val;
-              const res = await api.fetch('/db/query', { method: 'POST', body: JSON.stringify({ table, action: 'updateMany', args: queryArgs }) });
+              // Remove orderBy from updateMany as Prisma doesn't support it
+              const { orderBy, ...cleanArgs } = queryArgs;
+              const res = await api.fetch('/db/query', { 
+                method: 'POST', 
+                body: JSON.stringify({ table, action: 'updateMany', args: cleanArgs }) 
+              });
               return { data: res.data, error: null };
             } catch (err) {
               return { data: null, error: err };
@@ -98,7 +134,12 @@ export const db = {
           eq: async (field: string, val: unknown) => {
             try {
               (queryArgs.where as Record<string, unknown>)[field] = val;
-              const res = await api.fetch('/db/query', { method: 'POST', body: JSON.stringify({ table, action: 'deleteMany', args: queryArgs }) });
+              // Remove orderBy from deleteMany as Prisma doesn't support it
+              const { orderBy, ...cleanArgs } = queryArgs;
+              const res = await api.fetch('/db/query', { 
+                method: 'POST', 
+                body: JSON.stringify({ table, action: 'deleteMany', args: cleanArgs }) 
+              });
               return { data: res.data, error: null };
             } catch (err) {
               return { data: null, error: err };

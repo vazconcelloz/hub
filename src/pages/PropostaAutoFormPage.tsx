@@ -14,7 +14,7 @@ import { Save, ArrowLeft, Plus, Trash2, Upload, Loader2 } from "lucide-react";
 import { generateSlug, STATUS_LABELS } from "@/lib/proposal-auto-utils";
 import { DESTAQUE_LABELS, COLUNA_COLORS } from "@/lib/proposal-utils";
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import { Check, CreditCard } from "lucide-react";
 
 interface AutoCardForm {
   id?: string;
@@ -82,7 +82,7 @@ export default function PropostaAutoFormPage() {
     tipo_cotacao: "", vigencia_inicio: "", vigencia_fim: "",
     cep_pernoite: "", condutor_18_26: false,
   });
-  const [cards, setCards] = useState<AutoCardForm[]>(modoManual ? [{ ...empty, ordem_exibicao: 1 }] : []);
+  const [cards, setCards] = useState<AutoCardForm[]>(modoManual ? [{ ...empty, id: 'manual-init', ordem_exibicao: 1 }] : []);
 
   useEffect(() => {
     if (isEdit) load();
@@ -170,6 +170,7 @@ export default function PropostaAutoFormPage() {
 
       const novos: AutoCardForm[] = (ext.cotacoes || []).map((c: any, i: number) => ({
         ...empty,
+        id: `pdf-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
         seguradora_nome: c.seguradora_nome || "",
         produto_nome: c.produto_nome || "",
         premio_total: c.premio_total?.toString() || "",
@@ -208,8 +209,14 @@ export default function PropostaAutoFormPage() {
     setCards((cs) => cs.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
   };
 
-  const removeCard = (i: number) => setCards((cs) => cs.filter((_, idx) => idx !== i));
-  const addCard = () => setCards((cs) => [...cs, { ...empty, ordem_exibicao: cs.length + 1 }]);
+  const removeCard = (id: string | undefined, index: number) => {
+    setCards((cs) => cs.filter((c, idx) => {
+      if (id && c.id) return c.id !== id;
+      return idx !== index;
+    }));
+  };
+
+  const addCard = () => setCards((cs) => [...cs, { ...empty, id: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, ordem_exibicao: cs.length + 1 }]);
 
   const save = async () => {
     if (!form.nome_cliente.trim()) {
@@ -219,11 +226,23 @@ export default function PropostaAutoFormPage() {
     setSaving(true);
     try {
       const { data: { user } } = await db.auth.getUser();
+      
+      const toIso = (dateStr: string | null | undefined) => {
+        if (!dateStr) return null;
+        try {
+          // Garante que a data seja interpretada corretamente sem deslocamento de fuso
+          const date = new Date(`${dateStr}T12:00:00Z`);
+          return isNaN(date.getTime()) ? null : date.toISOString();
+        } catch {
+          return null;
+        }
+      };
+
       const payload = {
         ...form,
-        validade_proposta: form.validade_proposta || null,
-        vigencia_inicio: form.vigencia_inicio || null,
-        vigencia_fim: form.vigencia_fim || null,
+        validade_proposta: toIso(form.validade_proposta),
+        vigencia_inicio: toIso(form.vigencia_inicio),
+        vigencia_fim: toIso(form.vigencia_fim),
         user_id: user?.id,
       };
 
@@ -242,12 +261,15 @@ export default function PropostaAutoFormPage() {
       }
 
       // sync cards: deleta existentes e re-insere
-      if (isEdit) await db.from("proposta_auto_seguradoras").delete().eq("proposta_id", propostaId!);
+      if (isEdit) {
+        await db.from("proposta_auto_seguradoras").delete().eq("proposta_id", propostaId!);
+      }
 
       if (cards.length) {
+        console.log(`Tentando salvar ${cards.length} seguradoras para a proposta ${propostaId}`);
         const rows = cards.map((c, i) => ({
           proposta_id: propostaId!,
-          seguradora_nome: c.seguradora_nome,
+          seguradora_nome: c.seguradora_nome || "Sem nome",
           produto_nome: c.produto_nome || null,
           premio_total: num(c.premio_total),
           cobertura_resumo: c.cobertura_resumo || null,
@@ -263,21 +285,29 @@ export default function PropostaAutoFormPage() {
           carro_reserva: c.carro_reserva || null,
           parcelamento: c.parcelamento || null,
           formas_pagamento: c.formas_pagamento || null,
-          formas_pagamento_detalhes: c.formas_pagamento_detalhes && c.formas_pagamento_detalhes.length > 0
-            ? c.formas_pagamento_detalhes
-            : null,
+          formas_pagamento_detalhes: Array.isArray(c.formas_pagamento_detalhes) ? c.formas_pagamento_detalhes : null,
           destaque_comercial: c.destaque_comercial || null,
           cor_coluna: c.cor_coluna || null,
           ordem_exibicao: i + 1,
         }));
-        const { error } = await db.from("proposta_auto_seguradoras").insert(rows);
-        if (error) throw error;
+        
+        // Tenta salvar em lote
+        const { error: insErr } = await db.from("proposta_auto_seguradoras").insert(rows);
+        if (insErr) {
+          console.error("Erro no insert createMany, tentando individualmente...", insErr);
+          // Fallback para individual se falhar em lote (mais lento mas mais seguro para debug)
+          for (const row of rows) {
+            const { error: singleErr } = await db.from("proposta_auto_seguradoras").insert(row);
+            if (singleErr) throw singleErr;
+          }
+        }
       }
 
-      toast({ title: "Proposta salva!" });
+      toast({ title: "Proposta salva com sucesso!" });
       navigate("/app/cotacoes/automovel");
     } catch (e: any) {
-      toast({ title: "Erro ao salvar", description: e.message, variant: "destructive" });
+      console.error("Erro fatal ao salvar proposta:", e);
+      toast({ title: "Erro ao salvar", description: e.message || "Erro desconhecido", variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -408,12 +438,22 @@ export default function PropostaAutoFormPage() {
         </div>
 
         {cards.map((c, i) => (
-          <Card key={i}>
+          <Card key={c.id || i}>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base">
                 {c.seguradora_nome || "Nova cotação"} {c.produto_nome ? `— ${c.produto_nome}` : ""}
               </CardTitle>
-              <Button variant="ghost" size="icon" onClick={() => removeCard(i)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+              <Button 
+                type="button"
+                variant="ghost" 
+                size="icon" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  removeCard(c.id, i);
+                }}
+              >
+                <Trash2 className="w-4 h-4 text-destructive" />
+              </Button>
             </CardHeader>
             <CardContent className="grid sm:grid-cols-2 gap-3">
               <div><Label>Seguradora *</Label><Input value={c.seguradora_nome} onChange={(e) => updateCard(i, { seguradora_nome: e.target.value })} /></div>
@@ -431,7 +471,67 @@ export default function PropostaAutoFormPage() {
               <div><Label>Assistência 24h</Label><Input value={c.assistencia_24h} onChange={(e) => updateCard(i, { assistencia_24h: e.target.value })} placeholder="Reboque 500 km" /></div>
               <div><Label>Vidros</Label><Input value={c.vidros} onChange={(e) => updateCard(i, { vidros: e.target.value })} placeholder="Não contemplado" /></div>
               <div><Label>Carro reserva</Label><Input value={c.carro_reserva} onChange={(e) => updateCard(i, { carro_reserva: e.target.value })} /></div>
-              <div><Label>Formas de pagamento</Label><Input value={c.formas_pagamento} onChange={(e) => updateCard(i, { formas_pagamento: e.target.value })} /></div>
+              <div className="sm:col-span-2 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <CreditCard className="w-4 h-4" />
+                  Opções de Pagamento Detalhadas
+                </div>
+                <div className="grid gap-2 border rounded-md p-3 bg-muted/20">
+                  {(c.formas_pagamento_detalhes || [{ tipo: "Cartão de crédito", descricao: "" }, { tipo: "Boleto", descricao: "" }]).map((d, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <Select
+                        value={d.tipo}
+                        onValueChange={(v) => {
+                          const next = [...(c.formas_pagamento_detalhes || [{ tipo: "Cartão de crédito", descricao: "" }, { tipo: "Boleto", descricao: "" }])];
+                          next[idx] = { ...next[idx], tipo: v };
+                          updateCard(i, { formas_pagamento_detalhes: next });
+                        }}
+                      >
+                        <SelectTrigger className="h-9 w-40 bg-background">
+                          <SelectValue placeholder="Tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["Cartão de crédito", "Boleto", "Débito em conta", "PIX", "Cartão de débito"].map(t => (
+                            <SelectItem key={t} value={t}>{t}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        value={d.descricao}
+                        onChange={(e) => {
+                          const next = [...(c.formas_pagamento_detalhes || [{ tipo: "Cartão de crédito", descricao: "" }, { tipo: "Boleto", descricao: "" }])];
+                          next[idx] = { ...next[idx], descricao: e.target.value };
+                          updateCard(i, { formas_pagamento_detalhes: next });
+                        }}
+                        placeholder="Ex: 10x sem juros"
+                        className="bg-background"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const next = (c.formas_pagamento_detalhes || []).filter((_, k) => k !== idx);
+                          updateCard(i, { formas_pagamento_detalhes: next.length ? next : null });
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 text-muted-foreground" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-fit"
+                    onClick={() => {
+                      const next = [...(c.formas_pagamento_detalhes || [])];
+                      next.push({ tipo: "Cartão de crédito", descricao: "" });
+                      updateCard(i, { formas_pagamento_detalhes: next });
+                    }}
+                  >
+                    <Plus className="w-3 h-3 mr-1" /> Adicionar opção
+                  </Button>
+                </div>
+              </div>
               <div>
                 <Label>Destaque comercial</Label>
                 <Select

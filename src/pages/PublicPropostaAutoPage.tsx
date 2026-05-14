@@ -127,6 +127,7 @@ interface Criterio {
 }
 
 const CRITERIOS: Criterio[] = [
+  { label: "Produto / Plano", field: "produto_nome", type: "text", render: (c) => txt(c.produto_nome) },
   { label: "Cobertura", field: "cobertura_resumo", type: "text", render: (c) => txt(c.cobertura_resumo) },
   {
     label: "Franquia (R$)",
@@ -198,29 +199,27 @@ export default function PublicPropostaAutoPage() {
         setLoading(false);
         return;
       }
-      const { data: p } = await db
-        .from("propostas_auto")
-        .select("*")
-        .eq("slug", slug)
-        .maybeSingle();
-      if (!p) {
+      try {
+        const { api } = await import('@/lib/api');
+        const res = await api.fetch(`/propostas/auto/full/${slug}`);
+        console.log("Auto Proposal Response:", res);
+        
+        if (res.proposta) {
+          setProposta(res.proposta);
+          setCotacoes(res.seguradoras || []);
+          
+          // detecta admin (qualquer usuário autenticado pode editar)
+          const { data: { user } } = await db.auth.getUser();
+          setIsAdmin(!!user);
+        } else {
+          setNotFound(true);
+        }
+      } catch (err) {
+        console.error('Error loading auto proposal:', err);
         setNotFound(true);
+      } finally {
         setLoading(false);
-        return;
       }
-      setProposta(p);
-      const { data: cs } = await db
-        .from("proposta_auto_seguradoras")
-        .select("*")
-        .eq("proposta_id", p.id)
-        .order("ordem_exibicao");
-      setCotacoes(cs || []);
-
-      // detecta admin (qualquer usuário autenticado pode editar — RLS valida)
-      const { data: { user } } = await db.auth.getUser();
-      setIsAdmin(!!user);
-
-      setLoading(false);
     })();
   }, [slug]);
 
@@ -259,8 +258,8 @@ export default function PublicPropostaAutoPage() {
         .eq("id", proposta.id);
       if (propErr) throw propErr;
 
-      // Estratégia simples e consistente com o form admin:
-      // deleta todas as cotações e re-insere a partir do draft.
+      // Deleta todas as cotações e re-insere a partir do draft.
+      console.log(`Limpando cotações antigas da proposta ${proposta.id}`);
       const { error: delErr } = await db
         .from("proposta_auto_seguradoras")
         .delete()
@@ -268,6 +267,7 @@ export default function PublicPropostaAutoPage() {
       if (delErr) throw delErr;
 
       if (draft.length) {
+        console.log(`Salvando ${draft.length} cotações (draft) para a proposta ${proposta.id}`);
         const rows: AutoCotacaoInsert[] = draft.map((c, i) => ({
           proposta_id: proposta.id,
           seguradora_nome: c.seguradora_nome || "Sem nome",
@@ -291,12 +291,27 @@ export default function PublicPropostaAutoPage() {
           cor_coluna: c.cor_coluna,
           ordem_exibicao: i + 1,
         }));
+        
         const { data: inserted, error: insErr } = await db
           .from("proposta_auto_seguradoras")
-          .insert(rows)
-          .select();
-        if (insErr) throw insErr;
-        setCotacoes(inserted || []);
+          .insert(rows);
+          
+        if (insErr) {
+          console.error("Erro no insert createMany (public), tentando individual...", insErr);
+          for (const row of rows) {
+            const { error: singleErr } = await db.from("proposta_auto_seguradoras").insert(row);
+            if (singleErr) throw singleErr;
+          }
+        }
+        
+        // Recarrega as cotações para garantir que o estado local está sincronizado com o banco
+        const { data: refreshed } = await db
+          .from("proposta_auto_seguradoras")
+          .select("*")
+          .eq("proposta_id", proposta.id)
+          .order("ordem_exibicao");
+          
+        setCotacoes(refreshed || []);
       } else {
         setCotacoes([]);
       }
@@ -304,11 +319,12 @@ export default function PublicPropostaAutoPage() {
       setProposta((p) => (p ? { ...p, cor_rotulos: draftCorRotulos } : p));
       setEditMode(false);
       setDraft([]);
-      toast({ title: "Alterações salvas!" });
+      toast({ title: "Alterações salvas com sucesso!" });
     } catch (e: any) {
+      console.error("Erro fatal ao salvar edit (public):", e);
       toast({
         title: "Erro ao salvar",
-        description: e.message,
+        description: e.message || "Erro desconhecido",
         variant: "destructive",
       });
     } finally {
