@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Eye, Copy, Pencil, FileText, Trash2, Car } from "lucide-react";
+import { Plus, Search, Eye, Copy, Pencil, FileText, Trash2, Car, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -234,8 +234,11 @@ export default function DashboardAutoPage() {
                     <Button variant="ghost" size="icon" onClick={() => navigate(`/app/cotacoes/automovel/proposta/${p.id}`)} title="Editar">
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => navigate(`/app/cotacoes/automovel/cotacao/${p.slug}`)} title="Visualizar">
+                    <Button variant="ghost" size="icon" onClick={() => navigate(`/app/cotacoes/automovel/cotacao/${p.slug}`)} title="Visualizar/Editar grade">
                       <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => window.open(`/cotacao-auto/${p.slug}`, '_blank')} title="Ver como cliente">
+                      <ExternalLink className="w-4 h-4" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => copyLink(p.slug)} title="Copiar link">
                       <Copy className="w-4 h-4" />

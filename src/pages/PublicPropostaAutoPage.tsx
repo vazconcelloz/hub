@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { db } from "@/lib/db";
 import {
   PropostaAuto,
@@ -17,19 +17,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import {
   Shield,
@@ -37,23 +24,27 @@ import {
   Car,
   Calendar,
   FileText,
-  Pencil,
-  Save,
-  X,
-  Plus,
-  Trash2,
-  Palette,
-  Check,
   Loader2,
-  CreditCard,
-  ChevronDown,
   MapPin,
   RefreshCw,
   UserCheck,
+  CreditCard,
+  ChevronDown,
+  Edit2,
+  Eye as EyeIcon,
+  Plus,
+  Trash2,
+  Save as SaveIcon,
+  X,
+  Palette,
+  Check,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import heroBg from "@/assets/proposta-hero-bg.jpg";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // ============== Formas de pagamento (gaveta) ==============
 interface FormaPagamento {
@@ -146,51 +137,24 @@ const CRITERIOS: Criterio[] = [
   { label: "Carro reserva", field: "carro_reserva", type: "text", render: (c) => txt(c.carro_reserva) },
 ];
 
-// Cota��o vazia (template para "Adicionar")
-const emptyCotacao = (proposta_id: string, ordem: number): AutoCotacao => ({
-  id: `tmp-${Math.random().toString(36).slice(2)}`,
-  proposta_id,
-  seguradora_nome: "Nova seguradora",
-  produto_nome: null,
-  premio_total: null,
-  cobertura_resumo: null,
-  franquia_valor: null,
-  franquia_tipo: null,
-  percentual_fipe: null,
-  danos_materiais: null,
-  danos_corporais: null,
-  danos_morais: null,
-  app_morte_invalidez: null,
-  assistencia_24h: null,
-  vidros: null,
-  carro_reserva: null,
-  parcelamento: null,
-  formas_pagamento: null,
-  formas_pagamento_detalhes: null,
-  destaque_comercial: null,
-  cor_coluna: null,
-  cores_celulas: null,
-  pdf_url: null,
-  ordem_exibicao: ordem,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-});
-
 export default function PublicPropostaAutoPage() {
   const { slug } = useParams();
+  const location = useLocation();
   const { toast } = useToast();
+
+  const isAdmin = location.pathname.startsWith("/app");
+  const [editMode, setEditMode] = useState(false);
+
   const [proposta, setProposta] = useState<PropostaAuto | null>(null);
   const [cotacoes, setCotacoes] = useState<AutoCotacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-
-  // Modo de edição (apenas admin logado)
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [draft, setDraft] = useState<AutoCotacao[]>([]);
-  const [draftCorRotulos, setDraftCorRotulos] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
   const [pagamentoOpen, setPagamentoOpen] = useState(false);
+
+  // Draft states
+  const [draft, setDraft] = useState<AutoCotacao[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [draftCorRotulos, setDraftCorRotulos] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -202,15 +166,12 @@ export default function PublicPropostaAutoPage() {
       try {
         const { api } = await import('@/lib/api');
         const res = await api.fetch(`/propostas/auto/full/${slug}`);
-        console.log("Auto Proposal Response:", res);
         
         if (res.proposta) {
           setProposta(res.proposta);
           setCotacoes(res.seguradoras || []);
-          
-          // detecta admin (qualquer usuário autenticado pode editar)
-          const { data: { user } } = await db.auth.getUser();
-          setIsAdmin(!!user);
+          setDraft(res.seguradoras || []);
+          setDraftCorRotulos(res.proposta.cor_rotulos || null);
         } else {
           setNotFound(true);
         }
@@ -222,152 +183,6 @@ export default function PublicPropostaAutoPage() {
       }
     })();
   }, [slug]);
-
-  const enterEdit = () => {
-    setDraft(cotacoes.map((c) => ({ ...c })));
-    setDraftCorRotulos(proposta?.cor_rotulos ?? null);
-    setEditMode(true);
-  };
-  const cancelEdit = () => {
-    setDraft([]);
-    setDraftCorRotulos(null);
-    setEditMode(false);
-  };
-
-  const updateDraft = (id: string, field: keyof AutoCotacao, value: any) => {
-    setDraft((d) => d.map((c) => (c.id === id ? { ...c, [field]: value } : c)));
-  };
-
-  const addCotacao = () => {
-    if (!proposta) return;
-    setDraft((d) => [...d, emptyCotacao(proposta.id, d.length + 1)]);
-  };
-
-  const removeCotacao = (id: string) => {
-    setDraft((d) => d.filter((c) => c.id !== id));
-  };
-
-  const saveEdit = async () => {
-    if (!proposta) return;
-    setSaving(true);
-    try {
-      // Salva preferências da proposta (cor da coluna de rótulos)
-      const { error: propErr } = await db
-        .from("propostas_auto")
-        .update({ cor_rotulos: draftCorRotulos })
-        .eq("id", proposta.id);
-      if (propErr) throw propErr;
-
-      // Deleta todas as cotações e re-insere a partir do draft.
-      console.log(`Limpando cotações antigas da proposta ${proposta.id}`);
-      const { error: delErr } = await db
-        .from("proposta_auto_seguradoras")
-        .delete()
-        .eq("proposta_id", proposta.id);
-      if (delErr) throw delErr;
-
-      if (draft.length) {
-        console.log(`Salvando ${draft.length} cotações (draft) para a proposta ${proposta.id}`);
-        const rows: AutoCotacaoInsert[] = draft.map((c, i) => ({
-          proposta_id: proposta.id,
-          seguradora_nome: c.seguradora_nome || "Sem nome",
-          produto_nome: c.produto_nome,
-          premio_total: c.premio_total,
-          cobertura_resumo: c.cobertura_resumo,
-          franquia_valor: c.franquia_valor,
-          franquia_tipo: c.franquia_tipo,
-          percentual_fipe: c.percentual_fipe,
-          danos_materiais: c.danos_materiais,
-          danos_corporais: c.danos_corporais,
-          danos_morais: c.danos_morais,
-          app_morte_invalidez: c.app_morte_invalidez,
-          assistencia_24h: c.assistencia_24h,
-          vidros: c.vidros,
-          carro_reserva: c.carro_reserva,
-          parcelamento: c.parcelamento,
-          formas_pagamento: c.formas_pagamento,
-          formas_pagamento_detalhes: c.formas_pagamento_detalhes,
-          destaque_comercial: c.destaque_comercial,
-          cor_coluna: c.cor_coluna,
-          ordem_exibicao: i + 1,
-        }));
-        
-        const { data: inserted, error: insErr } = await db
-          .from("proposta_auto_seguradoras")
-          .insert(rows);
-          
-        if (insErr) {
-          console.error("Erro no insert createMany (public), tentando individual...", insErr);
-          for (const row of rows) {
-            const { error: singleErr } = await db.from("proposta_auto_seguradoras").insert(row);
-            if (singleErr) throw singleErr;
-          }
-        }
-        
-        // Recarrega as cotações para garantir que o estado local está sincronizado com o banco
-        const { data: refreshed } = await db
-          .from("proposta_auto_seguradoras")
-          .select("*")
-          .eq("proposta_id", proposta.id)
-          .order("ordem_exibicao");
-          
-        setCotacoes(refreshed || []);
-      } else {
-        setCotacoes([]);
-      }
-
-      setProposta((p) => (p ? { ...p, cor_rotulos: draftCorRotulos } : p));
-      setEditMode(false);
-      setDraft([]);
-      toast({ title: "Alterações salvas com sucesso!" });
-    } catch (e: any) {
-      console.error("Erro fatal ao salvar edit (public):", e);
-      toast({
-        title: "Erro ao salvar",
-        description: e.message || "Erro desconhecido",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Paleta para cor da coluna
-  const ColorPalette = ({
-    current,
-    onPick,
-  }: {
-    current: string | null | undefined;
-    onPick: (k: string | null) => void;
-  }) => (
-    <div className="grid grid-cols-5 gap-1.5">
-      <button
-        type="button"
-        onClick={() => onPick(null)}
-        className={cn(
-          "h-8 col-span-5 rounded text-[11px] bg-muted text-muted-foreground",
-          !current && "ring-2 ring-offset-1 ring-foreground"
-        )}
-      >
-        Sem cor
-      </button>
-      {Object.entries(COLUNA_COLORS).map(([k, c]) => (
-        <button
-          key={k}
-          type="button"
-          onClick={() => onPick(k)}
-          className={cn(
-            "h-8 rounded flex items-center justify-center",
-            c.header,
-            current === k && "ring-2 ring-offset-1 ring-foreground"
-          )}
-          title={c.label}
-        >
-          {current === k && <Check className="w-3 h-3" />}
-        </button>
-      ))}
-    </div>
-  );
 
   if (loading) {
     return (
@@ -393,6 +208,13 @@ export default function PublicPropostaAutoPage() {
     );
   }
 
+  const view = editMode ? draft : cotacoes;
+  const corRotulosAtiva = editMode ? draftCorRotulos : proposta.cor_rotulos ?? null;
+  const rotuloCol = getColunaColor(corRotulosAtiva);
+  const algumaTemPagamento = view.some(
+    (c) => parseFormasPagamento(c.formas_pagamento_detalhes).length > 0
+  );
+
   const tel = (proposta.consultora_telefone || "").replace(/\D/g, "");
   const whatsappHref = tel
     ? `https://wa.me/${tel.length <= 11 ? "55" + tel : tel}?text=${encodeURIComponent(
@@ -400,26 +222,90 @@ export default function PublicPropostaAutoPage() {
       )}`
     : "#";
 
-  // Lista visualizada: draft em edição, cotações publicadas no modo leitura.
-  const view = editMode ? draft : cotacoes;
-  const corRotulosAtiva = editMode
-    ? draftCorRotulos
-    : proposta.cor_rotulos ?? null;
-  const rotuloCol = getColunaColor(corRotulosAtiva);
-  const algumaTemPagamento = view.some(
-    (c) => parseFormasPagamento(c.formas_pagamento_detalhes).length > 0
-  );
+  // --- Admin Logic ---
+  const updateDraft = (id: string, field: keyof AutoCotacao, val: any) => {
+    setDraft((ds) => ds.map((c) => (c.id === id ? { ...c, [field]: val } : c)));
+  };
 
-  // Render de uma c�lula edit�vel para um crit�rio + cota��o
+  const removeCotacao = (id: string) => {
+    setDraft((ds) => ds.filter((c) => c.id !== id));
+  };
+
+  const addCotacao = () => {
+    const nextOrdem = draft.length > 0 ? Math.max(...draft.map(d => d.ordem_exibicao || 0)) + 1 : 1;
+    const nova: AutoCotacao = {
+      id: `tmp-${Math.random().toString(36).slice(2)}`,
+      proposta_id: proposta!.id,
+      seguradora_nome: "Nova Seguradora",
+      ordem_exibicao: nextOrdem,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    } as any;
+    setDraft((ds) => [...ds, nova]);
+  };
+
+  const saveDraft = async () => {
+    if (!proposta) return;
+    setSaving(true);
+    try {
+      // Sync seguradoras
+      await db.from("proposta_auto_seguradoras").delete().eq("proposta_id", proposta.id);
+      if (draft.length > 0) {
+        const rows = draft.map((c, i) => ({
+          proposta_id: proposta.id,
+          seguradora_nome: c.seguradora_nome || "Sem nome",
+          produto_nome: c.produto_nome,
+          premio_total: c.premio_total,
+          cobertura_resumo: c.cobertura_resumo,
+          franquia_valor: c.franquia_valor,
+          franquia_tipo: c.franquia_tipo,
+          percentual_fipe: c.percentual_fipe,
+          danos_materiais: c.danos_materiais,
+          danos_corporais: c.danos_corporais,
+          danos_morais: c.danos_morais,
+          app_morte_invalidez: c.app_morte_invalidez,
+          assistencia_24h: c.assistencia_24h,
+          vidros: c.vidros,
+          carro_reserva: c.carro_reserva,
+          parcelamento: c.parcelamento,
+          formas_pagamento_detalhes: c.formas_pagamento_detalhes,
+          destaque_comercial: c.destaque_comercial,
+          cor_coluna: c.cor_coluna,
+          ordem_exibicao: i + 1,
+        }));
+        await db.from("proposta_auto_seguradoras").insert(rows);
+      }
+      // Update proposta (colors, status etc)
+      await db.from("propostas_auto").update({ cor_rotulos: draftCorRotulos }).eq("id", proposta.id);
+
+      // Refresh
+      const { api } = await import("@/lib/api");
+      const res = await api.fetch(`/propostas/auto/full/${slug}`);
+      setProposta(res.proposta);
+      setCotacoes(res.seguradoras || []);
+      setDraft(res.seguradoras || []);
+      setEditMode(false);
+      toast({ title: "Alterações salvas!" });
+    } catch (e: any) {
+      toast({ title: "Erro ao salvar", description: e.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const cancelDraft = () => {
+    setDraft(cotacoes);
+    setDraftCorRotulos(proposta?.cor_rotulos || null);
+    setEditMode(false);
+  };
+
   const renderEditableCell = (c: AutoCotacao, crit: Criterio) => {
     const value = (c as any)[crit.field];
     if (crit.type === "number") {
       return (
         <Input
           value={value == null ? "" : String(value)}
-          onChange={(e) =>
-            updateDraft(c.id, crit.field, parseNum(e.target.value))
-          }
+          onChange={(e) => updateDraft(c.id, crit.field, parseNum(e.target.value))}
           placeholder="0,00"
           className="h-8 text-sm text-center"
         />
@@ -434,75 +320,45 @@ export default function PublicPropostaAutoPage() {
     );
   };
 
-  // ============== Editor de formas de pagamento (modo edit) ==============
   const FormasPagamentoEditor = ({ c }: { c: AutoCotacao }) => {
-    const lista = parseFormasPagamento(c.formas_pagamento_detalhes);
-    const atual = lista.length > 0 ? lista : FORMA_PADRAO;
-    const update = (next: FormaPagamento[]) => {
-      const limpos = next.filter((d) => d.tipo.trim() || d.descricao.trim());
-      updateDraft(
-        c.id,
-        "formas_pagamento_detalhes",
-        limpos.length > 0 ? limpos : null
-      );
-    };
+    const list = parseFormasPagamento(c.formas_pagamento_detalhes);
     return (
-      <div className="rounded-md border border-border/60 bg-background/60 p-2 space-y-1.5">
-        <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide text-left">
-          Opções de pagamento
-        </div>
-        {atual.map((d, i) => (
-          <div key={i} className="flex items-center gap-1.5">
-            <Select
-              value={d.tipo || ""}
-              onValueChange={(v) => {
-                const next = [...atual];
-                next[i] = { ...next[i], tipo: v };
-                update(next);
-              }}
-            >
-              <SelectTrigger className="h-7 text-xs w-36">
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                {FORMA_TIPOS.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      <div className="space-y-1 mt-1">
+        {list.map((d, idx) => (
+          <div key={idx} className="flex items-center gap-1">
             <Input
               value={d.descricao}
               onChange={(e) => {
-                const next = [...atual];
-                next[i] = { ...next[i], descricao: e.target.value };
-                update(next);
+                const next = [...list];
+                next[idx] = { ...next[idx], descricao: e.target.value };
+                updateDraft(c.id, "formas_pagamento_detalhes", next);
               }}
-              placeholder="Ex.: até 10x sem juros"
-              className="h-7 text-xs flex-1"
+              placeholder="Ex: 10x sem juros"
+              className="h-7 text-[10px] px-1"
             />
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
               onClick={() => {
-                const next = atual.filter((_, idx) => idx !== i);
-                update(next);
+                const next = list.filter((_, k) => k !== idx);
+                updateDraft(c.id, "formas_pagamento_detalhes", next.length ? next : null);
               }}
-              className="text-muted-foreground hover:text-destructive p-1"
-              title="Remover"
             >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+              <Trash2 className="w-3 h-3 text-destructive" />
+            </Button>
           </div>
         ))}
         <Button
-          type="button"
           variant="outline"
           size="sm"
-          className="h-7 text-[11px] w-full"
-          onClick={() => update([...atual, { tipo: "", descricao: "" }])}
+          className="h-6 text-[10px] w-full"
+          onClick={() => {
+            const next = [...list, { tipo: "Cartão de crédito", descricao: "" }];
+            updateDraft(c.id, "formas_pagamento_detalhes", next);
+          }}
         >
-          <Plus className="w-3 h-3 mr-1" /> Adicionar opção
+          <Plus className="w-3 h-3 mr-1" /> Add opção
         </Button>
       </div>
     );
@@ -512,13 +368,13 @@ export default function PublicPropostaAutoPage() {
   const FormasPagamentoList = ({ c }: { c: AutoCotacao }) => {
     const lista = parseFormasPagamento(c.formas_pagamento_detalhes);
     if (lista.length === 0) {
-      return <span className="text-muted-foreground text-xs">—</span>;
+      return <span className="text-muted-foreground text-xs"></span>;
     }
     return (
       <ul className="text-xs text-left space-y-1 bg-muted/40 rounded-md p-2 border border-border/60">
         {lista.map((d, i) => (
           <li key={i} className="flex flex-col">
-            <span className="font-semibold text-foreground">{d.tipo || "—"}</span>
+            <span className="font-semibold text-foreground">{d.tipo || ""}</span>
             {d.descricao && (
               <span className="text-muted-foreground">{d.descricao}</span>
             )}
@@ -530,6 +386,72 @@ export default function PublicPropostaAutoPage() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      {/* Admin Bar */}
+      {isAdmin && (
+        <div className="bg-muted border-b sticky top-0 z-50">
+          <div className="container py-2 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-4">
+              <Badge variant="outline" className="bg-background">Modo Consultor</Badge>
+              {editMode ? (
+                <div className="flex items-center gap-2">
+                  <Button size="sm" onClick={saveDraft} disabled={saving}>
+                    {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <SaveIcon className="w-4 h-4 mr-2" />}
+                    Salvar Alterações
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={cancelDraft} disabled={saving}>
+                    <X className="w-4 h-4 mr-1" /> Cancelar
+                  </Button>
+                </div>
+              ) : (
+                <Button size="sm" variant="outline" onClick={() => setEditMode(true)}>
+                  <Edit2 className="w-4 h-4 mr-2" /> Ativar Edição
+                </Button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              {editMode && (
+                <>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button size="sm" variant="outline">
+                        <Palette className="w-4 h-4 mr-2" /> Cor Rótulos
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-3">
+                      <p className="text-xs font-semibold mb-2">Cor da coluna de rótulos</p>
+                      <div className="grid grid-cols-5 gap-2">
+                        <button
+                          className={cn("h-8 rounded border", !draftCorRotulos && "ring-2 ring-primary")}
+                          onClick={() => setDraftCorRotulos(null)}
+                        >
+                          <X className="w-4 h-4 mx-auto" />
+                        </button>
+                        {Object.entries(COLUNA_COLORS).map(([k, v]) => (
+                          <button
+                            key={k}
+                            className={cn("h-8 rounded", v.header, draftCorRotulos === k && "ring-2 ring-primary")}
+                            onClick={() => setDraftCorRotulos(k)}
+                          >
+                            {draftCorRotulos === k && <Check className="w-3 h-3 mx-auto" />}
+                          </button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  <Button size="sm" variant="outline" onClick={addCotacao}>
+                    <Plus className="w-4 h-4 mr-2" /> Add Seguradora
+                  </Button>
+                </>
+              )}
+              <Button size="sm" variant="ghost" onClick={() => window.open(`/cotacao-auto/${slug}`, "_blank")}>
+                <EyeIcon className="w-4 h-4 mr-2" /> Ver como Cliente
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hero */}
       <header
         className="relative text-primary-foreground bg-cover bg-center"
@@ -601,53 +523,15 @@ export default function PublicPropostaAutoPage() {
         </div>
       </header>
 
-      {/* Barra de admin */}
-      {isAdmin && (
-        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b">
-          <div className="container py-2 flex items-center justify-between gap-3 flex-wrap">
-            <p className="text-xs text-muted-foreground">
-              Modo administrador {editMode && <span className="text-foreground font-medium">— editando inline</span>}
-            </p>
-            <div className="flex items-center gap-2">
-              {!editMode ? (
-                <Button size="sm" variant="outline" onClick={enterEdit}>
-                  <Pencil className="w-4 h-4 mr-1" /> Editar cotações
-                </Button>
-              ) : (
-                <>
-                  <Button size="sm" variant="outline" onClick={addCotacao}>
-                    <Plus className="w-4 h-4 mr-1" /> Adicionar seguradora
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={cancelEdit} disabled={saving}>
-                    <X className="w-4 h-4 mr-1" /> Cancelar
-                  </Button>
-                  <Button size="sm" onClick={saveEdit} disabled={saving}>
-                    {saving ? (
-                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                    ) : (
-                      <Save className="w-4 h-4 mr-1" />
-                    )}
-                    Salvar
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Barra de admin (removida) */}
 
-      {view.length === 0 ? (
+          {cotacoes.length === 0 && !editMode ? (
         <section className="container py-16 text-center">
           <Card className="p-10 max-w-lg mx-auto">
             <FileText className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
             <p className="text-muted-foreground">
               Nenhuma cotação cadastrada ainda.
             </p>
-            {editMode && (
-              <Button className="mt-4" onClick={addCotacao}>
-                <Plus className="w-4 h-4 mr-1" /> Adicionar primeira cotação
-              </Button>
-            )}
           </Card>
         </section>
       ) : (
@@ -664,176 +548,165 @@ export default function PublicPropostaAutoPage() {
                         rotuloCol ? rotuloCol.header : "text-foreground"
                       )}
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <span>Seguradora</span>
-                        {editMode && (
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-7 text-[11px] gap-1 text-foreground"
-                                title="Cor da coluna de critérios"
-                              >
-                                <Palette className="w-3 h-3" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-64 p-3">
-                              <p className="text-xs font-medium mb-2">
-                                Cor da coluna de critérios
-                              </p>
-                              <ColorPalette
-                                current={draftCorRotulos}
-                                onPick={(k) => setDraftCorRotulos(k)}
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        )}
-                      </div>
+                      Seguradora
                     </th>
                     {view.map((c) => {
-                      const destKey = c.destaque_comercial || "";
-                      const destLabel =
-                        DESTAQUE_LABELS[destKey] ||
-                        (destKey && !DESTAQUE_LABELS[destKey] ? destKey : null);
-                      const destClass =
-                        DESTAQUE_COLORS[destKey] ||
-                        "bg-primary text-primary-foreground";
+                      const colColor = getColunaColor(c.cor_coluna);
                       return (
                         <th
                           key={c.id}
-                          className="px-4 py-4 text-center align-bottom min-w-[220px] bg-muted/30"
+                          className={cn(
+                            "px-4 py-4 text-center align-bottom min-w-[220px]",
+                            colColor ? colColor.header : "bg-muted/30"
+                          )}
                         >
                           {editMode ? (
                             <div className="space-y-2">
-                              <div className="flex items-center justify-end gap-1">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7"
-                                  onClick={() => removeCotacao(c.id)}
-                                  title="Remover cotação"
+                              <div className="flex items-center justify-between gap-1 mb-1">
+                                <Select
+                                  value={c.destaque_comercial || "none"}
+                                  onValueChange={(v) => updateDraft(c.id, "destaque_comercial", v === "none" ? null : v)}
                                 >
+                                  <SelectTrigger className="h-6 w-full text-[10px]">
+                                    <SelectValue placeholder="Destaque" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">Sem destaque</SelectItem>
+                                    {Object.entries(DESTAQUE_LABELS).map(([k, v]) => (
+                                      <SelectItem key={k} value={k}>{v}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="flex items-center justify-between gap-1 mb-1">
+                                <Select
+                                  value={c.cor_coluna || "none"}
+                                  onValueChange={(v) => updateDraft(c.id, "cor_coluna", v === "none" ? null : v)}
+                                >
+                                  <SelectTrigger className="h-6 w-24 text-[10px]">
+                                    <Palette className="w-3 h-3 mr-1" /> Cor
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">Padrão</SelectItem>
+                                    {Object.entries(COLUNA_COLORS).map(([k, v]) => (
+                                      <SelectItem key={k} value={k}>{v.label}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeCotacao(c.id)}>
                                   <Trash2 className="w-3.5 h-3.5 text-destructive" />
                                 </Button>
                               </div>
                               <Input
                                 value={c.seguradora_nome ?? ""}
-                                onChange={(e) =>
-                                  updateDraft(c.id, "seguradora_nome", e.target.value)
-                                }
-                                placeholder="Seguradora"
-                                className="h-8 text-sm font-semibold text-foreground"
+                                onChange={(e) => updateDraft(c.id, "seguradora_nome", e.target.value)}
+                                placeholder="Nome"
+                                className="h-8 text-center"
                               />
                             </div>
                           ) : (
-                            <p className="font-bold text-foreground">
-                              {c.seguradora_nome}
-                            </p>
+                            <div className="space-y-1">
+                              {c.destaque_comercial && DESTAQUE_LABELS[c.destaque_comercial] && (
+                                <Badge className={cn("mb-1", DESTAQUE_COLORS[c.destaque_comercial] || "bg-primary text-primary-foreground")}>
+                                  {DESTAQUE_LABELS[c.destaque_comercial]}
+                                </Badge>
+                              )}
+                              <p className="font-bold text-foreground">
+                                {c.seguradora_nome}
+                              </p>
+                            </div>
                           )}
                         </th>
                       );
                     })}
                   </tr>
-                  <tr className="bg-primary/5">
-                    <th
-                      className={cn(
-                        "text-left px-4 py-3 font-semibold",
-                        rotuloCol ? rotuloCol.header : "text-foreground"
-                      )}
-                    >
-                      Prêmio total
-                    </th>
-                    {view.map((c) => (
-                      <th key={c.id} className="px-4 py-3 text-center">
-                        {editMode ? (
-                          <div className="space-y-1">
-                            <Input
-                              value={
-                                c.premio_total == null
-                                  ? ""
-                                  : String(c.premio_total)
-                              }
-                              onChange={(e) =>
-                                updateDraft(
-                                  c.id,
-                                  "premio_total",
-                                  parseNum(e.target.value)
-                                )
-                              }
-                              placeholder="0,00"
-                              className="h-8 text-base font-bold text-center text-primary"
-                            />
-                            <Input
-                              value={c.parcelamento ?? ""}
-                              onChange={(e) =>
-                                updateDraft(
-                                  c.id,
-                                  "parcelamento",
-                                  e.target.value || null
-                                )
-                              }
-                              placeholder="Ex.: 10x R$ 415,39"
-                              className="h-7 text-xs text-center"
-                            />
-                          </div>
-                        ) : (
-                          <>
-                            <p className="text-xl font-bold text-primary">
-                              {fmt(c.premio_total)}
-                            </p>
-                            {c.parcelamento && (
-                              <p className="text-xs text-muted-foreground font-normal mt-0.5">
-                                {c.parcelamento}
-                              </p>
-                            )}
-                          </>
+                    <tr className="bg-primary/5">
+                      <th
+                        className={cn(
+                          "text-left px-4 py-3 font-semibold",
+                          rotuloCol ? rotuloCol.header : "text-foreground"
                         )}
+                      >
+                        Prêmio total
                       </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {CRITERIOS.map((crit, i) => (
-                    <tr
-                      key={crit.label}
-                      className={i % 2 ? "bg-muted/20" : ""}
-                    >
-                      <td
-                        className={cn(
-                          "px-4 py-3 font-medium",
-                          rotuloCol
-                            ? cn(rotuloCol.header, "border-b border-white/25")
-                            : "text-foreground"
-                        )}
-                      >
-                        {crit.label}
-                      </td>
-                      {view.map((c) => (
-                        <td
-                          key={c.id}
-                          className="px-4 py-3 text-center text-muted-foreground"
-                        >
-                          {editMode ? renderEditableCell(c, crit) : crit.render(c)}
-                        </td>
-                      ))}
+                      {view.map((c) => {
+                        const colColor = getColunaColor(c.cor_coluna);
+                        return (
+                          <th key={c.id} className={cn("px-4 py-3 text-center", colColor ? colColor.cell : "")}>
+                            {editMode ? (
+                              <div className="space-y-1">
+                                <Input
+                                  value={c.premio_total == null ? "" : String(c.premio_total)}
+                                  onChange={(e) => updateDraft(c.id, "premio_total", parseNum(e.target.value))}
+                                  placeholder="0,00"
+                                  className="h-8 text-center font-bold text-primary"
+                                />
+                                <Input
+                                  value={c.parcelamento ?? ""}
+                                  onChange={(e) => updateDraft(c.id, "parcelamento", e.target.value || null)}
+                                  placeholder="Parcelamento"
+                                  className="h-7 text-[10px] text-center"
+                                />
+                              </div>
+                            ) : (
+                              <>
+                                <p className="text-xl font-bold text-primary">
+                                  {fmt(c.premio_total)}
+                                </p>
+                                {c.parcelamento && (
+                                  <p className="text-xs text-muted-foreground font-normal mt-0.5">
+                                    {c.parcelamento}
+                                  </p>
+                                )}
+                              </>
+                            )}
+                          </th>
+                        );
+                      })}
                     </tr>
-                  ))}
-                  {(editMode || algumaTemPagamento) && (
-                    <tr className={CRITERIOS.length % 2 ? "bg-muted/20" : ""}>
-                      <td
-                        className={cn(
-                          "px-4 py-3 font-medium align-top",
-                          rotuloCol
-                            ? cn(rotuloCol.header, "border-b border-white/25")
-                            : "text-foreground"
-                        )}
+                  </thead>
+                  <tbody>
+                    {CRITERIOS.map((crit, i) => (
+                      <tr
+                        key={crit.label}
+                        className={i % 2 ? "bg-muted/20" : ""}
                       >
-                        {editMode ? (
-                          "Formas de pagamento"
-                        ) : (
+                        <td
+                          className={cn(
+                            "px-4 py-3 font-medium",
+                            rotuloCol
+                              ? cn(rotuloCol.header, "border-b border-white/25")
+                              : "text-foreground"
+                          )}
+                        >
+                          {crit.label}
+                        </td>
+                        {view.map((c) => {
+                          const colColor = getColunaColor(c.cor_coluna);
+                          return (
+                            <td
+                              key={c.id}
+                              className={cn(
+                                "px-4 py-3 text-center text-muted-foreground",
+                                colColor ? colColor.cell : ""
+                              )}
+                            >
+                              {editMode ? renderEditableCell(c, crit) : crit.render(c)}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                    {algumaTemPagamento && (
+                      <tr className={CRITERIOS.length % 2 ? "bg-muted/20" : ""}>
+                        <td
+                          className={cn(
+                            "px-4 py-3 font-medium align-top",
+                            rotuloCol
+                              ? cn(rotuloCol.header, "border-b border-white/25")
+                              : "text-foreground"
+                          )}
+                        >
                           <button
                             type="button"
                             onClick={() => setPagamentoOpen((v) => !v)}
@@ -848,32 +721,34 @@ export default function PublicPropostaAutoPage() {
                               )}
                             />
                           </button>
-                        )}
-                      </td>
-                      {view.map((c) => (
-                        <td key={c.id} className="px-4 py-3 text-center align-top">
-                          {editMode ? (
-                            <FormasPagamentoEditor c={c} />
-                          ) : pagamentoOpen ? (
-                            <FormasPagamentoList c={c} />
-                          ) : (
-                            <span className="text-muted-foreground/60 text-xs">
-                              {parseFormasPagamento(c.formas_pagamento_detalhes).length || "—"}
-                              {parseFormasPagamento(c.formas_pagamento_detalhes).length > 0 && " opções"}
-                            </span>
-                          )}
                         </td>
-                      ))}
-                    </tr>
-                  )}
-                </tbody>
+                        {view.map((c) => {
+                          const colColor = getColunaColor(c.cor_coluna);
+                          return (
+                            <td key={c.id} className={cn("px-4 py-3 text-center align-top", colColor ? colColor.cell : "")}>
+                              {editMode ? (
+                                <FormasPagamentoEditor c={c} />
+                              ) : pagamentoOpen ? (
+                                <FormasPagamentoList c={c} />
+                              ) : (
+                                <span className="text-muted-foreground/60 text-xs">
+                                  {parseFormasPagamento(c.formas_pagamento_detalhes).length || "—"}
+                                  {parseFormasPagamento(c.formas_pagamento_detalhes).length > 0 && " opções"}
+                                </span>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    )}
+                  </tbody>
               </table>
             </div>
           </section>
 
           {/* Cards (mobile) */}
           <section className="container py-6 md:hidden space-y-4">
-            {view.map((c) => {
+          {view.map((c) => {
               const destKey = c.destaque_comercial || "";
               const destLabel =
                 DESTAQUE_LABELS[destKey] ||
@@ -881,60 +756,50 @@ export default function PublicPropostaAutoPage() {
               const destClass =
                 DESTAQUE_COLORS[destKey] ||
                 "bg-primary text-primary-foreground";
+              const colColor = getColunaColor(c.cor_coluna);
+              
               return (
-                <Card key={c.id} className="overflow-hidden p-0 border-t-4 border-primary">
-                  <div className="p-4 bg-muted/30">
+                <Card 
+                  key={c.id} 
+                  className={cn(
+                    "overflow-hidden p-0 border-t-4", 
+                    colColor ? colColor.border : "border-primary"
+                  )}
+                >
+                  <div className={cn("p-4", colColor ? colColor.header : "bg-muted/30")}>
                     {editMode ? (
                       <div className="space-y-2">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => removeCotacao(c.id)}
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <Select
+                            value={c.destaque_comercial || "none"}
+                            onValueChange={(v) => updateDraft(c.id, "destaque_comercial", v === "none" ? null : v)}
                           >
+                            <SelectTrigger className="h-7 w-full text-[10px]">
+                              <SelectValue placeholder="Destaque" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Sem destaque</SelectItem>
+                              {Object.entries(DESTAQUE_LABELS).map(([k, v]) => (
+                                <SelectItem key={k} value={k}>{v}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeCotacao(c.id)}>
                             <Trash2 className="w-3.5 h-3.5 text-destructive" />
                           </Button>
                         </div>
                         <Input
                           value={c.seguradora_nome ?? ""}
-                          onChange={(e) =>
-                            updateDraft(c.id, "seguradora_nome", e.target.value)
-                          }
+                          onChange={(e) => updateDraft(c.id, "seguradora_nome", e.target.value)}
                           placeholder="Seguradora"
-                          className="h-8 text-foreground"
+                          className="h-8"
                         />
                         <Input
                           value={c.produto_nome ?? ""}
-                          onChange={(e) =>
-                            updateDraft(c.id, "produto_nome", e.target.value || null)
-                          }
+                          onChange={(e) => updateDraft(c.id, "produto_nome", e.target.value || null)}
                           placeholder="Produto"
-                          className="h-7 text-xs text-foreground"
+                          className="h-8"
                         />
-                        <Select
-                          value={c.destaque_comercial || "none"}
-                          onValueChange={(v) =>
-                            updateDraft(
-                              c.id,
-                              "destaque_comercial",
-                              v === "none" ? null : v
-                            )
-                          }
-                        >
-                          <SelectTrigger className="h-7 text-xs text-foreground">
-                            <SelectValue placeholder="Sem destaque" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Sem destaque</SelectItem>
-                            {Object.entries(DESTAQUE_LABELS).map(([k, v]) => (
-                              <SelectItem key={k} value={k}>
-                                {v}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
                       </div>
                     ) : (
                       <div className="flex items-start justify-between gap-2">
@@ -953,39 +818,23 @@ export default function PublicPropostaAutoPage() {
                     )}
                   </div>
                   <div className="p-4">
-                    <div className="bg-primary/5 rounded-lg p-3 text-center mb-4">
-                      <p className="text-xs uppercase text-muted-foreground">
+                    <div className={cn("rounded-lg p-3 text-center mb-4", colColor ? colColor.cell : "bg-primary/5")}>
+                      <p className={cn("text-xs uppercase", colColor ? "text-current opacity-70" : "text-muted-foreground")}>
                         Prêmio total
                       </p>
                       {editMode ? (
                         <div className="space-y-1 mt-1">
                           <Input
-                            value={
-                              c.premio_total == null
-                                ? ""
-                                : String(c.premio_total)
-                            }
-                            onChange={(e) =>
-                              updateDraft(
-                                c.id,
-                                "premio_total",
-                                parseNum(e.target.value)
-                              )
-                            }
+                            value={c.premio_total == null ? "" : String(c.premio_total)}
+                            onChange={(e) => updateDraft(c.id, "premio_total", parseNum(e.target.value))}
                             placeholder="0,00"
-                            className="h-9 text-lg font-bold text-center text-primary"
+                            className="h-9 text-lg font-bold text-center text-primary bg-background"
                           />
                           <Input
                             value={c.parcelamento ?? ""}
-                            onChange={(e) =>
-                              updateDraft(
-                                c.id,
-                                "parcelamento",
-                                e.target.value || null
-                              )
-                            }
+                            onChange={(e) => updateDraft(c.id, "parcelamento", e.target.value || null)}
                             placeholder="Parcelamento"
-                            className="h-7 text-xs text-center"
+                            className="h-7 text-xs text-center bg-background"
                           />
                         </div>
                       ) : (
@@ -1035,7 +884,7 @@ export default function PublicPropostaAutoPage() {
       )}
 
       {/* CTA WhatsApp */}
-      {!editMode && tel && (
+      {tel && (
         <section className="container py-8 text-center">
           <Button
             asChild
@@ -1053,7 +902,7 @@ export default function PublicPropostaAutoPage() {
         </section>
       )}
 
-      {!editMode && proposta.observacoes_gerais && (
+      {proposta.observacoes_gerais && (
         <section className="container max-w-3xl">
           <Card className="p-5">
             <div className="flex items-center gap-2 mb-2 text-foreground">

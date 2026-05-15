@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Save, ArrowLeft, Plus, Trash2, Upload, Loader2 } from "lucide-react";
+import { Save, ArrowLeft, Plus, Trash2, Upload, Loader2, Copy, Eye } from "lucide-react";
 import { generateSlug, STATUS_LABELS } from "@/lib/proposal-auto-utils";
 import { DESTAQUE_LABELS, COLUNA_COLORS } from "@/lib/proposal-utils";
 import { cn } from "@/lib/utils";
@@ -73,6 +73,7 @@ export default function PropostaAutoFormPage() {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [extracting, setExtracting] = useState(false);
+  const [slug, setSlug] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
@@ -91,6 +92,7 @@ export default function PropostaAutoFormPage() {
   const load = async () => {
     const { data: p } = await db.from("propostas_auto").select("*").eq("id", id!).single();
     if (!p) { navigate("/app/cotacoes/automovel"); return; }
+    setSlug(p.slug);
     setForm({
       nome_cliente: p.nome_cliente || "",
       telefone_cliente: p.telefone_cliente || "",
@@ -313,6 +315,13 @@ export default function PropostaAutoFormPage() {
     }
   };
 
+  const copyLink = () => {
+    if (!slug) return;
+    const url = `${window.location.origin}/cotacao-auto/${slug}`;
+    navigator.clipboard.writeText(url);
+    toast({ title: "Link copiado!", description: "O link da proposta está pronto para ser enviado." });
+  };
+
   return (
     <AdminLayout>
       <div className="max-w-5xl mx-auto space-y-6">
@@ -323,6 +332,16 @@ export default function PropostaAutoFormPage() {
           <h1 className="text-2xl font-bold text-foreground">
             {isEdit ? "Editar proposta" : "Nova proposta de auto"}
           </h1>
+          {isEdit && slug && (
+            <div className="flex items-center gap-2 ml-4">
+              <Button type="button" variant="outline" size="sm" onClick={copyLink}>
+                <Copy className="w-4 h-4 mr-2" /> Copiar Link
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => window.open(`/cotacao-auto/${slug}`, '_blank')}>
+                <Eye className="w-4 h-4 mr-2" /> Visualizar
+              </Button>
+            </div>
+          )}
         </div>
 
         {!isEdit && !modoManual && (
