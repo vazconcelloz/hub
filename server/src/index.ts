@@ -58,7 +58,7 @@ app.get('/health', (req, res) => {
 });
 
 // React Router fallback
-app.get('*all', (req, res) => {
+app.use((req, res) => {
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ error: 'Endpoint não encontrado' });
   }
@@ -72,3 +72,6 @@ app.use(errorHandler);
 app.listen(port, () => {
   console.log(`🚀 Servidor rodando na porta ${port}`);
 });
+
+// Mantém o processo vivo caso o event loop fique ocioso
+setInterval(() => {}, 1000);

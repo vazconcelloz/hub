@@ -427,9 +427,11 @@ export type Database = {
           status: string
           telefone_cliente: string | null
           tipo_produto: string | null
+          ultimo_acesso: string | null
           updated_at: string
           user_id: string | null
           validade_proposta: string | null
+          visualizacoes: number
         }
         Insert: {
           cidade?: string | null
@@ -449,9 +451,11 @@ export type Database = {
           status?: string
           telefone_cliente?: string | null
           tipo_produto?: string | null
+          ultimo_acesso?: string | null
           updated_at?: string
           user_id?: string | null
           validade_proposta?: string | null
+          visualizacoes?: number
         }
         Update: {
           cidade?: string | null
@@ -471,9 +475,11 @@ export type Database = {
           status?: string
           telefone_cliente?: string | null
           tipo_produto?: string | null
+          ultimo_acesso?: string | null
           updated_at?: string
           user_id?: string | null
           validade_proposta?: string | null
+          visualizacoes?: number
         }
         Relationships: []
       }
@@ -495,12 +501,14 @@ export type Database = {
           status: string
           telefone_cliente: string | null
           tipo_cotacao: string | null
+          ultimo_acesso: string | null
           updated_at: string
           user_id: string | null
           validade_proposta: string | null
           veiculo_marca_modelo: string | null
           vigencia_fim: string | null
           vigencia_inicio: string | null
+          visualizacoes: number
         }
         Insert: {
           cep_pernoite?: string | null
@@ -519,12 +527,14 @@ export type Database = {
           status?: string
           telefone_cliente?: string | null
           tipo_cotacao?: string | null
+          ultimo_acesso?: string | null
           updated_at?: string
           user_id?: string | null
           validade_proposta?: string | null
           veiculo_marca_modelo?: string | null
           vigencia_fim?: string | null
           vigencia_inicio?: string | null
+          visualizacoes?: number
         }
         Update: {
           cep_pernoite?: string | null
@@ -543,12 +553,14 @@ export type Database = {
           status?: string
           telefone_cliente?: string | null
           tipo_cotacao?: string | null
+          ultimo_acesso?: string | null
           updated_at?: string
           user_id?: string | null
           validade_proposta?: string | null
           veiculo_marca_modelo?: string | null
           vigencia_fim?: string | null
           vigencia_inicio?: string | null
+          visualizacoes?: number
         }
         Relationships: []
       }

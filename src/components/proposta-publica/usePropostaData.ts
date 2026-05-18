@@ -91,7 +91,7 @@ export function usePropostaData() {
     }
     try {
       const { api } = await import('@/lib/api');
-      const res = await api.fetch(`/propostas/full/${slug}`);
+      const res = await api.fetch(`/propostas/full/${slug}${location.search}`);
       console.log("Proposal Response:", res);
       
       if (res.proposta) {

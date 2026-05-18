@@ -143,6 +143,7 @@ export default function DashboardAutoPage() {
     pendentes: propostas.filter((p) => p.status === "pendente").length,
     enviadas: propostas.filter((p) => p.status === "enviada").length,
     fechadas: propostas.filter((p) => p.status === "fechada").length,
+    visualizacoes: propostas.reduce((acc, p) => acc + (p.visualizacoes || 0), 0),
   };
 
   return (
@@ -172,7 +173,7 @@ export default function DashboardAutoPage() {
             { label: "Total", value: stats.total, color: "text-foreground" },
             { label: "Pendentes", value: stats.pendentes, color: "text-amber-600" },
             { label: "Enviadas", value: stats.enviadas, color: "text-blue-600" },
-            { label: "Fechadas", value: stats.fechadas, color: "text-green-600" },
+            { label: "Visualizações", value: stats.visualizacoes, color: "text-indigo-600" },
           ].map((s) => (
             <Card key={s.label} className="p-4 text-center">
               <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
@@ -228,6 +229,16 @@ export default function DashboardAutoPage() {
                     <div className="text-sm text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-1">
                       {p.veiculo_marca_modelo && <span>🚗 {p.veiculo_marca_modelo}</span>}
                       <span>• {format(new Date(p.created_at), "dd/MM/yyyy", { locale: ptBR })}</span>
+                      {p.visualizacoes > 0 && (
+                        <span className="flex items-center gap-1 text-indigo-600 font-medium">
+                          <Eye className="w-3 h-3" /> {p.visualizacoes} {p.visualizacoes === 1 ? 'visita' : 'visitas'}
+                        </span>
+                      )}
+                      {p.ultimo_acesso && (
+                        <span className="text-[10px] opacity-70">
+                          (Último: {format(new Date(p.ultimo_acesso), "dd/MM HH:mm", { locale: ptBR })})
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-1 flex-wrap">
@@ -237,7 +248,7 @@ export default function DashboardAutoPage() {
                     <Button variant="ghost" size="icon" onClick={() => navigate(`/app/cotacoes/automovel/cotacao/${p.slug}`)} title="Visualizar/Editar grade">
                       <Eye className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => window.open(`/cotacao-auto/${p.slug}`, '_blank')} title="Ver como cliente">
+                    <Button variant="ghost" size="icon" onClick={() => window.open(`/cotacao-auto/${p.slug}?tracking=false`, '_blank')} title="Ver como cliente">
                       <ExternalLink className="w-4 h-4" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => copyLink(p.slug)} title="Copiar link">

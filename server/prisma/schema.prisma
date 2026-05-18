@@ -208,6 +208,8 @@ model Proposta {
   observacoes_gerais     String?
   linhas_ocultas         String[]
   cores_rotulos          Json?
+  visualizacoes          Int                 @default(0)
+  ultimo_acesso          DateTime?           @db.Timestamptz(6)
   created_at             DateTime            @default(now()) @db.Timestamptz(6)
   updated_at             DateTime            @default(now()) @updatedAt @db.Timestamptz(6)
   operadoras             PropostaOperadora[]
@@ -265,6 +267,8 @@ model PropostaAuto {
   linhas_ocultas       String[]
   cores_rotulos        Json?
   cor_rotulos          String?
+  visualizacoes        Int                      @default(0)
+  ultimo_acesso        DateTime?                @db.Timestamptz(6)
   created_at           DateTime                 @default(now()) @db.Timestamptz(6)
   updated_at           DateTime                 @default(now()) @updatedAt @db.Timestamptz(6)
   seguradoras          PropostaAutoSeguradora[]

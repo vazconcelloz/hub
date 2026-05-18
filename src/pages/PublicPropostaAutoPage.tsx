@@ -13,7 +13,7 @@ import {
   COLUNA_COLORS,
   getColunaColor,
 } from "@/lib/proposal-utils";
-import { cn } from "@/lib/utils";
+import { cn, getContrastColor } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -137,6 +137,153 @@ const CRITERIOS: Criterio[] = [
   { label: "Carro reserva", field: "carro_reserva", type: "text", render: (c) => txt(c.carro_reserva) },
 ];
 
+// --- Sub-components moved outside to prevent re-mount focus loss ---
+interface EditorProps {
+  c: AutoCotacao;
+  updateDraft: (id: string, field: keyof AutoCotacao, val: any) => void;
+}
+
+const FormaPagamentoEditorRow = ({ 
+  d, 
+  idx, 
+  list, 
+  cId, 
+  updateDraft 
+}: { 
+  d: FormaPagamento; 
+  idx: number; 
+  list: FormaPagamento[]; 
+  cId: string;
+  updateDraft: (id: string, field: keyof AutoCotacao, val: any) => void;
+}) => {
+  const [localDesc, setLocalDesc] = useState(d.descricao);
+
+  useEffect(() => {
+    setLocalDesc(d.descricao);
+  }, [d.descricao]);
+
+  return (
+    <div className="flex items-center gap-1">
+      <Select
+        value={d.tipo || "Cartão de crédito"}
+        onValueChange={(v) => {
+          const next = [...list];
+          next[idx] = { ...next[idx], tipo: v };
+          updateDraft(cId, "formas_pagamento_detalhes", next);
+        }}
+      >
+        <SelectTrigger className="h-7 w-24 text-[10px] px-1 bg-background">
+          <SelectValue placeholder="Tipo" />
+        </SelectTrigger>
+        <SelectContent>
+          {FORMA_TIPOS.map(t => (
+            <SelectItem key={t} value={t} className="text-[10px]">{t}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Input
+        value={localDesc}
+        onChange={(e) => {
+          setLocalDesc(e.target.value);
+          const next = [...list];
+          next[idx] = { ...next[idx], descricao: e.target.value };
+          updateDraft(cId, "formas_pagamento_detalhes", next);
+        }}
+        placeholder="Parcelas"
+        className="h-7 text-[10px] px-1 flex-1"
+      />
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-6 w-6 shrink-0"
+        onClick={() => {
+          const next = list.filter((_, k) => k !== idx);
+          updateDraft(cId, "formas_pagamento_detalhes", next.length ? next : null);
+        }}
+      >
+        <Trash2 className="w-3 h-3 text-destructive" />
+      </Button>
+    </div>
+  );
+};
+
+const FormasPagamentoEditor = ({ c, updateDraft }: EditorProps) => {
+  const list = parseFormasPagamento(c.formas_pagamento_detalhes);
+  return (
+    <div className="space-y-1 mt-1">
+      {list.map((d, idx) => (
+        <FormaPagamentoEditorRow 
+          key={idx} 
+          d={d} 
+          idx={idx} 
+          list={list} 
+          cId={c.id} 
+          updateDraft={updateDraft} 
+        />
+      ))}
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-6 text-[10px] w-full"
+        onClick={() => {
+          const next = [...list, { tipo: "Cartão de crédito", descricao: "" }];
+          updateDraft(c.id, "formas_pagamento_detalhes", next);
+        }}
+      >
+        <Plus className="w-3 h-3 mr-1" /> Add opção
+      </Button>
+    </div>
+  );
+};
+
+const FormasPagamentoList = ({ c }: { c: AutoCotacao }) => {
+  const lista = parseFormasPagamento(c.formas_pagamento_detalhes);
+  if (lista.length === 0) {
+    return <span className="text-muted-foreground text-xs"></span>;
+  }
+  return (
+    <ul className="text-xs text-left space-y-1 bg-muted/40 rounded-md p-2 border border-border/60">
+      {lista.map((d, i) => (
+        <li key={i} className="flex flex-col">
+          <span className="font-semibold text-foreground">{d.tipo || ""}</span>
+          {d.descricao && (
+            <span className="text-muted-foreground">{d.descricao}</span>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+};
+
+const EditableCell = ({ 
+  c, 
+  crit, 
+  updateDraft 
+}: { 
+  c: AutoCotacao; 
+  crit: Criterio; 
+  updateDraft: (id: string, field: keyof AutoCotacao, val: any) => void 
+}) => {
+  const value = (c as any)[crit.field];
+  if (crit.type === "number") {
+    return (
+      <Input
+        value={value == null ? "" : String(value)}
+        onChange={(e) => updateDraft(c.id, crit.field, parseNum(e.target.value))}
+        placeholder="0,00"
+        className="h-8 text-sm text-center"
+      />
+    );
+  }
+  return (
+    <Input
+      value={value ?? ""}
+      onChange={(e) => updateDraft(c.id, crit.field, e.target.value || null)}
+      className="h-8 text-sm text-center"
+    />
+  );
+};
+
 export default function PublicPropostaAutoPage() {
   const { slug } = useParams();
   const location = useLocation();
@@ -149,7 +296,6 @@ export default function PublicPropostaAutoPage() {
   const [cotacoes, setCotacoes] = useState<AutoCotacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [pagamentoOpen, setPagamentoOpen] = useState(false);
 
   // Draft states
   const [draft, setDraft] = useState<AutoCotacao[]>([]);
@@ -165,7 +311,7 @@ export default function PublicPropostaAutoPage() {
       }
       try {
         const { api } = await import('@/lib/api');
-        const res = await api.fetch(`/propostas/auto/full/${slug}`);
+        const res = await api.fetch(`/propostas/auto/full/${slug}${location.search}`);
         
         if (res.proposta) {
           setProposta(res.proposta);
@@ -211,6 +357,8 @@ export default function PublicPropostaAutoPage() {
   const view = editMode ? draft : cotacoes;
   const corRotulosAtiva = editMode ? draftCorRotulos : proposta.cor_rotulos ?? null;
   const rotuloCol = getColunaColor(corRotulosAtiva);
+  const rotuloTextClass = rotuloCol ? getContrastColor(rotuloCol.header) : "text-foreground";
+  
   const algumaTemPagamento = view.some(
     (c) => parseFormasPagamento(c.formas_pagamento_detalhes).length > 0
   );
@@ -299,90 +447,7 @@ export default function PublicPropostaAutoPage() {
     setEditMode(false);
   };
 
-  const renderEditableCell = (c: AutoCotacao, crit: Criterio) => {
-    const value = (c as any)[crit.field];
-    if (crit.type === "number") {
-      return (
-        <Input
-          value={value == null ? "" : String(value)}
-          onChange={(e) => updateDraft(c.id, crit.field, parseNum(e.target.value))}
-          placeholder="0,00"
-          className="h-8 text-sm text-center"
-        />
-      );
-    }
-    return (
-      <Input
-        value={value ?? ""}
-        onChange={(e) => updateDraft(c.id, crit.field, e.target.value || null)}
-        className="h-8 text-sm text-center"
-      />
-    );
-  };
 
-  const FormasPagamentoEditor = ({ c }: { c: AutoCotacao }) => {
-    const list = parseFormasPagamento(c.formas_pagamento_detalhes);
-    return (
-      <div className="space-y-1 mt-1">
-        {list.map((d, idx) => (
-          <div key={idx} className="flex items-center gap-1">
-            <Input
-              value={d.descricao}
-              onChange={(e) => {
-                const next = [...list];
-                next[idx] = { ...next[idx], descricao: e.target.value };
-                updateDraft(c.id, "formas_pagamento_detalhes", next);
-              }}
-              placeholder="Ex: 10x sem juros"
-              className="h-7 text-[10px] px-1"
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => {
-                const next = list.filter((_, k) => k !== idx);
-                updateDraft(c.id, "formas_pagamento_detalhes", next.length ? next : null);
-              }}
-            >
-              <Trash2 className="w-3 h-3 text-destructive" />
-            </Button>
-          </div>
-        ))}
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-6 text-[10px] w-full"
-          onClick={() => {
-            const next = [...list, { tipo: "Cartão de crédito", descricao: "" }];
-            updateDraft(c.id, "formas_pagamento_detalhes", next);
-          }}
-        >
-          <Plus className="w-3 h-3 mr-1" /> Add opção
-        </Button>
-      </div>
-    );
-  };
-
-  // Lista visual (read-only) das formas de pagamento de UMA seguradora
-  const FormasPagamentoList = ({ c }: { c: AutoCotacao }) => {
-    const lista = parseFormasPagamento(c.formas_pagamento_detalhes);
-    if (lista.length === 0) {
-      return <span className="text-muted-foreground text-xs"></span>;
-    }
-    return (
-      <ul className="text-xs text-left space-y-1 bg-muted/40 rounded-md p-2 border border-border/60">
-        {lista.map((d, i) => (
-          <li key={i} className="flex flex-col">
-            <span className="font-semibold text-foreground">{d.tipo || ""}</span>
-            {d.descricao && (
-              <span className="text-muted-foreground">{d.descricao}</span>
-            )}
-          </li>
-        ))}
-      </ul>
-    );
-  };
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -539,13 +604,13 @@ export default function PublicPropostaAutoPage() {
           {/* Tabela comparativa (desktop) */}
           <section className="container py-8 md:py-10 hidden md:block">
             <div className="overflow-x-auto rounded-lg border border-border">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="bg-muted/50">
+                  <tr className="bg-muted/50 border-b border-black/10">
                     <th
                       className={cn(
-                        "text-left px-4 py-3 font-semibold w-48",
-                        rotuloCol ? rotuloCol.header : "text-foreground"
+                        "text-left px-4 py-3 font-semibold w-48 border-r border-white/20",
+                        rotuloCol ? cn(rotuloCol.header, rotuloTextClass) : "text-foreground"
                       )}
                     >
                       Seguradora
@@ -556,8 +621,8 @@ export default function PublicPropostaAutoPage() {
                         <th
                           key={c.id}
                           className={cn(
-                            "px-4 py-4 text-center align-bottom min-w-[220px]",
-                            colColor ? colColor.header : "bg-muted/30"
+                            "px-4 py-4 text-center align-bottom min-w-[220px] border-r border-white/20 last:border-r-0",
+                            colColor ? cn(colColor.header, getContrastColor(colColor.header)) : "bg-muted/30 text-foreground"
                           )}
                         >
                           {editMode ? (
@@ -611,7 +676,7 @@ export default function PublicPropostaAutoPage() {
                                   {DESTAQUE_LABELS[c.destaque_comercial]}
                                 </Badge>
                               )}
-                              <p className="font-bold text-foreground">
+                              <p className="font-bold text-current">
                                 {c.seguradora_nome}
                               </p>
                             </div>
@@ -620,11 +685,11 @@ export default function PublicPropostaAutoPage() {
                       );
                     })}
                   </tr>
-                    <tr className="bg-primary/5">
+                    <tr className="bg-primary/5 border-b border-black/10">
                       <th
                         className={cn(
-                          "text-left px-4 py-3 font-semibold",
-                          rotuloCol ? rotuloCol.header : "text-foreground"
+                          "text-left px-4 py-3 font-semibold border-r border-white/20",
+                          rotuloCol ? cn(rotuloCol.header, rotuloTextClass) : "text-foreground"
                         )}
                       >
                         Prêmio total
@@ -632,7 +697,7 @@ export default function PublicPropostaAutoPage() {
                       {view.map((c) => {
                         const colColor = getColunaColor(c.cor_coluna);
                         return (
-                          <th key={c.id} className={cn("px-4 py-3 text-center", colColor ? colColor.cell : "")}>
+                          <th key={c.id} className={cn("px-4 py-3 text-center border-r border-black/5 last:border-r-0", colColor ? colColor.cell : "")}>
                             {editMode ? (
                               <div className="space-y-1">
                                 <Input
@@ -669,14 +734,14 @@ export default function PublicPropostaAutoPage() {
                     {CRITERIOS.map((crit, i) => (
                       <tr
                         key={crit.label}
-                        className={i % 2 ? "bg-muted/20" : ""}
+                        className={cn("border-b border-black/5 last:border-b-0", i % 2 ? "bg-muted/20" : "")}
                       >
                         <td
                           className={cn(
-                            "px-4 py-3 font-medium",
+                            "px-4 py-3 font-medium border-r border-white/20",
                             rotuloCol
-                              ? cn(rotuloCol.header, "border-b border-white/25")
-                              : "text-foreground"
+                              ? cn(rotuloCol.header, rotuloTextClass, "border-b-0")
+                              : "text-foreground border-b-0"
                           )}
                         >
                           {crit.label}
@@ -687,11 +752,11 @@ export default function PublicPropostaAutoPage() {
                             <td
                               key={c.id}
                               className={cn(
-                                "px-4 py-3 text-center text-muted-foreground",
-                                colColor ? colColor.cell : ""
+                                "px-4 py-3 text-center border-r border-black/5 last:border-r-0",
+                                colColor ? cn(colColor.cell, "text-current") : "text-muted-foreground"
                               )}
                             >
-                              {editMode ? renderEditableCell(c, crit) : crit.render(c)}
+                              {editMode ? <EditableCell c={c} crit={crit} updateDraft={updateDraft} /> : crit.render(c)}
                             </td>
                           );
                         })}
@@ -701,40 +766,25 @@ export default function PublicPropostaAutoPage() {
                       <tr className={CRITERIOS.length % 2 ? "bg-muted/20" : ""}>
                         <td
                           className={cn(
-                            "px-4 py-3 font-medium align-top",
+                            "px-4 py-3 font-medium align-top border-r border-white/20",
                             rotuloCol
-                              ? cn(rotuloCol.header, "border-b border-white/25")
+                              ? cn(rotuloCol.header, rotuloTextClass)
                               : "text-foreground"
                           )}
                         >
-                          <button
-                            type="button"
-                            onClick={() => setPagamentoOpen((v) => !v)}
-                            className="inline-flex items-center gap-1.5 hover:underline"
-                          >
+                          <div className="inline-flex items-center gap-1.5">
                             <CreditCard className="w-3.5 h-3.5" />
                             <span>Formas de pagamento</span>
-                            <ChevronDown
-                              className={cn(
-                                "w-3.5 h-3.5 transition-transform",
-                                pagamentoOpen && "rotate-180"
-                              )}
-                            />
-                          </button>
+                          </div>
                         </td>
                         {view.map((c) => {
                           const colColor = getColunaColor(c.cor_coluna);
                           return (
-                            <td key={c.id} className={cn("px-4 py-3 text-center align-top", colColor ? colColor.cell : "")}>
+                            <td key={c.id} className={cn("px-4 py-3 text-center align-top border-r border-black/5 last:border-r-0", colColor ? colColor.cell : "")}>
                               {editMode ? (
-                                <FormasPagamentoEditor c={c} />
-                              ) : pagamentoOpen ? (
-                                <FormasPagamentoList c={c} />
+                                <FormasPagamentoEditor c={c} updateDraft={updateDraft} />
                               ) : (
-                                <span className="text-muted-foreground/60 text-xs">
-                                  {parseFormasPagamento(c.formas_pagamento_detalhes).length || "—"}
-                                  {parseFormasPagamento(c.formas_pagamento_detalhes).length > 0 && " opções"}
-                                </span>
+                                <FormasPagamentoList c={c} />
                               )}
                             </td>
                           );
@@ -766,7 +816,7 @@ export default function PublicPropostaAutoPage() {
                     colColor ? colColor.border : "border-primary"
                   )}
                 >
-                  <div className={cn("p-4", colColor ? colColor.header : "bg-muted/30")}>
+                  <div className={cn("p-4", colColor ? cn(colColor.header, getContrastColor(colColor.header)) : "bg-muted/30")}>
                     {editMode ? (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between gap-1 mb-1">
@@ -807,7 +857,7 @@ export default function PublicPropostaAutoPage() {
                           <p className="text-xs uppercase tracking-wider text-muted-foreground">
                             {c.seguradora_nome}
                           </p>
-                          <h3 className="font-bold text-foreground">
+                          <h3 className={cn("font-bold", colColor ? "text-current" : "text-foreground")}>
                             {txt(c.produto_nome)}
                           </h3>
                         </div>
@@ -860,7 +910,7 @@ export default function PublicPropostaAutoPage() {
                             {crit.label}
                           </dt>
                           <dd className="text-right text-foreground font-medium flex-1 min-w-0">
-                            {editMode ? renderEditableCell(c, crit) : crit.render(c)}
+                            {editMode ? <EditableCell c={c} crit={crit} updateDraft={updateDraft} /> : crit.render(c)}
                           </dd>
                         </div>
                       ))}
@@ -869,7 +919,7 @@ export default function PublicPropostaAutoPage() {
                           Formas de pagamento
                         </p>
                         {editMode ? (
-                          <FormasPagamentoEditor c={c} />
+                          <FormasPagamentoEditor c={c} updateDraft={updateDraft} />
                         ) : (
                           <FormasPagamentoList c={c} />
                         )}

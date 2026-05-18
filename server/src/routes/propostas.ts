@@ -30,12 +30,23 @@ router.get('/full/:slug', async (req, res) => {
       return res.status(404).json({ error: 'Proposta não encontrada' });
     }
 
+    // Tracking: incrementa visualizações se não for preview do admin
+    if (req.query.tracking !== 'false') {
+      prisma.proposta.update({
+        where: { id: proposta.id },
+        data: {
+          visualizacoes: { increment: 1 },
+          ultimo_acesso: new Date()
+        }
+      }).catch(err => console.error('Error updating health tracking:', err));
+    }
+
     console.log(`Proposta saúde encontrada com ${proposta.operadoras.length} operadoras`);
 
     return res.json({
       proposta: {
         ...proposta,
-        operadoras: undefined // Remove redundância se quiser, mas vamos manter
+        operadoras: undefined
       },
       operadoras: proposta.operadoras
     });
@@ -70,6 +81,17 @@ router.get('/auto/full/:slug', async (req, res) => {
     if (!proposta) {
       console.log(`Proposta auto não encontrada: ${slug}`);
       return res.status(404).json({ error: 'Proposta não encontrada' });
+    }
+
+    // Tracking: incrementa visualizações se não for preview do admin
+    if (req.query.tracking !== 'false') {
+      prisma.propostaAuto.update({
+        where: { id: proposta.id },
+        data: {
+          visualizacoes: { increment: 1 },
+          ultimo_acesso: new Date()
+        }
+      }).catch(err => console.error('Error updating auto tracking:', err));
     }
 
     console.log(`Proposta auto encontrada com ${proposta.seguradoras.length} seguradoras`);

@@ -134,7 +134,12 @@ router.post('/preview', authMiddleware, async (req, res) => {
     if (!response.ok) {
       const text = await response.text();
       console.error('Webhook preview error:', text);
-      return res.status(response.status).json({ error: 'Erro ao buscar prévia dos dados.' });
+      let errorMessage = 'Erro ao buscar prévia dos dados.';
+      try {
+        const json = JSON.parse(text);
+        if (json.detail) errorMessage = json.detail;
+      } catch (e) {}
+      return res.status(response.status).json({ error: errorMessage });
     }
 
     // Converte XLSX → Array de objetos JSON usando SheetJS

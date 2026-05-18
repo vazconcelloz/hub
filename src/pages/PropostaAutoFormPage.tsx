@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Save, ArrowLeft, Plus, Trash2, Upload, Loader2, Copy, Eye } from "lucide-react";
 import { generateSlug, STATUS_LABELS } from "@/lib/proposal-auto-utils";
 import { DESTAQUE_LABELS, COLUNA_COLORS } from "@/lib/proposal-utils";
-import { cn } from "@/lib/utils";
+import { cn, getContrastColor } from "@/lib/utils";
 import { Check, CreditCard } from "lucide-react";
 
 interface AutoCardForm {
@@ -61,6 +61,56 @@ const num = (s: string) => {
 
   const v = Number(normalized);
   return Number.isFinite(v) ? v : null;
+};
+
+// --- Sub-component to prevent focus loss ---
+interface FormaPagamentoRowProps {
+  d: { tipo: string; descricao: string };
+  idx: number;
+  onUpdate: (idx: number, patch: Partial<{ tipo: string; descricao: string }>) => void;
+  onRemove: (idx: number) => void;
+}
+
+const FormaPagamentoRow = ({ d, idx, onUpdate, onRemove }: FormaPagamentoRowProps) => {
+  const [localDesc, setLocalDesc] = useState(d.descricao);
+
+  useEffect(() => {
+    setLocalDesc(d.descricao);
+  }, [d.descricao]);
+
+  return (
+    <div className="flex items-center gap-2">
+      <Select
+        value={d.tipo}
+        onValueChange={(v) => onUpdate(idx, { tipo: v })}
+      >
+        <SelectTrigger className="h-9 w-40 bg-background">
+          <SelectValue placeholder="Tipo" />
+        </SelectTrigger>
+        <SelectContent>
+          {["Cartão de crédito", "Boleto", "Débito em conta", "PIX", "Cartão de débito"].map(t => (
+            <SelectItem key={t} value={t}>{t}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Input
+        value={localDesc}
+        onChange={(e) => {
+          setLocalDesc(e.target.value);
+          onUpdate(idx, { descricao: e.target.value });
+        }}
+        placeholder="Ex: 10x sem juros"
+        className="bg-background"
+      />
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => onRemove(idx)}
+      >
+        <Trash2 className="w-4 h-4 text-muted-foreground" />
+      </Button>
+    </div>
+  );
 };
 
 export default function PropostaAutoFormPage() {
@@ -497,45 +547,20 @@ export default function PropostaAutoFormPage() {
                 </div>
                 <div className="grid gap-2 border rounded-md p-3 bg-muted/20">
                   {(c.formas_pagamento_detalhes || [{ tipo: "Cartão de crédito", descricao: "" }, { tipo: "Boleto", descricao: "" }]).map((d, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <Select
-                        value={d.tipo}
-                        onValueChange={(v) => {
-                          const next = [...(c.formas_pagamento_detalhes || [{ tipo: "Cartão de crédito", descricao: "" }, { tipo: "Boleto", descricao: "" }])];
-                          next[idx] = { ...next[idx], tipo: v };
-                          updateCard(i, { formas_pagamento_detalhes: next });
-                        }}
-                      >
-                        <SelectTrigger className="h-9 w-40 bg-background">
-                          <SelectValue placeholder="Tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {["Cartão de crédito", "Boleto", "Débito em conta", "PIX", "Cartão de débito"].map(t => (
-                            <SelectItem key={t} value={t}>{t}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Input
-                        value={d.descricao}
-                        onChange={(e) => {
-                          const next = [...(c.formas_pagamento_detalhes || [{ tipo: "Cartão de crédito", descricao: "" }, { tipo: "Boleto", descricao: "" }])];
-                          next[idx] = { ...next[idx], descricao: e.target.value };
-                          updateCard(i, { formas_pagamento_detalhes: next });
-                        }}
-                        placeholder="Ex: 10x sem juros"
-                        className="bg-background"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          const next = (c.formas_pagamento_detalhes || []).filter((_, k) => k !== idx);
-                          updateCard(i, { formas_pagamento_detalhes: next.length ? next : null });
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4 text-muted-foreground" />
-                      </Button>
-                    </div>
+                    <FormaPagamentoRow 
+                      key={idx}
+                      d={d}
+                      idx={idx}
+                      onUpdate={(idx, patch) => {
+                        const next = [...(c.formas_pagamento_detalhes || [{ tipo: "Cartão de crédito", descricao: "" }, { tipo: "Boleto", descricao: "" }])];
+                        next[idx] = { ...next[idx], ...patch };
+                        updateCard(i, { formas_pagamento_detalhes: next });
+                      }}
+                      onRemove={(idx) => {
+                        const next = (c.formas_pagamento_detalhes || []).filter((_, k) => k !== idx);
+                        updateCard(i, { formas_pagamento_detalhes: next.length ? next : null });
+                      }}
+                    />
                   ))}
                   <Button
                     variant="outline"
@@ -588,6 +613,7 @@ export default function PropostaAutoFormPage() {
                       className={cn(
                         "h-8 rounded flex items-center justify-center",
                         col.header,
+                        getContrastColor(col.header),
                         c.cor_coluna === k && "ring-2 ring-offset-1 ring-foreground"
                       )}
                       title={col.label}
